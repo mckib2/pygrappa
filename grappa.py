@@ -1,5 +1,8 @@
 '''Reference GRAPPA implementation ported to python.'''
 
+from contextlib import ExitStack
+from tempfile import NamedTemporaryFile as NTF
+
 import numpy as np
 from skimage.util import pad
 from tqdm import trange
@@ -15,12 +18,12 @@ def grappa(
         2D multi-coil k-space data to reconstruct from.  Make sure
         that the missing entries have exact zeros in them.
     calib : array_like
-        Calibration data (fully sampled k-space)
+        Calibration data (fully sampled k-space).
     kernel_size : tuple, optional
-        size of the 2D GRAPPA kernel (kx, ky)
+        size of the 2D GRAPPA kernel (kx, ky).
     coil_axis : int, optional
         Dimension holding coil data.  The other two dimensions should
-        be (kx, ky).
+        be sizes (kx, ky).
     lamda : float, optional
         Tikhonov regularization for the kernel calibration.
     disp : bool, optional
@@ -51,6 +54,12 @@ def grappa(
     A sampling configuration is stored in a list, and retrieved
     when needed to accelerate the reconstruction (a bit)
 
+    If memmap=True, the results will be written to memmap_filename
+    and nothing is returned from the function.  The calibration
+    matrix will also be stored in a Temporary Named File that will
+    deleted after the reconstruction.  Currently all intermediate
+    matrices are still stored in memory.
+
     References
     ----------
     .. [1] https://people.eecs.berkeley.edu/~mlustig/Software.html
@@ -75,27 +84,35 @@ def grappa(
     else:
         res = np.zeros(kspace.shape, dtype=kspace.dtype)
 
-    # build coil calibrating matrix
-    AtA = dat2AtA(calib, kernel_size)[0]
+    # Build coil calibrating matrix, store in memmap if user said to
+    with ExitStack() if not memmap else NTF() as AtA_file:
+        if memmap:
+            sh = (kernel_size[0]*kernel_size[1]*ncoils)
+            AtA = np.memmap(
+                AtA_file, mode='w+', shape=(sh, sh),
+                dtype=kspace.dtype)
+            AtA[:] = dat2AtA(calib, kernel_size)
+        else:
+            AtA = dat2AtA(calib, kernel_size)
 
-    # reconstruct single coil images
-    for nn in trange(ncoils, leave=False):
-        res[..., nn] = ARC(
-            kspace, AtA, kernel_size, nn, lamda)
-        if disp:
-            plt.imshow(
-                np.abs(np.sqrt(sx*sy)*np.fft.fftshift(
-                    np.fft.ifft2(np.fft.ifftshift(
-                        res[..., nn])))), cmap='gray')
-            plt.show()
+        # reconstruct single coil images
+        for nn in trange(ncoils, leave=False):
+            res[..., nn] = ARC(
+                kspace, AtA, kernel_size, nn, lamda)
+            if disp:
+                plt.imshow(
+                    np.abs(np.sqrt(sx*sy)*np.fft.fftshift(
+                        np.fft.ifft2(np.fft.ifftshift(
+                            res[..., nn])))), cmap='gray')
+                plt.show()
 
     # Move the coil dimension back where the user had it
     res = np.moveaxis(res, -1, coil_axis)
 
-    # Don't return anything for memmap, just close the file.
+    # Don't return anything for memmap, just close the files
     # Otherwise, return the reconstructed coil images
     if memmap:
-        del res
+        del res, AtA
         return None
     return res
 
@@ -162,26 +179,13 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
     return res
 
 def dat2AtA(data, kernel_size):
-    '''[AtA, A, kernel] = dat2AtA(data, kSize)
-
-    Function computes the calibration matrix from calibration data.
-    (c) Michael Lustig 2013
+    '''Computes the calibration matrix from calibration data.
     '''
-
-    nc = data.shape[-1]
-    kx, ky = kernel_size[:]
 
     tmp = im2row(data, kernel_size)
     tsx, tsy, tsz = tmp.shape[:]
     A = np.reshape(tmp, (tsx, tsy*tsz), order='F')
-
-    AtA = np.dot(A.T.conj(), A)
-
-    kernel = AtA.copy()
-    kernel = np.reshape(
-        kernel, (kx, ky, nc, kernel.shape[1]), order='F')
-
-    return(AtA, A, kernel)
+    return np.dot(A.T.conj(), A)
 
 def im2row(im, win_shape):
     '''res = im2row(im, winSize)'''
@@ -193,8 +197,10 @@ def im2row(im, win_shape):
     count = 0
     for y in range(wy):
         for x in range(wx):
+            #res[:, count, :] = np.reshape(
+            #    im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz), order='F')
             res[:, count, :] = np.reshape(
-                im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz), order='F')
+                im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz))
             count += 1
     return res
 
@@ -223,15 +229,15 @@ def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     Aty = AtA[:, idxY_flat]
     Aty = Aty[idxA_flat]
 
-    AtA = AtA[idxA_flat, :].copy()
-    AtA = AtA[:, idxA_flat]
+    AtA0 = AtA[idxA_flat, :]
+    AtA0 = AtA0[:, idxA_flat]
 
-    kernel = np.zeros(sampling.size, dtype=AtA.dtype)
+    kernel = np.zeros(sampling.size, dtype=AtA0.dtype)
 
-    lamda = np.linalg.norm(AtA)/AtA.shape[0]*lamda
+    lamda = np.linalg.norm(AtA0)/AtA0.shape[0]*lamda
 
     rawkernel = np.linalg.inv(
-        AtA + np.eye(AtA.shape[0])*lamda).dot(Aty)
+        AtA0 + np.eye(AtA0.shape[0])*lamda).dot(Aty)
     kernel[idxA_flat] = rawkernel.squeeze()
     kernel = np.reshape(kernel, sampling.shape, order='F')
 
