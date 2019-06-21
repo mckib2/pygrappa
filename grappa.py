@@ -4,20 +4,25 @@ import numpy as np
 from skimage.util import pad
 from tqdm import trange
 
-def grappa(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
-    '''GRAPPA(kData,kCalib,kSize,lambda [, disp)
+def grappa(
+        kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
+        disp=False):
+    '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
     ----------
-    kData : array_like, [Size x, Size y, num coils]
+    kspace : array_like
         2D multi-coil k-space data to reconstruct from.  Make sure
         that the missing entries have exact zeros in them.
-    kCalib : array_like
+    calib : array_like
         Calibration data (fully sampled k-space)
-    kSize : tuple, optional
+    kernel_size : tuple, optional
         size of the 2D GRAPPA kernel (kx, ky)
+    coil_axis : int, optional
+        Dimension holding coil data.  The other two dimensions should
+        be (kx, ky).
     lamda : float, optional
-        Tykhonov regularization for the kernel calibration.
+        Tikhonov regularization for the kernel calibration.
     disp : bool, optional
         Display images as they are reconstructed
 
@@ -58,7 +63,7 @@ def grappa(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
     >>> DATA[1::2, ::2, :] = 0
 
     Reconstruct:
-    ... res = GRAPPA(DATA, kCalib, kSize, 0.01, False)
+    >>> res = GRAPPA(DATA, kCalib, kSize, -1, 0.01, False)
 
     Notes
     -----
@@ -79,49 +84,57 @@ def grappa(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
     .. [1] https://people.eecs.berkeley.edu/~mlustig/Software.html
     '''
 
+    # Put the coil dimension at the end
+    kspace = np.moveaxis(kspace, coil_axis, -1)
+
     # Get displays up and running if we need them
     if disp:
         import matplotlib.pyplot as plt
 
-    # get sizes
-    _fe, _pe, coils = kData.shape[:]
+    # get number of coils
+    ncoils = kspace.shape[-1]
+    res = np.zeros(kspace.shape, dtype=kspace.dtype)
 
-    res = np.zeros(kData.shape, dtype=kData.dtype)
-    AtA, _, _ = dat2AtA(kCalib, kSize) # build coil calibrating matrix
+    # build coil calibrating matrix
+    AtA = dat2AtA(calib, kernel_size)[0]
 
     # reconstruct single coil images
-    for nn in trange(coils, leave=False):
+    for nn in trange(ncoils, leave=False):
         res[..., nn] = ARC(
-            kData, AtA, kSize, nn, lamda)
+            kspace, AtA, kernel_size, nn, lamda)
         if disp:
             plt.imshow(np.abs(ifft2c(res[..., nn])))
             plt.show()
 
+    # Move the coil dimension back where the user had it
+    res = np.moveaxis(res, -1, coil_axis)
     return res
 
-def ARC(kData, AtA, kSize, c, lamda):
+def ARC(kspace, AtA, kernel_size, c, lamda):
     '''ARC.'''
-    sx, sy, nCoil = kData.shape[:]
+    sx, sy, ncoils = kspace.shape[:]
+    kx, ky = kernel_size[:]
 
-    px = int((kSize[0])/2)
-    py = int((kSize[1])/2)
-    kData = pad(kData, ((px, px), (py, py), (0, 0)), mode='constant') #pylint: disable=E1102
+    # Zero-pad data
+    px = int(kx/2)
+    py = int(ky/2)
+    kspace = pad( #pylint: disable=E1102
+        kspace, ((px, px), (py, py), (0, 0)), mode='constant')
 
-    dummyK = np.zeros((kSize[0], kSize[1], nCoil))
-    dummyK[int((kSize[0])/2), int((kSize[1])/2), c] = 1
+    dummyK = np.zeros((kx, ky, ncoils))
+    dummyK[int(kx/2), int(ky/2), c] = 1
     idxy = np.where(dummyK)
-    res = np.zeros((sx, sy), dtype=kData.dtype)
+    res = np.zeros((sx, sy), dtype=kspace.dtype)
 
-    MaxListLen = 100
-    LIST = np.zeros(
-        (kSize[0]*kSize[1]*nCoil, MaxListLen), dtype=kData.dtype)
-    KEY = np.zeros((kSize[0]*kSize[1]*nCoil, MaxListLen))
+    MaxListLen = 100 # max number of kernels we'll store for lookup
+    LIST = np.zeros((kx*ky*ncoils, MaxListLen), dtype=kspace.dtype)
+    KEY = np.zeros((kx*ky*ncoils, MaxListLen))
+
     count = 0
-
     for xy in np.ndindex((sx, sy)):
         x, y = xy[:]
 
-        tmp = kData[x:x+kSize[0], y:y+kSize[1], :]
+        tmp = kspace[x:x+kx, y:y+ky, :]
         pat = np.abs(tmp) > 0
         if pat[idxy]:
             # If we aquired this k-space sample, use it!
@@ -129,7 +142,7 @@ def ARC(kData, AtA, kSize, c, lamda):
         else:
             # If we didn't aquire it, let's either look up the
             # kernel or compute a new one
-            key = pat.flatten('F')
+            key = pat.flatten()
 
             # If we have a matching kernel, the key will exist
             # in our array of KEYs
@@ -141,36 +154,34 @@ def ARC(kData, AtA, kSize, c, lamda):
 
             # If we didn't find a matching kernel, compute one.
             # We'll only hold MaxListLen kernels in the lookup
-            # at one time
+            # at one time to save on memory and lookup time
             if idx == 0:
                 count += 1
-                kernel, _ = calibrate(
-                    AtA, kSize, nCoil, c, lamda, pat)
-                KEY[:, np.mod(
-                    count, MaxListLen)] = key.flatten('F')
-                LIST[:, np.mod(
-                    count, MaxListLen)] = kernel.flatten('F')
+                kernel = calibrate(
+                    AtA, kernel_size, ncoils, c, lamda,
+                    pat)[0].flatten()
+                KEY[:, np.mod(count, MaxListLen)] = key
+                LIST[:, np.mod(count, MaxListLen)] = kernel
             else:
                 # If we found it, use it!
                 kernel = LIST[:, idx-1]
 
-            # Must be flattened in Fortran order because kernel
-            # was stored in LIST like this
-            res[x, y] = np.sum(
-                kernel.flatten('F')*tmp.flatten('F'))
+            # Apply kernel weights to coil data for interpolation
+            res[x, y] = np.sum(kernel*tmp.flatten())
 
     return res
 
-def dat2AtA(data, kSize):
-    '''[AtA,A,kernel] = dat2AtA(data, kSize)
+def dat2AtA(data, kernel_size):
+    '''[AtA, A, kernel] = dat2AtA(data, kSize)
 
     Function computes the calibration matrix from calibration data.
     (c) Michael Lustig 2013
     '''
 
-    _sx, _sy, nc = data.shape[:]
+    nc = data.shape[-1]
+    kx, ky = kernel_size[:]
 
-    tmp = im2row(data, kSize)
+    tmp = im2row(data, kernel_size)
     tsx, tsy, tsz = tmp.shape[:]
     A = np.reshape(tmp, (tsx, tsy*tsz), order='F')
 
@@ -178,23 +189,22 @@ def dat2AtA(data, kSize):
 
     kernel = AtA.copy()
     kernel = np.reshape(
-        kernel, (kSize[0], kSize[1], nc, kernel.shape[1]), order='F')
+        kernel, (kx, ky, nc, kernel.shape[1]), order='F')
 
     return(AtA, A, kernel)
 
-def im2row(im, winSize):
+def im2row(im, win_shape):
     '''res = im2row(im, winSize)'''
     sx, sy, sz = im.shape[:]
+    wx, wy = win_shape[:]
+    sh = (sx-wx+1)*(sy-wy+1)
+    res = np.zeros((sh, wx*wy, sz), dtype=im.dtype)
 
-    res = np.zeros(
-        ((sx-winSize[0]+1)*(sy-winSize[1]+1), np.prod(winSize), sz),
-        dtype=im.dtype)
     count = 0
-    for y in range(winSize[1]):
-        for x in range(winSize[0]):
+    for y in range(wy):
+        for x in range(wx):
             res[:, count, :] = np.reshape(
-                im[x:sx-winSize[0]+x+1, y:sy-winSize[1]+y+1, :],
-                ((sx-winSize[0]+1)*(sy-winSize[1]+1), sz), order='F')
+                im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz), order='F')
             count += 1
     return res
 
@@ -228,14 +238,17 @@ def ifft2c(x):
     res = np.reshape(res, S, 'F')
     return res
 
-def calibrate(AtA, kSize, nCoil, coil, lamda, sampling=None):
-    '''Calibrate.'''
+def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
+    '''Calibrate.
+    '''
+
+    kx, ky = kernel_size[:]
 
     if sampling is None:
-        sampling = np.ones((kSize, nCoil))
+        sampling = np.ones((kernel_size, ncoils))
 
-    dummyK = np.zeros((kSize[0], kSize[1], nCoil))
-    dummyK[int((kSize[0])/2), int((kSize[1])/2), coil] = 1
+    dummyK = np.zeros((kx, ky, ncoils))
+    dummyK[int(kx/2), int(ky/2), coil] = 1
 
     # To match MATLAB output, use Fortran ordering and make sure
     # indices come out sorted
@@ -299,8 +312,17 @@ if __name__ == '__main__':
     DATA[1::2, ::2, :] = 0
 
     # reconstruct:
-    res = grappa(DATA, kCalib, kSize, 0.01, False)
+    res = grappa(
+        DATA, kCalib, kSize, coil_axis=-1, lamda=0.01, disp=False)
 
     # Take a look
-    from mr_utils import view
-    view(res, fft=True)
+    import matplotlib.pyplot as plt
+    res = np.abs(ifft2c(res))
+    res0 = np.zeros((2*N, 2*N))
+    kk = 0
+    for idx in np.ndindex((2, 2)):
+        ii, jj = idx[:]
+        res0[ii*N:(ii+1)*N, jj*N:(jj+1)*N] = res[..., kk]
+        kk += 1
+    plt.imshow(res0, cmap='gray')
+    plt.show()
