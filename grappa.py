@@ -4,18 +4,8 @@ import numpy as np
 from skimage.util import pad
 from tqdm import trange
 
-def GRAPPA(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
+def grappa(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
     '''GRAPPA(kData,kCalib,kSize,lambda [, disp)
-
-    This is a GRAPPA reconstruction algorithm that supports
-    arbitrary Cartesian sampling. However, the implementation
-    is highly inefficient in Matlab because it uses for loops.
-    This implementation is very similar to the GE ARC implementation.
-    The reconstruction looks at a neighborhood of a point and
-    does a calibration according to the neighborhood to synthesize
-    the missing point. This is a k-space varying interpolation.
-    A sampling configuration is stored in a list, and retrieved
-    when needed to accelerate the reconstruction (a bit)
 
     Parameters
     ----------
@@ -33,30 +23,56 @@ def GRAPPA(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
 
     Returns
     -------
-        res : array_like
-            k-space data where missing entries have been filled in.
+    res : array_like
+        k-space data where missing entries have been filled in.
 
     Examples
     --------
-    >>> xx = np.linspace(0, 1, 128)
+    Generate fake Sensitivity maps:
+    >>> N = 128
+    >>> ncoils = 4
+    >>> xx = np.linspace(0, 1, N)
     >>> x, y = np.meshgrid(xx, xx)
-    >>> # Generate fake Sensitivity maps
-    >>> sMaps = cat(3, x.^2, 1-x.^2, y.^2, 1-y.^2)
-    >>> # generate 4 coil phantom
-    >>> imgs = phantom(128)[..., None]*sMaps
-    >>> DATA = fft2c(imgs)
-    >>> # crop 20x20 window from the center of k-space for calibration
-    >>> kCalib = crop(DATA, [20, 20, 4])
-    >>> # calibrate a kernel
-    >>> kSize = [5, 5]
-    >>> coils = 4
-    >>> # undersample by a factor of 2
-    >>> DATA[1:2:end, 2:2:end, :] = 0
-    >>> DATA[2:2:end, 1:2:end, :] = 0
-    >>> # reconstruct:
-    >>> res = GRAPPA(DATA, kCalib, kSize, 0.01)
+    >>> sMaps = np.zeros((N, N, ncoils))
+    >>> sMaps[..., 0] = x**2
+    >>> sMaps[..., 1] = 1 - x**2
+    >>> sMaps[..., 2] = y**2
+    >>> sMaps[..., 3] = 1 - y**2
 
+    Generate 4 coil phantom:
+    >>> ph = np.load('phantom.npy')
+    >>> imgs = ph[..., None]*sMaps
+    >>> imgs = imgs.astype('complex')
+    >>> DATA = fft2c(imgs)
+
+    Crop 20x20 window from the center of k-space for calibration:
+    >>> pd = 10
+    >>> ctr = int(N/2)
+    >>> kCalib = DATA[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
+
+    Calibration kernel size:
+    >>> kSize = (5, 5)
+
+    Undersample by a factor of 2 in both x and y:
+    >>> DATA[::2, 1::2, :] = 0
+    >>> DATA[1::2, ::2, :] = 0
+
+    Reconstruct:
+    ... res = GRAPPA(DATA, kCalib, kSize, 0.01, False)
+
+    Notes
+    -----
     Based on implementation at [1]_.
+
+    This is a GRAPPA reconstruction algorithm that supports
+    arbitrary Cartesian sampling. However, the implementation
+    is highly inefficient in Matlab because it uses for loops.
+    This implementation is very similar to the GE ARC implementation.
+    The reconstruction looks at a neighborhood of a point and
+    does a calibration according to the neighborhood to synthesize
+    the missing point. This is a k-space varying interpolation.
+    A sampling configuration is stored in a list, and retrieved
+    when needed to accelerate the reconstruction (a bit)
 
     References
     ----------
@@ -73,8 +89,8 @@ def GRAPPA(kData, kCalib, kSize=(5, 5), lamda=0.01, disp=False):
     res = np.zeros(kData.shape, dtype=kData.dtype)
     AtA, _, _ = dat2AtA(kCalib, kSize) # build coil calibrating matrix
 
+    # reconstruct single coil images
     for nn in trange(coils, leave=False):
-        # reconstruct single coil image
         res[..., nn] = ARC(
             kData, AtA, kSize, nn, lamda)
         if disp:
@@ -94,41 +110,55 @@ def ARC(kData, AtA, kSize, c, lamda):
     dummyK = np.zeros((kSize[0], kSize[1], nCoil))
     dummyK[int((kSize[0])/2), int((kSize[1])/2), c] = 1
     idxy = np.where(dummyK)
-
     res = np.zeros((sx, sy), dtype=kData.dtype)
 
     MaxListLen = 100
     LIST = np.zeros(
         (kSize[0]*kSize[1]*nCoil, MaxListLen), dtype=kData.dtype)
-    KEY = np.zeros((
-        kSize[0]*kSize[1]*nCoil, MaxListLen), dtype=kData.dtype)
+    KEY = np.zeros((kSize[0]*kSize[1]*nCoil, MaxListLen))
     count = 0
 
-    for y in trange(sy, leave=False):
-        for x in range(sx):
-            tmp = kData[x:x+kSize[0], y:y+kSize[1], :]
-            pat = np.abs(tmp) > 0
-            if pat[idxy] or np.sum(pat.flatten()) == 0:
-                res[x, y] = tmp[idxy].squeeze()
-            else:
-                key = pat.flatten('F')
-                idx = 0
-                for nn in range(1, KEY.shape[1]+1):
-                    if np.sum(key == KEY[:, nn-1]) == key.size:
-                        idx = nn
-                        break
+    for xy in np.ndindex((sx, sy)):
+        x, y = xy[:]
 
-                if idx == 0:
-                    count += 1
-                    kernel, _ = calibrate(
-                        AtA, kSize, nCoil, c, lamda, pat)
-                    KEY[:, np.mod(
-                        count, MaxListLen)] = key.flatten('F')
-                    LIST[:, np.mod(
-                        count, MaxListLen)] = kernel.flatten('F')
-                else:
-                    kernel = LIST[:, idx-1]
-                res[x, y] = np.sum(kernel.flatten()*tmp.flatten())
+        tmp = kData[x:x+kSize[0], y:y+kSize[1], :]
+        pat = np.abs(tmp) > 0
+        if pat[idxy]:
+            # If we aquired this k-space sample, use it!
+            res[x, y] = tmp[idxy].squeeze()
+        else:
+            # If we didn't aquire it, let's either look up the
+            # kernel or compute a new one
+            key = pat.flatten('F')
+
+            # If we have a matching kernel, the key will exist
+            # in our array of KEYs
+            idx = 0
+            for nn in range(1, KEY.shape[1]+1):
+                if np.sum(key == KEY[:, nn-1]) == key.size:
+                    idx = nn
+                    break
+
+            # If we didn't find a matching kernel, compute one.
+            # We'll only hold MaxListLen kernels in the lookup
+            # at one time
+            if idx == 0:
+                count += 1
+                kernel, _ = calibrate(
+                    AtA, kSize, nCoil, c, lamda, pat)
+                KEY[:, np.mod(
+                    count, MaxListLen)] = key.flatten('F')
+                LIST[:, np.mod(
+                    count, MaxListLen)] = kernel.flatten('F')
+            else:
+                # If we found it, use it!
+                kernel = LIST[:, idx-1]
+
+            # Must be flattened in Fortran order because kernel
+            # was stored in LIST like this
+            res[x, y] = np.sum(
+                kernel.flatten('F')*tmp.flatten('F'))
+
     return res
 
 def dat2AtA(data, kSize):
@@ -199,7 +229,7 @@ def ifft2c(x):
     return res
 
 def calibrate(AtA, kSize, nCoil, coil, lamda, sampling=None):
-    '''Calibrate,'''
+    '''Calibrate.'''
 
     if sampling is None:
         sampling = np.ones((kSize, nCoil))
@@ -207,27 +237,30 @@ def calibrate(AtA, kSize, nCoil, coil, lamda, sampling=None):
     dummyK = np.zeros((kSize[0], kSize[1], nCoil))
     dummyK[int((kSize[0])/2), int((kSize[1])/2), coil] = 1
 
+    # To match MATLAB output, use Fortran ordering and make sure
+    # indices come out sorted
     idxY = np.where(dummyK)
-    idxY_flat = np.ravel_multi_index(idxY, dummyK.shape)
+    idxY_flat = np.sort(
+        np.ravel_multi_index(idxY, dummyK.shape, order='F'))
     sampling[idxY] = 0
-    # print(sampling)
     idxA = np.where(sampling)
-    idxA_flat = np.ravel_multi_index(idxA, sampling.shape)
+    idxA_flat = np.sort(
+        np.ravel_multi_index(idxA, sampling.shape, order='F'))
 
     Aty = AtA[:, idxY_flat]
     Aty = Aty[idxA_flat]
 
-    AtA = AtA[idxA_flat, :]
+    AtA = AtA[idxA_flat, :].copy()
     AtA = AtA[:, idxA_flat]
 
-    kernel = np.zeros(sampling.shape, dtype=AtA.dtype)
+    kernel = np.zeros(sampling.size, dtype=AtA.dtype)
 
     lamda = np.linalg.norm(AtA)/AtA.shape[0]*lamda
 
-    # print(AtA.shape)
     rawkernel = np.linalg.inv(
         AtA + np.eye(AtA.shape[0])*lamda).dot(Aty)
-    kernel[idxA] = rawkernel.squeeze() #pylint: disable=E1137
+    kernel[idxA_flat] = rawkernel.squeeze()
+    kernel = np.reshape(kernel, sampling.shape, order='F')
 
     return(kernel, rawkernel)
 
@@ -252,7 +285,7 @@ if __name__ == '__main__':
     imgs = ph[..., None]*sMaps
     imgs = imgs.astype('complex')
     DATA = fft2c(imgs)
-    
+
     # crop 20x20 window from the center of k-space for calibration
     pd = 10
     ctr = int(N/2)
@@ -266,7 +299,7 @@ if __name__ == '__main__':
     DATA[1::2, ::2, :] = 0
 
     # reconstruct:
-    res = GRAPPA(DATA, kCalib, kSize, 0.01, False)
+    res = grappa(DATA, kCalib, kSize, 0.01, False)
 
     # Take a look
     from mr_utils import view
