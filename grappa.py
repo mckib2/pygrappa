@@ -130,7 +130,7 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
     LIST = np.zeros((kx*ky*ncoils, MaxListLen), dtype=kspace.dtype)
     KEY = np.zeros((kx*ky*ncoils, MaxListLen))
 
-    count = 0
+    count = 0 # current index for the next kernel to store in LIST
     for xy in np.ndindex((sx, sy)):
         x, y = xy[:]
 
@@ -145,17 +145,18 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
             key = pat.flatten()
 
             # If we have a matching kernel, the key will exist
-            # in our array of KEYs
+            # in our array of KEYs.  This little loop looks through
+            # the list to find if we have the kernel already
             idx = 0
             for nn in range(1, KEY.shape[1]+1):
                 if np.sum(key == KEY[:, nn-1]) == key.size:
                     idx = nn
                     break
 
-            # If we didn't find a matching kernel, compute one.
-            # We'll only hold MaxListLen kernels in the lookup
-            # at one time to save on memory and lookup time
             if idx == 0:
+                # If we didn't find a matching kernel, compute one.
+                # We'll only hold MaxListLen kernels in the lookup
+                # at one time to save on memory and lookup time
                 count += 1
                 kernel = calibrate(
                     AtA, kernel_size, ncoils, c, lamda,
