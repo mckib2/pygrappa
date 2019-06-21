@@ -6,7 +6,7 @@ from tqdm import trange
 
 def grappa(
         kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
-        disp=False):
+        disp=False, memmap=False, memmap_filename='out.memmap'):
     '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
@@ -25,45 +25,17 @@ def grappa(
         Tikhonov regularization for the kernel calibration.
     disp : bool, optional
         Display images as they are reconstructed
+    memmap : bool, optional
+        Store data in Numpy memmaps.  Use when datasets are too large
+        to store in memory.
+    memmap_filename : str, optional
+        Name of memmap to store results in.  File is only saved if
+        memmap=True.
 
     Returns
     -------
     res : array_like
         k-space data where missing entries have been filled in.
-
-    Examples
-    --------
-    Generate fake Sensitivity maps:
-    >>> N = 128
-    >>> ncoils = 4
-    >>> xx = np.linspace(0, 1, N)
-    >>> x, y = np.meshgrid(xx, xx)
-    >>> sMaps = np.zeros((N, N, ncoils))
-    >>> sMaps[..., 0] = x**2
-    >>> sMaps[..., 1] = 1 - x**2
-    >>> sMaps[..., 2] = y**2
-    >>> sMaps[..., 3] = 1 - y**2
-
-    Generate 4 coil phantom:
-    >>> ph = np.load('phantom.npy')
-    >>> imgs = ph[..., None]*sMaps
-    >>> imgs = imgs.astype('complex')
-    >>> DATA = fft2c(imgs)
-
-    Crop 20x20 window from the center of k-space for calibration:
-    >>> pd = 10
-    >>> ctr = int(N/2)
-    >>> kCalib = DATA[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
-
-    Calibration kernel size:
-    >>> kSize = (5, 5)
-
-    Undersample by a factor of 2 in both x and y:
-    >>> DATA[::2, 1::2, :] = 0
-    >>> DATA[1::2, ::2, :] = 0
-
-    Reconstruct:
-    >>> res = GRAPPA(DATA, kCalib, kSize, -1, 0.01, False)
 
     Notes
     -----
@@ -92,8 +64,16 @@ def grappa(
         import matplotlib.pyplot as plt
 
     # get number of coils
-    ncoils = kspace.shape[-1]
-    res = np.zeros(kspace.shape, dtype=kspace.dtype)
+    sx, sy, ncoils = kspace.shape[:]
+
+    # If user asked for it, store result in memmap.  If not,
+    # business as usual
+    if memmap:
+        res = np.memmap(
+            memmap_filename, mode='w+', shape=kspace.shape,
+            dtype=kspace.dtype)
+    else:
+        res = np.zeros(kspace.shape, dtype=kspace.dtype)
 
     # build coil calibrating matrix
     AtA = dat2AtA(calib, kernel_size)[0]
@@ -103,11 +83,20 @@ def grappa(
         res[..., nn] = ARC(
             kspace, AtA, kernel_size, nn, lamda)
         if disp:
-            plt.imshow(np.abs(ifft2c(res[..., nn])))
+            plt.imshow(
+                np.abs(np.sqrt(sx*sy)*np.fft.fftshift(
+                    np.fft.ifft2(np.fft.ifftshift(
+                        res[..., nn])))), cmap='gray')
             plt.show()
 
     # Move the coil dimension back where the user had it
     res = np.moveaxis(res, -1, coil_axis)
+
+    # Don't return anything for memmap, just close the file.
+    # Otherwise, return the reconstructed coil images
+    if memmap:
+        del res
+        return None
     return res
 
 def ARC(kspace, AtA, kernel_size, c, lamda):
@@ -209,36 +198,6 @@ def im2row(im, win_shape):
             count += 1
     return res
 
-def fft2c(x):
-    '''Forward 2D Fourier transform.'''
-    S = x.shape
-    fctr = S[0]*S[1]
-
-    x = np.reshape(x, (S[0], S[1], int(np.prod(S[2:]))), 'F')
-
-    res = np.zeros(x.shape, dtype=x.dtype)
-    for n in range(x.shape[2]):
-        res[:, :, n] = 1/np.sqrt(fctr)*np.fft.fftshift(np.fft.fft2(
-            np.fft.ifftshift(x[:, :, n])))
-
-    res = np.reshape(res, S, 'F')
-    return res
-
-def ifft2c(x):
-    '''Inverse 2D Fourier transform.'''
-    S = x.shape
-    fctr = S[0]*S[1]
-
-    x = np.reshape(x, (S[0], S[1], int(np.prod(S[2:]))), 'F')
-
-    res = np.zeros(x.shape, dtype=x.dtype)
-    for n in range(x.shape[2]):
-        res[:, :, n] = np.sqrt(fctr)*np.fft.fftshift(np.fft.ifft2(
-            np.fft.ifftshift(x[:, :, n])))
-
-    res = np.reshape(res, S, 'F')
-    return res
-
 def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     '''Calibrate.
     '''
@@ -279,51 +238,4 @@ def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     return(kernel, rawkernel)
 
 if __name__ == '__main__':
-
-    # Generate fake Sensitivity maps
-    N = 128
-    ncoils = 4
-    xx = np.linspace(0, 1, N)
-    x, y = np.meshgrid(xx, xx)
-    sMaps = np.zeros((N, N, ncoils))
-    sMaps[..., 0] = x**2
-    sMaps[..., 1] = 1 - x**2
-    sMaps[..., 2] = y**2
-    sMaps[..., 3] = 1 - y**2
-
-    # generate 4 coil phantom
-    # from scipy.io import loadmat
-    # ph = loadmat('phantom.mat')['tmp']
-    # np.save('phantom.npy', ph)
-    ph = np.load('phantom.npy')
-    imgs = ph[..., None]*sMaps
-    imgs = imgs.astype('complex')
-    DATA = fft2c(imgs)
-
-    # crop 20x20 window from the center of k-space for calibration
-    pd = 10
-    ctr = int(N/2)
-    kCalib = DATA[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
-
-    # calibrate a kernel
-    kSize = (5, 5)
-
-    # undersample by a factor of 2 in both x and y
-    DATA[::2, 1::2, :] = 0
-    DATA[1::2, ::2, :] = 0
-
-    # reconstruct:
-    res = grappa(
-        DATA, kCalib, kSize, coil_axis=-1, lamda=0.01, disp=False)
-
-    # Take a look
-    import matplotlib.pyplot as plt
-    res = np.abs(ifft2c(res))
-    res0 = np.zeros((2*N, 2*N))
-    kk = 0
-    for idx in np.ndindex((2, 2)):
-        ii, jj = idx[:]
-        res0[ii*N:(ii+1)*N, jj*N:(jj+1)*N] = res[..., kk]
-        kk += 1
-    plt.imshow(res0, cmap='gray')
-    plt.show()
+    pass
