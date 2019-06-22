@@ -1,9 +1,10 @@
-'''Basic GRAPPA example using simulated numerical phantom.'''
+'''Basic GRAPPA example using Shepp-Logan phantom.'''
 
 import numpy as np
 import matplotlib.pyplot as plt
+from phantominator import shepp_logan
 
-from grappa import grappa
+from pygrappa import grappa
 
 if __name__ == '__main__':
 
@@ -19,7 +20,7 @@ if __name__ == '__main__':
     mps[..., 3] = 1 - y**2
 
     # generate 4 coil phantom
-    ph = np.load('phantom.npy')
+    ph = shepp_logan(N)
     imspace = ph[..., None]*mps
     imspace = imspace.astype('complex')
     ax = (0, 1)

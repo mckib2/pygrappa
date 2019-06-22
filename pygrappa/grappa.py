@@ -1,8 +1,5 @@
 '''Reference GRAPPA implementation ported to python.'''
 
-from contextlib import ExitStack
-from tempfile import NamedTemporaryFile as NTF
-
 import numpy as np
 from skimage.util import pad
 from tqdm import trange
@@ -42,27 +39,32 @@ def grappa(
 
     Notes
     -----
-    Based on implementation at [1]_.
+    Based on implementation of the GRAPPA algorithm [1]_ from Miki
+    Lustig [2]_.
 
     This is a GRAPPA reconstruction algorithm that supports
     arbitrary Cartesian sampling. However, the implementation
-    is highly inefficient in Matlab because it uses for loops.
+    is highly inefficient because it uses for loops.
+
     This implementation is very similar to the GE ARC implementation.
     The reconstruction looks at a neighborhood of a point and
     does a calibration according to the neighborhood to synthesize
     the missing point. This is a k-space varying interpolation.
     A sampling configuration is stored in a list, and retrieved
-    when needed to accelerate the reconstruction (a bit)
+    when needed to accelerate the reconstruction (a bit).
 
     If memmap=True, the results will be written to memmap_filename
-    and nothing is returned from the function.  The calibration
-    matrix will also be stored in a Temporary Named File that will
-    deleted after the reconstruction.  Currently all intermediate
-    matrices are still stored in memory.
+    and nothing is returned from the function.  Currently all
+    intermediate matrices are still stored in memory.
 
     References
     ----------
-    .. [1] https://people.eecs.berkeley.edu/~mlustig/Software.html
+    .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
+           partially parallel acquisitions (GRAPPA)." Magnetic
+           Resonance in Medicine: An Official Journal of the
+           International Society for Magnetic Resonance in Medicine
+           47.6 (2002): 1202-1210.
+    .. [2] https://people.eecs.berkeley.edu/~mlustig/Software.html
     '''
 
     # Put the coil dimension at the end
@@ -84,27 +86,19 @@ def grappa(
     else:
         res = np.zeros(kspace.shape, dtype=kspace.dtype)
 
-    # Build coil calibrating matrix, store in memmap if user said to
-    with ExitStack() if not memmap else NTF() as AtA_file:
-        if memmap:
-            sh = (kernel_size[0]*kernel_size[1]*ncoils)
-            AtA = np.memmap(
-                AtA_file, mode='w+', shape=(sh, sh),
-                dtype=kspace.dtype)
-            AtA[:] = dat2AtA(calib, kernel_size)
-        else:
-            AtA = dat2AtA(calib, kernel_size)
+    # construct calibration matrix
+    AtA = dat2AtA(calib, kernel_size)
 
-        # reconstruct single coil images
-        for nn in trange(ncoils, leave=False):
-            res[..., nn] = ARC(
-                kspace, AtA, kernel_size, nn, lamda)
-            if disp:
-                plt.imshow(
-                    np.abs(np.sqrt(sx*sy)*np.fft.fftshift(
-                        np.fft.ifft2(np.fft.ifftshift(
-                            res[..., nn])))), cmap='gray')
-                plt.show()
+    # reconstruct single coil images
+    for nn in trange(ncoils, leave=False):
+        res[..., nn] = ARC(
+            kspace, AtA, kernel_size, nn, lamda)
+        if disp:
+            plt.imshow(
+                np.abs(np.sqrt(sx*sy)*np.fft.fftshift(
+                    np.fft.ifft2(np.fft.ifftshift(
+                        res[..., nn])))), cmap='gray')
+            plt.show()
 
     # Move the coil dimension back where the user had it
     res = np.moveaxis(res, -1, coil_axis)
@@ -112,7 +106,7 @@ def grappa(
     # Don't return anything for memmap, just close the files
     # Otherwise, return the reconstructed coil images
     if memmap:
-        del res, AtA
+        del res
         return None
     return res
 
