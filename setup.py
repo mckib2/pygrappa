@@ -16,6 +16,8 @@ setup(
         'GeneRalized Autocalibrating Partially Parallel '
         'Acquisitions.'),
     long_description=open('README.rst').read(),
+    keywords=(
+        'mri grappa parallel-imaging image-reconstruction python'),
     install_requires=[
         "numpy>=1.16.2",
         "matplotlib>=3.0.3",
