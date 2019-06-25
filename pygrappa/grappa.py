@@ -69,6 +69,7 @@ def grappa(
 
     # Put the coil dimension at the end
     kspace = np.moveaxis(kspace, coil_axis, -1)
+    calib = np.moveaxis(calib, coil_axis, -1)
 
     # Get displays up and running if we need them
     if disp:
