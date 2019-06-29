@@ -1,12 +1,39 @@
-'''Reference GRAPPA implementation ported to python.'''
+'''Python GRAPPA implementation.
+
+More efficient Python implementation of GRAPPA.
+
+Notes
+-----
+view_as_windows uses numpy.lib.stride_tricks.as_strided which may
+use up a lot of memory.  This is more efficient as we get all the
+patches in one go as opposed to looping over the image in multiple
+dimensions.  These are stored in temporary memmaps so we don't
+crash anyone's computer (from memory usage, at least...).  Note that
+the recon is always stored in a temporary file memmap to begin with,
+since its initial size is zero-padded.  The final output array or
+memmap is then initialized at the end with the correct size.  This is
+because it's hard to resize memmaps, it's easier to create a temporary
+one and then copy over the contents to the final one.
+
+We are looping over unique sampling patterns, similar to Miki Lustig's
+key-lookup table for kernels.  It might be nice to train multiple
+kernel geometries simultaneously if possible, or at least have an
+option to do chunks at a time.
+
+Currently each hole in kspace is being looped over when applying
+weights for a single kernel type.  It would be nice to apply the
+weights for all corresponding holes simultaneously.
+'''
+
+from time import time
+from tempfile import NamedTemporaryFile as NTF
 
 import numpy as np
-from skimage.util import pad
-from tqdm import trange
+from skimage.util import pad, view_as_windows
 
 def grappa(
         kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
-        disp=False, memmap=False, memmap_filename='out.memmap'):
+        memmap=False, memmap_filename='out.memmap'):
     '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
@@ -17,14 +44,12 @@ def grappa(
     calib : array_like
         Calibration data (fully sampled k-space).
     kernel_size : tuple, optional
-        size of the 2D GRAPPA kernel (kx, ky).
+        Size of the 2D GRAPPA kernel (kx, ky).
     coil_axis : int, optional
         Dimension holding coil data.  The other two dimensions should
-        be sizes (kx, ky).
+        be image size: (sx, sy).
     lamda : float, optional
         Tikhonov regularization for the kernel calibration.
-    disp : bool, optional
-        Display images as they are reconstructed
     memmap : bool, optional
         Store data in Numpy memmaps.  Use when datasets are too large
         to store in memory.
@@ -39,204 +64,144 @@ def grappa(
 
     Notes
     -----
-    Based on implementation of the GRAPPA algorithm [1]_ from Miki
-    Lustig [2]_.
-
-    This is a GRAPPA reconstruction algorithm that supports
-    arbitrary Cartesian sampling. However, the implementation
-    is highly inefficient because it uses for loops.
-
-    This implementation is very similar to the GE ARC implementation.
-    The reconstruction looks at a neighborhood of a point and
-    does a calibration according to the neighborhood to synthesize
-    the missing point. This is a k-space varying interpolation.
-    A sampling configuration is stored in a list, and retrieved
-    when needed to accelerate the reconstruction (a bit).
-
-    If memmap=True, the results will be written to memmap_filename
-    and nothing is returned from the function.  Currently all
-    intermediate matrices are still stored in memory.
-
-    References
-    ----------
-    .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
-           partially parallel acquisitions (GRAPPA)." Magnetic
-           Resonance in Medicine: An Official Journal of the
-           International Society for Magnetic Resonance in Medicine
-           47.6 (2002): 1202-1210.
-    .. [2] https://people.eecs.berkeley.edu/~mlustig/Software.html
     '''
+
+    # Remember what shape the final reconstruction should be
+    fin_shape = kspace.shape[:]
 
     # Put the coil dimension at the end
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
 
-    # Get displays up and running if we need them
-    if disp:
-        import matplotlib.pyplot as plt
-
-    # get number of coils
-    sx, sy, ncoils = kspace.shape[:]
-
-    # If user asked for it, store result in memmap.  If not,
-    # business as usual
-    if memmap:
-        res = np.memmap(
-            memmap_filename, mode='w+', shape=kspace.shape,
-            dtype=kspace.dtype)
-    else:
-        res = np.zeros(kspace.shape, dtype=kspace.dtype)
-
-    # construct calibration matrix
-    AtA = dat2AtA(calib, kernel_size)
-
-    # reconstruct single coil images
-    for nn in trange(ncoils, leave=False):
-        res[..., nn] = ARC(
-            kspace, AtA, kernel_size, nn, lamda)
-        if disp:
-            plt.imshow(
-                np.abs(np.sqrt(sx*sy)*np.fft.fftshift(
-                    np.fft.ifft2(np.fft.ifftshift(
-                        res[..., nn])))), cmap='gray')
-            plt.show()
-
-    # Move the coil dimension back where the user had it
-    res = np.moveaxis(res, -1, coil_axis)
-
-    # Don't return anything for memmap, just close the files
-    # Otherwise, return the reconstructed coil images
-    if memmap:
-        del res
-        return None
-    return res
-
-def ARC(kspace, AtA, kernel_size, c, lamda):
-    '''ARC.'''
-    sx, sy, ncoils = kspace.shape[:]
+    # Get shape of kernel
     kx, ky = kernel_size[:]
+    kx2, ky2 = int(kx/2), int(ky/2)
+    nc = calib.shape[-1]
 
-    # Zero-pad data
-    px = int(kx/2)
-    py = int(ky/2)
-    kspace = pad( #pylint: disable=E1102
-        kspace, ((px, px), (py, py), (0, 0)), mode='constant')
+    # Pad kspace data
+    kspace = pad( # pylint: disable=E1102
+        kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
+    calib = pad( # pylint: disable=E1102
+        calib, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
+    mask = np.abs(kspace) > 0
 
-    dummyK = np.zeros((kx, ky, ncoils))
-    dummyK[int(kx/2), int(ky/2), c] = 1
-    idxy = np.where(dummyK)
-    res = np.zeros((sx, sy), dtype=kspace.dtype)
+    # Store windows in temporary files so we don't overwhelm memory
+    with NTF() as fP, NTF() as fA, NTF() as frecon:
 
-    MaxListLen = 100 # max number of kernels we'll store for lookup
-    LIST = np.zeros((kx*ky*ncoils, MaxListLen), dtype=kspace.dtype)
-    KEY = np.zeros((kx*ky*ncoils, MaxListLen))
+        # Start the clock...
+        t0 = time()
 
-    count = 0 # current index for the next kernel to store in LIST
-    for xy in np.ndindex((sx, sy)):
-        x, y = xy[:]
+        # Get all overlapping patches from the mask
+        P = np.memmap(fP, dtype=mask.dtype, mode='w+', shape=(
+            mask.shape[0]-2*kx2, mask.shape[1]-2*ky2, 1, kx, ky, nc))
+        P = view_as_windows(mask, (kx, ky, nc))
+        Psh = P.shape[:] # save shape for unflattening indices later
+        P = P.reshape((-1, kx, ky, nc))
 
-        tmp = kspace[x:x+kx, y:y+ky, :]
-        pat = np.abs(tmp) > 0
-        if pat[idxy]:
-            # If we aquired this k-space sample, use it!
-            res[x, y] = tmp[idxy].squeeze()
-        else:
-            # If we didn't aquire it, let's either look up the
-            # kernel or compute a new one
-            key = pat.flatten()
+        # Find the unique patches and associate them with indices
+        P, iidx = np.unique(P, return_inverse=True, axis=0)
 
-            # If we have a matching kernel, the key will exist
-            # in our array of KEYs.  This little loop looks through
-            # the list to find if we have the kernel already
-            idx = 0
-            for nn in range(1, KEY.shape[1]+1):
-                if np.sum(key == KEY[:, nn-1]) == key.size:
-                    idx = nn
-                    break
+        # Filter out geometries that don't have a hole at the center.
+        # These are all the kernel geometries we actually need to
+        # compute weights for. Notice that all coils have same
+        # sampling pattern, so choose the 0th one arbitrarily
+        validP = np.argwhere(~P[:, kx2, ky2, 0]).squeeze()
 
-            if idx == 0:
-                # If we didn't find a matching kernel, compute one.
-                # We'll only hold MaxListLen kernels in the lookup
-                # at one time to save on memory and lookup time
-                count += 1
-                kernel = calibrate(
-                    AtA, kernel_size, ncoils, c, lamda,
-                    pat)[0].flatten()
-                KEY[:, np.mod(count, MaxListLen)] = key
-                LIST[:, np.mod(count, MaxListLen)] = kernel
-            else:
-                # If we found it, use it!
-                kernel = LIST[:, idx-1]
+        # Get all overlapping patches of ACS
+        A = np.memmap(fA, dtype=calib.dtype, mode='w+', shape=(
+            calib.shape[0]-2*kx, calib.shape[1]-2*ky, 1, kx, ky, nc))
+        A = view_as_windows(
+            calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
 
-            # Apply kernel weights to coil data for interpolation
-            res[x, y] = np.sum(kernel*tmp.flatten())
+        # Report on how long it took to construct windows
+        print('Data set up took %g seconds' % (time() - t0))
 
-    return res
+        # Initialize recon array
+        recon = np.memmap(
+            frecon, dtype=kspace.dtype, mode='w+',
+            shape=kspace.shape)
 
-def dat2AtA(data, kernel_size):
-    '''Computes the calibration matrix from calibration data.
-    '''
+        # Train weights and apply them for each valid hole we have in
+        # kspace data:
+        t0 = time()
+        for ii in validP:
+            # Get the sources by masking all patches of the ACS and
+            # get targets by taking the center of each patch. Source
+            # and targets will have the following sizes:
+            #     S : (# samples, N possible patches in ACS)
+            #     T : (# coils, N possible patches in ACS)
+            # Solve the equation for the weights:
+            #     WS = T
+            #     WSS^H = TS^H
+            #  -> W = TS^H (SS^H)^-1
+            # S = A[:, P[ii, ...]].T # transpose to get correct shape
+            # T = A[:, kx2, ky2, :].T
+            # TSh = T @ S.conj().T
+            # SSh = S @ S.conj().T
+            # W = TSh @ np.linalg.pinv(SSh) # inv won't work here
 
-    tmp = im2row(data, kernel_size)
-    tsx, tsy, tsz = tmp.shape[:]
-    A = np.reshape(tmp, (tsx, tsy*tsz), order='F')
-    return np.dot(A.T.conj(), A)
+            # Equivalenty, we can formulate the problem so we avoid
+            # computing the inverse, use numpy.linalg.solve, and
+            # Tikhonov regularization for better conditioning:
+            #     SW = T
+            #     S^HSW = S^HT
+            #     W = (S^HS)^-1 S^HT
+            #  -> W = (S^HS + lamda I)^-1 S^HT
+            # Notice that this W is a transposed version of the
+            # above formulation.  Need to figure out if W @ S or
+            # S @ W is more efficient matrix multiplication.
+            # Currently computing W @ S when applying weights.
+            S = A[:, P[ii, ...]]
+            T = A[:, kx2, ky2, :]
+            ShS = S.conj().T @ S
+            ShT = S.conj().T @ T
+            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
+            W = np.linalg.solve(
+                ShS + lamda0*np.eye(ShS.shape[0]), ShT).T
 
-def im2row(im, win_shape):
-    '''res = im2row(im, winSize)'''
-    sx, sy, sz = im.shape[:]
-    wx, wy = win_shape[:]
-    sh = (sx-wx+1)*(sy-wy+1)
-    res = np.zeros((sh, wx*wy, sz), dtype=im.dtype)
+            # Now that we know the weights, let's apply them!  Find
+            # all holes corresponding to current geometry.
+            # Currently we're looping through all the points
+            # associated with the current geometry.  It would be nice
+            # to find a way to apply the weights to everything at
+            # once.  Right now I don't know how to simultaneously
+            # pull all source patches from kspace faster than a
+            # for loop...
 
-    count = 0
-    for y in range(wy):
-        for x in range(wx):
-            #res[:, count, :] = np.reshape(
-            #    im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz), order='F')
-            res[:, count, :] = np.reshape(
-                im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz))
-            count += 1
-    return res
+            # x, y define where top left corner is, so move to ctr,
+            # also make sure they are iterable by enforcing atleast_1d
+            idx = np.unravel_index(
+                np.argwhere(iidx == ii), Psh[:2])
+            x, y = idx[0]+kx2, idx[1]+ky2
+            x = np.atleast_1d(x.squeeze())
+            y = np.atleast_1d(y.squeeze())
+            for xx, yy in zip(x, y):
+                # Collect sources for this hole and apply weights
+                S = kspace[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
+                S = S[P[ii, ...]]
+                recon[xx, yy, :] = (W @ S[:, None]).squeeze()
 
-def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
-    '''Calibrate.
-    '''
+        # Report on how long it took to train and apply weights
+        print(('Training and application of weights took %g seconds'
+               '' % (time() - t0)))
 
-    kx, ky = kernel_size[:]
+        # The recon array has been zero padded, so let's crop it down
+        # to size and return it either as a memmap to the correct
+        # file or in memory.
+        # Also fill in known data, crop, move coil axis back.
+        if memmap:
+            fin = np.memmap(
+                memmap_filename, dtype=recon.dtype, mode='w+',
+                shape=fin_shape)
+            fin[:] = np.moveaxis(
+                (recon + kspace)[kx2:-kx2, ky2:-ky2, :],
+                -1, coil_axis)
+            del fin
+            return None
 
-    if sampling is None:
-        sampling = np.ones((kernel_size, ncoils))
+        return np.moveaxis(
+            (recon[:] + kspace)[kx2:-kx2, ky2:-ky2, :], -1, coil_axis)
 
-    dummyK = np.zeros((kx, ky, ncoils))
-    dummyK[int(kx/2), int(ky/2), coil] = 1
-
-    # To match MATLAB output, use Fortran ordering and make sure
-    # indices come out sorted
-    idxY = np.where(dummyK)
-    idxY_flat = np.sort(
-        np.ravel_multi_index(idxY, dummyK.shape, order='F'))
-    sampling[idxY] = 0
-    idxA = np.where(sampling)
-    idxA_flat = np.sort(
-        np.ravel_multi_index(idxA, sampling.shape, order='F'))
-
-    Aty = AtA[:, idxY_flat]
-    Aty = Aty[idxA_flat]
-
-    AtA0 = AtA[idxA_flat, :]
-    AtA0 = AtA0[:, idxA_flat]
-
-    kernel = np.zeros(sampling.size, dtype=AtA0.dtype)
-
-    lamda = np.linalg.norm(AtA0)/AtA0.shape[0]*lamda
-
-    rawkernel = np.linalg.inv(
-        AtA0 + np.eye(AtA0.shape[0])*lamda).dot(Aty)
-    kernel[idxA_flat] = rawkernel.squeeze()
-    kernel = np.reshape(kernel, sampling.shape, order='F')
-
-    return(kernel, rawkernel)
 
 if __name__ == '__main__':
     pass

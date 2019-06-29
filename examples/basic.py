@@ -42,7 +42,7 @@ if __name__ == '__main__':
     # reconstruct:
     res = grappa(
         kspace, calib, kernel_size, coil_axis=-1, lamda=0.01,
-        disp=False, memmap=False)
+        memmap=False)
 
     # Take a look
     res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifft2(
