@@ -75,7 +75,7 @@ def grappa(
         # These are all the kernel geometries we actually need to
         # compute weights for. Notice that all coils have same
         # sampling pattern, so choose the 0th one arbitrarily
-        validP = np.argwhere(P[:, kx2, ky2, 0] == 0).squeeze()
+        validP = np.argwhere(~P[:, kx2, ky2, 0]).squeeze()
 
         # Get all overlapping patches of ACS
         A = np.memmap(fA, dtype=calib.dtype, mode='w+', shape=(
