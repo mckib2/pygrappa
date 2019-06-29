@@ -21,9 +21,6 @@ def grappa(
     kx2, ky2 = int(kx/2), int(ky/2)
     nc = calib.shape[-1]
 
-    # # Find the holes
-    # idx = np.argwhere(kspace == 0)
-
     # Pad kspace
     kspace = pad( # pylint: disable=E1102
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
@@ -33,147 +30,59 @@ def grappa(
     # patches -- these are all the kernel geometries.  We will also
     # return mapping of each hole to the unique kernels
     P = view_as_windows(mask, (kx, ky, nc)).reshape((-1, kx, ky, nc))
-    # print(P.shape)
-    P, uidx, Pidx = np.unique(
-        P, return_index=True, return_inverse=True, axis=0)
-    # print(P.shape)
-    # print(Pidx)
-    # print(uidx)
+    P, Pidx = np.unique(P, return_inverse=True, axis=0)
 
     # Filter out geometries that don't have a hole at the center
     P = np.moveaxis(P, -1, 0)
     test = P[..., kx2, ky2] == 0
-    uidx = uidx[test[0, ...]]
+    idx = np.argwhere(P[..., kx2, ky2][0] == 0).squeeze().tolist()
+    Pidx = Pidx.squeeze().tolist()
+    Pidx = np.array([x for x in Pidx if x not in idx])
     P = P[test, ...].reshape((nc, -1, kx, ky))
     P = np.moveaxis(P, 0, -1)
-    # print(P.shape)
-    # print(uidx)
+
 
     # Get the sources of defined by the geometries by masking all
-    # patches of the ACS, targets by taking the center, and weights
-    # by solving:
-    #     WS = T => WSS^H = TS^H => W = TS^H (SS^H)^-1
+    # patches of the ACS, targets by taking the center.  Source and
+    # targets will have the following sizes:
+    #     S : (# samples, N possible patches in ACS)
+    #     T : (# coils, N possible patches in ACS)
+    # Solve the equation for the weights:
+    #     WS = T
+    #     WSS^H = TS^H
+    #  -> W = TS^H (SS^H)^-1
     A = view_as_windows(calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
     print(A.shape)
-    # W = np.zeros((P.shape[0], nc, (kx-1)*(ky-1)), dtype=kspace.dtype)
-    W = []
+    recon = np.zeros(kspace.shape, dtype=kspace.dtype)
     for ii in range(P.shape[0]):
-        # S = A[:, P[ii, ...]]
-        # T = A[:, kx2, ky2, :]
-        # TSh = T[..., None] @ S[:, None, :].conj()
-        # SSh = S[..., None] @ S[:, None, :].conj()
-        # W0 = TSh @ np.linalg.pinv(SSh)
-        # W0 = W0.sum(0)/np.count_nonzero(W0, axis=0)
-        # W.append(W0)
-        # # test = W[0, ...] @ S[0, :, None]
-        # # assert np.allclose(test, T[0, :, None])
-
-        S = A[:, P[ii, ...]].T
+        S = A[:, P[ii, ...]].T # transpose to get correct shape
         T = A[:, kx2, ky2, :].T
-        print(S.shape, T.shape)
         TSh = T @ S.conj().T
         SSh = S @ S.conj().T
-        W0 = TSh @ np.linalg.pinv(SSh)
-        W.append(W0)
+        W = TSh @ np.linalg.pinv(SSh)
 
-        # Well, the weights don't seem to be shift invariant, but
-        # hopefully averaging the nonzero weights will do the job...
-        # for jj in range(A.shape[0]):
-        #     S = A[jj, P[ii, ...]]
-        #     T = A[jj, kx2, ky2, :]
-        #     TSh = T[:, None] @ S[None, :].conj()
-        #     SSh = S[:, None] @ S[None, :].conj()
-        #     W = TSh @ np.linalg.pinv(SSh)
-        #     # test = W @ S[:, None]
-        #     # assert np.allclose(test, T[:, None])
+        # Now that we know the weights, let's apply them!  Find all
+        # holes corresponding to this geometry and fill them all in
 
-    # Now that we know the weights, let's apply them!
-    recon = np.zeros(kspace.shape, dtype=kspace.dtype)
-
-    # Find all holes with each geometry and fill them all in
-    for ii in range(P.shape[0]):
-
+        # We need to find all the holes that have geometry P[ii, ...].
+        # This is not a great way to do it...
         for xx in range(kx, mask.shape[0]-kx+1):
             for yy in range(ky, mask.shape[1]-ky+1):
-
                 mask0 = mask[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
                 if np.all(mask0 == P[ii, ...]):
                     S = kspace[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
                     S = S[P[ii, ...]]
-                    recon[xx, yy, :] = (W[ii] @ S[:, None]).squeeze()
-    recon += kspace
+                    recon[xx, yy, :] = (W @ S[:, None]).squeeze()
 
-    from mr_utils import view
-    view(recon, log=True)
-    view(recon, fft=True)
-
-    # # Now that we know the kernel geometries, we will train the
-    # # weights!
-    # lamda = .01
-    # W = np.zeros((P.shape[0], kx*ky*nc), dtype=np.complex64)
-    # A = view_as_windows(calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
-    # print(A.shape, P.shape)
-    # for ii in range(P.shape[0]):
-    #
-    #     # Gather up all the sources in the calibration data
-    #     # corresponding to the current kernel geometry
-    #     A0 = np.zeros(A.shape, dtype=A.dtype)
-    #     A0[:, P[ii, ...]] = A[:, P[ii, ...]]
-    #     A0 = A0.reshape((A.shape[0], -1))
-    #     AtA = np.dot(A0.conj().T, A0)
-    #     print(AtA.shape)
-    #
-    #     # Now we need to current hole targets
-    #     # hole = kspace[np.unravel_index(idx[Pidx], kspace.shape)]
-    #     # hole = kspace[idx[Pidx[np.argwhere(Pidx == ii)]]]
-    #     # hole = A[np.argwhere(Pidx == ii)
-    #     hole = A[:, kx2, ky2, 0] # for the first coil im for now
-    #
-    #     # Solve the least squares problem: AhA W = hole
-    #     # With Tikhonov regularization, of course...
-    #     W[ii, :] = np.linalg.solve(
-    #         AtA + lamda*np.eye(kx*ky*nc),
-    #         np.dot(A0.conj().T, hole))[0]
-    #
-    # # Now do the interpolation by applying the weights (first coil)
-    # P = view_as_windows(kspace, (kx, ky, nc)).reshape((-1, kx*ky*nc))
-    # for ii, jj in enumerate(Pidx):
-    #     xx, yy, cc = idx[ii]
-    #     kspace[xx, yy, cc] = np.dot(P[ii, ...], W[jj, ...])
-    #
-    # print(P.shape)
-    #
-    # from mr_utils import view
-    # view(kspace, fft=True)
-    #
-
-    # # We need weights for each of the holes
-    # lookup = dict()
-    # for ii, idx0 in enumerate(idx):
-    #     xx, yy, cc = idx0[:]
-    #
-    #     # Kernel mask for this hole
-    #     kernel = mask[xx:xx+kx, yy:yy+ky, cc].astype(int)
-    #     key = str(kernel.flatten().tolist())
-    #
-    #     # Associate this hole with this kernel geometry
-    #     try:
-    #         lookup[key].append(ii)
-    #     except KeyError:
-    #         lookup[key] = [ii]
-
-
-
-    # # Now train weights for each kernel geometry
-    # for key in
-
+    # Fill in known data and send it on back
+    return recon + kspace
 
 if __name__ == '__main__':
 
     from phantominator import shepp_logan
 
     # Generate fake sensitivity maps: mps
-    N = 64
+    N = 128
     ncoils = 4
     xx = np.linspace(0, 1, N)
     x, y = np.meshgrid(xx, xx)
@@ -207,3 +116,8 @@ if __name__ == '__main__':
     res = grappa(
         kspace, calib, kernel_size, coil_axis=-1, lamda=0.01,
         disp=False, memmap=False)
+
+    # Take a gander
+    from mr_utils import view
+    view(res, log=True)
+    view(res, fft=True)
