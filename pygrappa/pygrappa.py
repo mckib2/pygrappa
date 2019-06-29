@@ -1,4 +1,29 @@
-'''Python GRAPPA implementation.'''
+'''Python GRAPPA implementation.
+
+More efficient Python implementation of GRAPPA.
+
+Notes
+-----
+view_as_windows uses numpy.lib.stride_tricks.as_strided which may
+use up a lot of memory.  This is more efficient as we get all the
+patches in one go as opposed to looping over the image in multiple
+dimensions.  These should probably be stored in temporary memmaps
+so we don't crash anyone's computer.
+
+We are looping over unique sampling patterns, similar to Miki Lustig's
+key-lookup table for kernels.  It might be nice to train multiple
+kernel geometries simultaneously if possible.
+
+Currently each hole in kspace is being looped over when applying
+weights for a single kernel type.  It would be nice to apply the
+weights for all corresponding holes simultaneously.
+
+Tikhonov regularization is not being performed in the least squares
+fit.  Probably should try to implement the least squares to be solved
+using numpy.linalg.solve and not explicitly compute the inverse.
+'''
+
+from time import time
 
 import numpy as np
 from skimage.util import pad, view_as_windows
@@ -21,68 +46,90 @@ def grappa(
     kx2, ky2 = int(kx/2), int(ky/2)
     nc = calib.shape[-1]
 
-    # Pad kspace
+    # Pad kspace data
     kspace = pad( # pylint: disable=E1102
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
+    calib = pad( # pylint: disable=E1102
+        calib, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
     mask = np.abs(kspace) > 0
 
-    # Get all overlapping patches from the mask and find the unique
-    # patches -- these are all the kernel geometries.  We will also
-    # return mapping of each hole to the unique kernels
-    P = view_as_windows(mask, (kx, ky, nc)).reshape((-1, kx, ky, nc))
-    P, Pidx = np.unique(P, return_inverse=True, axis=0)
+    # Start windowing...
+    t0 = time()
 
-    # Filter out geometries that don't have a hole at the center
-    P = np.moveaxis(P, -1, 0)
-    test = P[..., kx2, ky2] == 0
-    idx = np.argwhere(P[..., kx2, ky2][0] == 0).squeeze().tolist()
-    Pidx = Pidx.squeeze().tolist()
-    Pidx = np.array([x for x in Pidx if x not in idx])
-    P = P[test, ...].reshape((nc, -1, kx, ky))
-    P = np.moveaxis(P, 0, -1)
+    # Get all overlapping patches from the mask
+    P = view_as_windows(mask, (kx, ky, nc))
+    Psh = P.shape[:] # save shape for unflattening indices later
+    P = P.reshape((-1, kx, ky, nc))
 
+    # Find the unique patches and associate them with indices
+    P, iidx = np.unique(P, return_inverse=True, axis=0)
 
-    # Get the sources of defined by the geometries by masking all
-    # patches of the ACS, targets by taking the center.  Source and
-    # targets will have the following sizes:
-    #     S : (# samples, N possible patches in ACS)
-    #     T : (# coils, N possible patches in ACS)
-    # Solve the equation for the weights:
-    #     WS = T
-    #     WSS^H = TS^H
-    #  -> W = TS^H (SS^H)^-1
+    # Filter out geometries that don't have a hole at the center.
+    # These are all the kernel geometries we actually need to compute
+    # weights for. Notice that all coils have same sampling pattern,
+    # so choose the 0th one arbitrarily
+    validP = np.argwhere(P[:, kx2, ky2, 0] == 0).squeeze()
+
+    # Get all overlapping patches of ACS
     A = view_as_windows(calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
-    print(A.shape)
+
+    # Report on how long it took to construct windows
+    print('Data set up took %g seconds' % (time() - t0))
+
+    # Train weights and apply them for each hole we have in kspace:
     recon = np.zeros(kspace.shape, dtype=kspace.dtype)
-    for ii in range(P.shape[0]):
+    t0 = time()
+    for ii in validP:
+
+        # Get the sources of defined by the geometries by masking all
+        # patches of the ACS, targets by taking the center. Source and
+        # targets will have the following sizes:
+        #     S : (# samples, N possible patches in ACS)
+        #     T : (# coils, N possible patches in ACS)
+        # Solve the equation for the weights:
+        #     WS = T
+        #     WSS^H = TS^H
+        #  -> W = TS^H (SS^H)^-1
         S = A[:, P[ii, ...]].T # transpose to get correct shape
         T = A[:, kx2, ky2, :].T
         TSh = T @ S.conj().T
         SSh = S @ S.conj().T
-        W = TSh @ np.linalg.pinv(SSh)
+        W = TSh @ np.linalg.pinv(SSh) # NOTE: inv will not work here
 
         # Now that we know the weights, let's apply them!  Find all
-        # holes corresponding to this geometry and fill them all in
+        # holes corresponding to current geometry.
+        # Currently we're looping through all the points associated
+        # with the current geometry.  It would be nice to find a way
+        # to apply the weights to everything at once.  Right now I
+        # don't know how to simultaneously pull all source patches
+        # from kspace.
 
-        # We need to find all the holes that have geometry P[ii, ...].
-        # This is not a great way to do it...
-        for xx in range(kx, mask.shape[0]-kx+1):
-            for yy in range(ky, mask.shape[1]-ky+1):
-                mask0 = mask[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
-                if np.all(mask0 == P[ii, ...]):
-                    S = kspace[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
-                    S = S[P[ii, ...]]
-                    recon[xx, yy, :] = (W @ S[:, None]).squeeze()
+        # x, y define where top left corner is, so move to ctr,
+        # also make sure they are iterable by enforcing atleast_1d
+        idx = np.unravel_index(
+            np.argwhere(iidx == ii), Psh[:2])
+        x, y = idx[0]+kx2, idx[1]+ky2
+        x, y = np.atleast_1d(x.squeeze()), np.atleast_1d(y.squeeze())
+        for xx, yy in zip(x, y):
+            # Collect sources for this hole and apply weights
+            S = kspace[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
+            S = S[P[ii, ...]]
+            recon[xx, yy, :] = (W @ S[:, None]).squeeze()
 
-    # Fill in known data and send it on back
-    return recon + kspace
+    # Report on how long it took to train and apply weights
+    print(('Training and application of weights took %g seconds'
+           '' % (time() - t0)))
+
+    # Fill in known data, crop, move coil axis back
+    return np.moveaxis(
+        (recon + kspace)[kx2:-kx2, ky2:-ky2, :], -1, coil_axis)
 
 if __name__ == '__main__':
 
     from phantominator import shepp_logan
 
     # Generate fake sensitivity maps: mps
-    N = 128
+    N = 256
     ncoils = 4
     xx = np.linspace(0, 1, N)
     x, y = np.meshgrid(xx, xx)
