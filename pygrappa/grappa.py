@@ -76,9 +76,19 @@ def grappa(
     # Get shape of kernel
     kx, ky = kernel_size[:]
     kx2, ky2 = int(kx/2), int(ky/2)
-    adjx = np.mod(kx, 2) # we'll index windows differently if even/odd
-    adjy = np.mod(ky, 2)
     nc = calib.shape[-1]
+
+    # When we apply weights, we need to select a window of data the
+    # size of the kernel.  If the kernel size is odd, the window will
+    # be symmetric about the target.  If it's even, then we have to
+    # decide where the window lies in relation to the target.  Let's
+    # arbitrarily decide that it will be right-sided, so we'll need
+    # adjustment factors used as follows:
+    #     S = kspace[xx-kx2:xx+kx2+adjx, yy-ky2:yy+ky2+adjy, :]
+    # Where:
+    #     xx, yy : location of target
+    adjx = np.mod(kx, 2)
+    adjy = np.mod(ky, 2)
 
     # Pad kspace data
     kspace = pad( # pylint: disable=E1102
