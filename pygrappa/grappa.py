@@ -76,6 +76,8 @@ def grappa(
     # Get shape of kernel
     kx, ky = kernel_size[:]
     kx2, ky2 = int(kx/2), int(ky/2)
+    adjx = np.mod(kx, 2) # we'll index windows differently if even/odd
+    adjy = np.mod(ky, 2)
     nc = calib.shape[-1]
 
     # Pad kspace data
@@ -177,7 +179,7 @@ def grappa(
             y = np.atleast_1d(y.squeeze())
             for xx, yy in zip(x, y):
                 # Collect sources for this hole and apply weights
-                S = kspace[xx-kx2:xx+kx2+1, yy-ky2:yy+ky2+1, :]
+                S = kspace[xx-kx2:xx+kx2+adjx, yy-ky2:yy+ky2+adjy, :]
                 S = S[P[ii, ...]]
                 recon[xx, yy, :] = (W @ S[:, None]).squeeze()
 
