@@ -119,6 +119,13 @@ def grappa(
         # sampling pattern, so choose the 0th one arbitrarily
         validP = np.argwhere(~P[:, kx2, ky2, 0]).squeeze()
 
+        # We also want to ignore empty patches
+        invalidP = np.argwhere(np.all(P[..., 0] == 0))
+        validP = np.setdiff1d(validP, invalidP, assume_unique=True)
+
+        # Make sure validP is iterable
+        validP = np.atleast_1d(validP)
+
         # Get all overlapping patches of ACS
         A = np.memmap(fA, dtype=calib.dtype, mode='w+', shape=(
             calib.shape[0]-2*kx, calib.shape[1]-2*ky, 1, kx, ky, nc))
