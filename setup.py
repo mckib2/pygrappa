@@ -5,7 +5,7 @@ from setuptools import find_packages
 
 setup(
     name='pygrappa',
-    version='0.1.1',
+    version='0.2.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -19,10 +19,11 @@ setup(
     keywords=(
         'mri grappa parallel-imaging image-reconstruction python'),
     install_requires=[
-        "numpy>=1.16.2",
-        "matplotlib>=3.0.3",
-        "phantominator>=0.0.7",
-        "scikit-image>=0.15.0",
+        "numpy>=1.16.4",
+        "matplotlib>=2.2.4",
+        "phantominator>=0.1.2",
+        "scikit-image>=0.14.3",
+        "tqdm>=4.32.2"
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
 )
