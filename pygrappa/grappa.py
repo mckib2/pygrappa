@@ -120,7 +120,7 @@ def grappa(
         validP = np.argwhere(~P[:, kx2, ky2, 0]).squeeze()
 
         # We also want to ignore empty patches
-        invalidP = np.argwhere(np.all(P[..., 0] == 0))
+        invalidP = np.argwhere(np.all(P[..., 0] == 0, axis=(1, 2)))
         validP = np.setdiff1d(validP, invalidP, assume_unique=True)
 
         # Make sure validP is iterable
