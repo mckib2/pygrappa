@@ -64,6 +64,19 @@ def grappa(
 
     Notes
     -----
+    Based on implementation of the GRAPPA algorithm [1]_ for 2D
+    images.
+
+    If memmap=True, the results will be written to memmap_filename
+    and nothing is returned from the function.
+
+    References
+    ----------
+    .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
+           partially parallel acquisitions (GRAPPA)." Magnetic
+           Resonance in Medicine: An Official Journal of the
+           International Society for Magnetic Resonance in Medicine
+           47.6 (2002): 1202-1210.
     '''
 
     # Remember what shape the final reconstruction should be
