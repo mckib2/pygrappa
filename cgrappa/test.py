@@ -27,7 +27,7 @@ from phantominator import shepp_logan
 from cgrappa import cgrappa
 
 # Generate fake sensitivity maps: mps
-N = 32
+N = 512
 ncoils = 4
 xx = np.linspace(0, 1, N)
 x, y = np.meshgrid(xx, xx)
@@ -57,4 +57,7 @@ kernel_size = (5, 5)
 kspace[::2, 1::2, :] = 0
 kspace[1::2, ::2, :] = 0
 
-cgrappa(kspace, calib, (5, 5))
+recon = cgrappa(kspace, calib, (5, 5))
+
+from mr_utils import view
+view(recon, fft=True)

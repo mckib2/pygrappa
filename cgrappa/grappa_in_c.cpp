@@ -23,7 +23,7 @@
         Size of kernel: (ksx, ksy).
 
 */
-void grappa_in_c(
+std::map<unsigned long long int, std::vector<unsigned int>> grappa_in_c(
     std::complex<double> kspace[],
     int mask[],
     unsigned int kx, unsigned int ky,
@@ -67,7 +67,7 @@ void grappa_in_c(
                         wx = (int)ii + xx;
                         wy = (int)jj + yy;
                         // Make sure the index is within bounds:
-                        if ((wx >= 0) && (wy >= 0) && (wx < (int)kx) && (wy < (int)ky)) {
+                        if ((wx >= 0) && (wy >= 0) && ((unsigned int)wx < kx) && ((unsigned int)wy < ky)) {
                             if (mask[wx*kx + wy]) {
                                 sum += (1 << pos);
                             }
@@ -79,7 +79,7 @@ void grappa_in_c(
                 // If we have samples, then we consider this a valid
                 // patch and store the index corresponding to a unique
                 // sampling pattern.
-                if (sum > 0) {
+                if (sum) {
                     patterns.insert(std::pair <unsigned long long int, unsigned int> (sum, idx));
                 }
             }
@@ -87,19 +87,32 @@ void grappa_in_c(
     }
 
     // For each unique sampling pattern we need to train a kernel!
-    std::multimap<unsigned long long int, unsigned int>::const_iterator iter;
-    for (iter = patterns.begin(); iter != patterns.end(); iter = patterns.upper_bound(iter->first)) {
+    std::map<unsigned long long int, std::vector<unsigned int>> res;
+    typedef std::multimap<unsigned long long int, unsigned int>::const_iterator iter_t;
+    for (iter_t iter = patterns.begin(); iter != patterns.end(); iter = patterns.upper_bound(iter->first)) {
         // std::cout << std::bitset<25>(iter->first) << std::endl;
 
-        std::bitset<25> d(iter->first);
-
-        for (ii = 0; ii < ksx; ii++) {
-            for (jj = 0; jj < ksy; jj++) {
-                std::cout << d[ii*ksx + jj];
-            }
-            std::cout << std::endl;
+        std::vector<unsigned int> idxs0;
+        // std::cout << iter->first << std::endl;
+        std::pair<iter_t, iter_t> idxs = patterns.equal_range(iter->first);
+        for (iter_t it = idxs.first; it != idxs.second; it++) {
+            // std::cout << " " << it->second;
+            idxs0.push_back(it->second);
         }
-        std::cout << std::endl;
+        // std::cout << std::endl;
+
+        res.emplace(iter->first, idxs0);
+
+        // std::bitset<25> d(iter->first);
+        //
+        // for (ii = 0; ii < ksx; ii++) {
+        //     for (jj = 0; jj < ksy; jj++) {
+        //         std::cout << d[ii*ksx + jj];
+        //     }
+        //     std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
     }
 
+    return res;
 }

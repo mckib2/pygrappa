@@ -1,9 +1,11 @@
 #include <complex>
+#include <vector>
+#include <map>
 
 #ifndef GRAPPA_IN_C_H
 #define GRAPPA_IN_C_H
 
-void grappa_in_c(
+std::map<unsigned long long int, std::vector<unsigned int>> grappa_in_c(
     std::complex<double> kspace[],
     int mask[],
     unsigned int kx,

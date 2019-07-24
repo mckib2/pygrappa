@@ -139,6 +139,9 @@ def grappa(
         # Make sure validP is iterable
         validP = np.atleast_1d(validP)
 
+        print('P took %g seconds!' % (time() - t0))
+        t0 = time()
+
         # Get all overlapping patches of ACS
         A = np.memmap(fA, dtype=calib.dtype, mode='w+', shape=(
             calib.shape[0]-2*kx, calib.shape[1]-2*ky, 1, kx, ky, nc))
@@ -146,7 +149,7 @@ def grappa(
             calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
 
         # Report on how long it took to construct windows
-        print('Data set up took %g seconds' % (time() - t0))
+        print('A took %g seconds' % (time() - t0))
 
         # Initialize recon array
         recon = np.memmap(
