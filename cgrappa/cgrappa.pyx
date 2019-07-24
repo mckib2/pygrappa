@@ -30,17 +30,18 @@ def cgrappa(kspace, calib, kernel_size, coil_axis=-1):
     ksx, ksy = kernel_size[:]
     ksx2, ksy2 = int(ksx/2), int(ksy/2)
 
-    # Pad the arrays
-    print('start pad')
-    kspace = pad(
-        kspace, ((ksx2, ksx2), (ksy2, ksy2), (0, 0)), mode='constant')
-    calib = pad(
-        calib, ((ksx2, ksx2), (ksy2, ksy2), (0, 0)), mode='constant')
-    print('end pad')
-
     print('start mask')
     mask = (np.abs(kspace[:, :, 0]) > 0).astype(np.int32)
+    print(mask)
     print('end mask')
+
+    # # Pad the arrays
+    # print('start pad')
+    # kspace = pad(
+    #     kspace, ((ksx2, ksx2), (ksy2, ksy2), (0, 0)), mode='constant')
+    # calib = pad(
+    #     calib, ((ksx2, ksx2), (ksy2, ksy2), (0, 0)), mode='constant')
+    # print('end pad')
 
     # Define complex memory views, ::1 ensures contiguous
     cdef:
