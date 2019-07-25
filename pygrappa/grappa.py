@@ -108,7 +108,10 @@ def grappa(
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
     calib = pad( # pylint: disable=E1102
         calib, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
-    mask = np.abs(kspace) > 0
+
+    # Notice that all coils have same sampling pattern, so choose
+    # the 0th one arbitrarily for the mask
+    mask = np.abs(kspace[..., 0]) > 0
 
     # Store windows in temporary files so we don't overwhelm memory
     with NTF() as fP, NTF() as fA, NTF() as frecon:
@@ -118,26 +121,28 @@ def grappa(
 
         # Get all overlapping patches from the mask
         P = np.memmap(fP, dtype=mask.dtype, mode='w+', shape=(
-            mask.shape[0]-2*kx2, mask.shape[1]-2*ky2, 1, kx, ky, nc))
-        P = view_as_windows(mask, (kx, ky, nc))
+            mask.shape[0]-2*kx2, mask.shape[1]-2*ky2, 1, kx, ky))
+        P = view_as_windows(mask, (kx, ky))
         Psh = P.shape[:] # save shape for unflattening indices later
-        P = P.reshape((-1, kx, ky, nc))
+        P = P.reshape((-1, kx, ky))
 
         # Find the unique patches and associate them with indices
         P, iidx = np.unique(P, return_inverse=True, axis=0)
 
         # Filter out geometries that don't have a hole at the center.
         # These are all the kernel geometries we actually need to
-        # compute weights for. Notice that all coils have same
-        # sampling pattern, so choose the 0th one arbitrarily
-        validP = np.argwhere(~P[:, kx2, ky2, 0]).squeeze()
+        # compute weights for.
+        validP = np.argwhere(~P[:, kx2, ky2]).squeeze()
 
         # We also want to ignore empty patches
-        invalidP = np.argwhere(np.all(P[..., 0] == 0, axis=(1, 2)))
+        invalidP = np.argwhere(np.all(P == 0, axis=(1, 2)))
         validP = np.setdiff1d(validP, invalidP, assume_unique=True)
 
         # Make sure validP is iterable
         validP = np.atleast_1d(validP)
+
+        # Give P back its coil dimension
+        P = np.tile(P[..., None], (1, 1, 1, nc))
 
         print('P took %g seconds!' % (time() - t0))
         t0 = time()
