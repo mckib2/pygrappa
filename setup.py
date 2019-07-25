@@ -1,4 +1,13 @@
-'''Setup.py'''
+'''Setup.py
+
+Notes
+-----
+Developers: to build C++ code:
+
+.. code-block:: python
+
+    python3 setup.py build_ext --inplace
+'''
 
 from setuptools import setup, Extension, find_packages
 import numpy as np
