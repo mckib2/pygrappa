@@ -10,7 +10,7 @@ import numpy as np
 
 setup(
     name='pygrappa',
-    version='0.3.0',
+    version='0.3.1',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -36,7 +36,7 @@ setup(
     # And now for some Cython...
     cmdclass={'build_ext': build_ext},
     ext_modules=cythonize([Extension(
-        'pygrappa/cgrappa',
+        'pygrappa.cgrappa',
         sources=[
             'src/cgrappa.pyx',
             'src/get_sampling_patterns.cpp'],
