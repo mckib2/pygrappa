@@ -7,3 +7,6 @@ lib/
 lib64
 pyvenv.cfg
 share/
+*.so
+*.html
+cgrappa.c*

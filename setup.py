@@ -1,11 +1,16 @@
 '''Setup.py'''
 
 from distutils.core import setup
+from distutils.extension import Extension
 from setuptools import find_packages
+from Cython.Distutils import build_ext
+from Cython.Build import cythonize
+
+import numpy as np
 
 setup(
     name='pygrappa',
-    version='0.2.1',
+    version='0.3.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -23,7 +28,17 @@ setup(
         "matplotlib>=2.2.4",
         "phantominator>=0.1.2",
         "scikit-image>=0.14.3",
-        "tqdm>=4.32.2"
+        "tqdm>=4.32.2",
+        "Cython>=0.28.5"
     ],
     python_requires='>=3.5',
+
+    # And now for some Cython...
+    cmdclass={'build_ext': build_ext},
+    ext_modules=cythonize([Extension(
+        'pygrappa/cgrappa',
+        sources=[
+            'src/cgrappa.pyx',
+            'src/get_sampling_patterns.cpp'],
+        include_dirs=[np.get_include()])]),
 )
