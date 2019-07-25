@@ -5,7 +5,7 @@ import numpy as np
 
 setup(
     name='pygrappa',
-    version='0.3.4',
+    version='0.3.5',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -24,7 +24,6 @@ setup(
         "phantominator>=0.1.2",
         "scikit-image>=0.14.3",
         "tqdm>=4.32.2",
-        "Cython>=0.28.5"
     ],
     python_requires='>=3.5',
 
