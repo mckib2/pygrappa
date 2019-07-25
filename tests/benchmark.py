@@ -5,7 +5,7 @@ from time import time
 import numpy as np
 from phantominator import shepp_logan
 
-from cgrappa.cgrappa import cgrappa
+from pygrappa import cgrappa
 from pygrappa import grappa
 from utils import gaussian_csm
 
@@ -47,5 +47,5 @@ if __name__ == '__main__':
 
     assert np.allclose(recon0, recon1)
 
-    from mr_utils import view
-    view(np.stack((recon0, recon1)), fft=True, fft_axes=(1, 2))
+    # from mr_utils import view
+    # view(np.stack((recon0, recon1)), fft=True, fft_axes=(1, 2))

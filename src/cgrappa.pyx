@@ -10,8 +10,10 @@ from libcpp.vector cimport vector
 cimport cython
 from cython.operator cimport dereference, postincrement
 
+# Define a vector of uints for use in map definition
 ctypedef vector[unsigned int] vector_uint
 
+# This allows us to use the C function in this cython module
 cdef extern from "get_sampling_patterns.h":
     map[unsigned long long int, vector_uint] get_sampling_patterns(
         int*, unsigned int, unsigned int,
@@ -19,7 +21,7 @@ cdef extern from "get_sampling_patterns.h":
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def cgrappa(kspace, calib, kernel_size, double lamda=.01, int coil_axis=-1):
+def cgrappa(kspace, calib, kernel_size, lamda=.01, int coil_axis=-1):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -27,7 +29,8 @@ def cgrappa(kspace, calib, kernel_size, double lamda=.01, int coil_axis=-1):
 
     # Make sure we're contiguous
     kspace = np.ascontiguousarray(kspace)
-    mask = np.ascontiguousarray((np.abs(kspace[:, :, 0]) > 0).astype(np.int32))
+    mask = np.ascontiguousarray(
+        (np.abs(kspace[:, :, 0]) > 0).astype(np.int32))
 
     # Let's define all the C types we'll be using
     cdef:
@@ -39,7 +42,7 @@ def cgrappa(kspace, calib, kernel_size, double lamda=.01, int coil_axis=-1):
         Py_ssize_t ii
         Py_ssize_t[:] x
         Py_ssize_t[:] y
-        complex[:, :, ::1] kspace_memview = kspace
+        # complex[:, :, ::1] kspace_memview = kspace
         int[:, ::1] mask_memview = mask
         map[unsigned long long int, vector_uint] res
         map[unsigned long long int, vector_uint].iterator it
@@ -65,14 +68,14 @@ def cgrappa(kspace, calib, kernel_size, double lamda=.01, int coil_axis=-1):
         &mask_memview[0, 0],
         kx, ky,
         ksx, ksy)
-    print('get_sampling_patterns: %g' % (time() - t0))
+    print('Find unique sampling patterns: %g' % (time() - t0))
 
     # Get all overlapping patches of ACS
     t0 = time()
     A = view_as_windows(
         calib, (ksx, ksy, nc)).reshape((-1, ksx, ksy, nc))
     cdef complex[:, :, :, ::1] A_memview = A
-    print('calibration patches: %g' % (time() - t0))
+    print('Make calibration patches: %g' % (time() - t0))
 
     # Train and apply weights
     t0 = time()
@@ -86,7 +89,8 @@ def cgrappa(kspace, calib, kernel_size, double lamda=.01, int coil_axis=-1):
         # boolean array, and then repmat to get the right number of
         # coils.
         P = format(dereference(it).first, 'b').zfill(ksx*ksy)
-        P = (np.fromstring(P[::-1], np.int8) - ord('0')).reshape((ksx, ksy)).astype(bool)
+        P = (np.fromstring(P[::-1], np.int8) - ord('0')).reshape(
+            (ksx, ksy)).astype(bool)
         P = np.tile(P[..., None], (1, 1, nc))
 
         # Train the weights for this pattern

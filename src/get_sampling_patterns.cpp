@@ -4,6 +4,10 @@
 #include <climits>
 
 /* get_sampling_patterns:
+    Given binary mask, find unique kernel-sized sampling patterns.
+
+    From the sampling mask, map each unsampled k-space location to a
+    unique kernel-sized sampling pattern.
 
     Parameters
     ----------
@@ -13,6 +17,20 @@
         Size of 2D k-space coil data array (and mask).
     ksx, ksy : unsigned int
         Size of kernel: (ksx, ksy).
+
+    Returns
+    -------
+    res : map<unsigned long long int, vecctor<unsigned int>>
+        Maps vectors of indices to sampling patterns.
+
+    Notes
+    -----
+    Each sampling pattern is a ksx by ksy patch.  We use a binary
+    number to encode each pixel this patch.  This number is an
+    unsigned long long int, so if the patch size ksx*ksy > ULLONG_MAX,
+    then we run into issues.  Although unlikely, we check for this
+    right at the start, and if it is an issue we use a default kernel
+    size of (5, 5).
 
 */
 std::map<unsigned long long int, std::vector<unsigned int>> get_sampling_patterns(
@@ -84,31 +102,17 @@ std::map<unsigned long long int, std::vector<unsigned int>> get_sampling_pattern
     }
 
     // For each unique sampling pattern we need to train a kernel!
+    // Iterate through each unique key (sampling pattern) and store
+    // the vector of indices that use that pattern as a map entry.
     std::map<unsigned long long int, std::vector<unsigned int>> res;
     typedef std::multimap<unsigned long long int, unsigned int>::const_iterator iter_t;
     for (iter_t iter = patterns.begin(); iter != patterns.end(); iter = patterns.upper_bound(iter->first)) {
-        // std::cout << std::bitset<25>(iter->first) << std::endl;
-
         std::vector<unsigned int> idxs0;
-        // std::cout << iter->first << std::endl;
         std::pair<iter_t, iter_t> idxs = patterns.equal_range(iter->first);
         for (iter_t it = idxs.first; it != idxs.second; it++) {
-            // std::cout << " " << it->second;
             idxs0.push_back(it->second);
         }
-        // std::cout << std::endl;
-
         res.emplace(iter->first, idxs0);
-
-        // std::bitset<25> d(iter->first);
-        //
-        // for (ii = 0; ii < ksx; ii++) {
-        //     for (jj = 0; jj < ksy; jj++) {
-        //         std::cout << d[ii*ksx + jj];
-        //     }
-        //     std::cout << std::endl;
-        // }
-        // std::cout << std::endl;
     }
 
     return res;

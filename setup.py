@@ -2,6 +2,11 @@
 
 from distutils.core import setup
 from setuptools import find_packages
+from distutils.extension import Extension
+from Cython.Distutils import build_ext
+from Cython.Build import cythonize
+
+import numpy as np
 
 setup(
     name='pygrappa',
@@ -26,4 +31,13 @@ setup(
         "tqdm>=4.32.2"
     ],
     python_requires='>=3.5',
+
+    # And now for some Cython...
+    cmdclass={'build_ext': build_ext},
+    ext_modules=cythonize([Extension(
+        'pygrappa/cgrappa',
+        sources=[
+            'src/cgrappa.pyx',
+            'src/get_sampling_patterns.cpp'],
+        include_dirs=[np.get_include()])]),
 )
