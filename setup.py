@@ -1,8 +1,8 @@
 '''Setup.py'''
 
 from distutils.core import setup
-from setuptools import find_packages
 from distutils.extension import Extension
+from setuptools import find_packages
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
 
@@ -28,7 +28,8 @@ setup(
         "matplotlib>=2.2.4",
         "phantominator>=0.1.2",
         "scikit-image>=0.14.3",
-        "tqdm>=4.32.2"
+        "tqdm>=4.32.2",
+        "Cython>=0.28.5"
     ],
     python_requires='>=3.5',
 
