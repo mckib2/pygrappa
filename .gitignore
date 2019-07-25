@@ -9,4 +9,3 @@ pyvenv.cfg
 share/
 *.so
 *.html
-cgrappa.c*
