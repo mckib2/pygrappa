@@ -1,26 +1,5 @@
 '''See if Cython module is working.'''
 
-# import numpy as np
-# from pyx_cgrappa import multiply_by_10 # pylint: disable=E0611
-#
-# a = np.ones(5, dtype=np.double)
-# print(multiply_by_10(a))
-#
-# b = np.ones(10, dtype=np.double)
-# b = b[::2]  # b is not contiguous.
-#
-
-# import numpy as np
-
-# kspace = np.arange((5**3))
-# kspace = np.reshape(kspace, (5, 5, 5))
-# kspace = kspace + 1j*kspace
-#
-# # kspace = np.ones((5, 5, 5), dtype='complex')
-# calib = np.ones((3, 3, 5), dtype='complex')
-#
-# cgrappa(kspace, calib, (2, 2))
-
 import numpy as np
 from phantominator import shepp_logan
 

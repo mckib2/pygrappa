@@ -1,35 +1,32 @@
-#include "grappa_in_c.h"
-#include <complex>
+#include "get_sampling_patterns.h"
 #include <vector>
 #include <map>
-#include <iostream>
-#include <bitset>
+#include <climits>
 
-/* grappa_in_c: GRAPPA reconstruction.
+/* get_sampling_patterns:
 
     Parameters
     ----------
-    kspace[kx, ky, ncoil] : complex<double>
-        Complex 2D k-space coil data (total 3D).
+    mask[kx, ky] : int
+        Sampling mask.
     kx, ky : unsigned int
         Size of 2D k-space coil data array (and mask).
-    calib[cx, cy, ncoil] : complex<double>
-        Complex 2D calibration data (total 3D).
-    cx, cy : unsigned int
-        Size of 2D calibration data array.
-    ncoil : unsigned int
-        Number of coils (for kspace, mask, and calib arrays).
     ksx, ksy : unsigned int
         Size of kernel: (ksx, ksy).
 
 */
-std::map<unsigned long long int, std::vector<unsigned int>> grappa_in_c(
-    std::complex<double> kspace[],
+std::map<unsigned long long int, std::vector<unsigned int>> get_sampling_patterns(
     int mask[],
     unsigned int kx, unsigned int ky,
-    std::complex<double> calib[], unsigned int cx, unsigned int cy,
-    unsigned int ncoil, unsigned int ksx, unsigned int ksy)
+    unsigned int ksx, unsigned int ksy)
 {
+
+    // Check to make sure we're fine (we should be unless the user
+    // tries something stupid):
+    if ((unsigned long long int)(ksx)*(unsigned long long)(ksy) > ULLONG_MAX) {
+        fprintf(stderr, "Something wild is happening with kernel size, choosing (ksx, ksy) = (5, 5).\n");
+        ksx = ksy = 5;
+    }
 
     // Initializations
     std::multimap<unsigned long long int, unsigned int> patterns;

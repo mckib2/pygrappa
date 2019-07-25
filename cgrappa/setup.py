@@ -11,11 +11,6 @@ setup(
     cmdclass={'build_ext': build_ext},
     ext_modules=cythonize([Extension(
         'cgrappa',
-        sources=['cgrappa.pyx', 'grappa_in_c.cpp'],
+        sources=['cgrappa.pyx', 'get_sampling_patterns.cpp'],
         include_dirs=[np.get_include()])])
 )
-
-# from Cython.Build import cythonize
-#
-# setup(name='Hello world app',
-#       ext_modules=cythonize('pyx_cgrappa.pyx'))
