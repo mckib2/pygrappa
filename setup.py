@@ -17,7 +17,7 @@ os.environ['CC'] = 'gcc'
 
 setup(
     name='pygrappa',
-    version='0.3.6',
+    version='0.3.7',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
