@@ -9,15 +9,15 @@ Developers: to build C++ code:
     python3 setup.py build_ext --inplace
 '''
 
-import os
+# import os
 from setuptools import setup, Extension, find_packages
 import numpy as np
 
-os.environ['CC'] = 'gcc'
+# os.environ['CC'] = 'gcc'
 
 setup(
     name='pygrappa',
-    version='0.3.7',
+    version='0.3.8',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
