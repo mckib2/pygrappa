@@ -20,7 +20,7 @@
 
     Returns
     -------
-    res : map<unsigned long long int, vecctor<unsigned int>>
+    res : map<unsigned long long int, vecctor<unsigned int> >
         Maps vectors of indices to sampling patterns.
 
     Notes
@@ -33,7 +33,7 @@
     size of (5, 5).
 
 */
-std::map<unsigned long long int, std::vector<unsigned int>> get_sampling_patterns(
+std::map<unsigned long long int, std::vector<unsigned int> > get_sampling_patterns(
     int mask[],
     unsigned int kx, unsigned int ky,
     unsigned int ksx, unsigned int ksy)
@@ -104,7 +104,7 @@ std::map<unsigned long long int, std::vector<unsigned int>> get_sampling_pattern
     // For each unique sampling pattern we need to train a kernel!
     // Iterate through each unique key (sampling pattern) and store
     // the vector of indices that use that pattern as a map entry.
-    std::map<unsigned long long int, std::vector<unsigned int>> res;
+    std::map<unsigned long long int, std::vector<unsigned int> > res;
     typedef std::multimap<unsigned long long int, unsigned int>::const_iterator iter_t;
     for (iter_t iter = patterns.begin(); iter != patterns.end(); iter = patterns.upper_bound(iter->first)) {
         std::vector<unsigned int> idxs0;
