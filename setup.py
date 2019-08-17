@@ -9,15 +9,21 @@ Developers: to build C++ code:
     python3 setup.py build_ext --inplace
 '''
 
-# import os
 from setuptools import setup, Extension, find_packages
-import numpy as np
+from setuptools.command.build_ext import build_ext as _build_ext
 
-# os.environ['CC'] = 'gcc'
+class build_ext(_build_ext):
+    '''Subclass build_ext to bootstrap numpy.'''
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+
+        # Prevent numpy from thinking it's still in its setup process
+        import numpy as np
+        self.include_dirs.append(np.get_include())
 
 setup(
     name='pygrappa',
-    version='0.3.8',
+    version='0.3.9',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -37,11 +43,13 @@ setup(
         "scikit-image>=0.14.3",
         "tqdm>=4.32.2",
     ],
+    cmdclass={'build_ext': build_ext},
+    setup_requires=['numpy'],
     python_requires='>=3.5',
 
     # And now for Cython generated files...
     ext_modules=[Extension(
         "pygrappa.cgrappa",
         ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
-        include_dirs=['src/', np.get_include()])]
+        include_dirs=['src/'])]
 )
