@@ -74,14 +74,11 @@ if __name__ == '__main__':
         res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifft2(
             np.fft.ifftshift(res, axes=ax), axes=ax), axes=ax))
 
-        from mr_utils import view
-        view(res)
-
-        # res0 = np.zeros((2*N, 2*N))
-        # kk = 0
-        # for idx in np.ndindex((2, 2)):
-        #     ii, jj = idx[:]
-        #     res0[ii*N:(ii+1)*N, jj*N:(jj+1)*N] = res[..., kk]
-        #     kk += 1
-        # plt.imshow(res0, cmap='gray')
-        # plt.show()
+        res0 = np.zeros((2*N, 2*N))
+        kk = 0
+        for idx in np.ndindex((2, 2)):
+            ii, jj = idx[:]
+            res0[ii*N:(ii+1)*N, jj*N:(jj+1)*N] = res[..., kk]
+            kk += 1
+        plt.imshow(res0, cmap='gray')
+        plt.show()

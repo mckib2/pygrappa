@@ -112,7 +112,8 @@ std::map<unsigned long long int, std::vector<unsigned int> > get_sampling_patter
         for (iter_t it = idxs.first; it != idxs.second; it++) {
             idxs0.push_back(it->second);
         }
-        res.emplace(iter->first, idxs0);
+        // res.emplace(iter->first, idxs0); // C++11 only
+        res.insert(make_pair(iter->first, idxs0));
     }
 
     return res;

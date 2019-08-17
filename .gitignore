@@ -9,3 +9,4 @@ pyvenv.cfg
 share/
 *.so
 *.html
+.eggs/
