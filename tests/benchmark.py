@@ -46,6 +46,3 @@ if __name__ == '__main__':
     print('CGRAPPA: %g' % (time() - t0))
 
     assert np.allclose(recon0, recon1)
-
-    # from mr_utils import view
-    # view(np.stack((recon0, recon1)), fft=True, fft_axes=(1, 2))
