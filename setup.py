@@ -1,11 +1,29 @@
-'''Setup.py'''
+'''Setup.py
 
-from distutils.core import setup
-from setuptools import find_packages
+Notes
+-----
+Developers: to build C++ code:
+
+.. code-block:: python
+
+    python3 setup.py build_ext --inplace
+'''
+
+from setuptools import setup, Extension, find_packages
+from setuptools.command.build_ext import build_ext as _build_ext
+
+class build_ext(_build_ext):
+    '''Subclass build_ext to bootstrap numpy.'''
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+
+        # Prevent numpy from thinking it's still in its setup process
+        import numpy as np
+        self.include_dirs.append(np.get_include())
 
 setup(
     name='pygrappa',
-    version='0.1.1',
+    version='0.3.10',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -19,10 +37,19 @@ setup(
     keywords=(
         'mri grappa parallel-imaging image-reconstruction python'),
     install_requires=[
-        "numpy>=1.16.2",
-        "matplotlib>=3.0.3",
-        "phantominator>=0.0.7",
-        "scikit-image>=0.15.0",
+        "numpy>=1.16.4",
+        "matplotlib>=2.2.4",
+        "phantominator>=0.1.2",
+        "scikit-image>=0.14.3",
+        "tqdm>=4.32.2",
     ],
-    python_requires='>=3.6',
+    cmdclass={'build_ext': build_ext},
+    setup_requires=['numpy'],
+    python_requires='>=3.5',
+
+    # And now for Cython generated files...
+    ext_modules=[Extension(
+        "pygrappa.cgrappa",
+        ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
+        include_dirs=['src/'])]
 )

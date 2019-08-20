@@ -1,11 +1,19 @@
+#!/usr/bin/env bash
+
+## TO RUN:
+##     source path/to/venv/bin/activate
+##     source make_release.sh
 
 # Remove any existing distribution archives
 rm -rf dist
+mkdir dist
+
+source make_cython.sh
 
 # Generate distribution archives
-python3 -m pip install --user --upgrade setuptools wheel
-python3 setup.py sdist bdist_wheel
+pip install --upgrade setuptools wheel
+python setup.py sdist # bdist_wheel
 
 # Upload
-python3 -m pip install --user --upgrade twine
-python3 -m twine upload dist/*
+pip install --upgrade twine
+python -m twine upload dist/*
