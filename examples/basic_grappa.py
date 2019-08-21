@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # calibrate a kernel
     kernel_size = (5, 5)
 
-    # undersample by a factor of 2 in both x and y
+    # undersample by a factor of 2 in both kx and ky
     kspace[::2, 1::2, :] = 0
     kspace[1::2, ::2, :] = 0
 
