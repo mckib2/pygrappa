@@ -1,8 +1,13 @@
 '''TGRAPPA implementation.'''
 
 import numpy as np
+from tqdm import tqdm
 
-def tgrappa(kspace, kernel_size=(5, 5), coil_axis=-2, time_axis=-1):
+from pygrappa import grappa
+
+def tgrappa(
+        kspace, calib_size=(20, 20), kernel_size=(5, 5),
+        coil_axis=-2, time_axis=-1):
     '''Temporal GRAPPA.
 
     Parameters
@@ -11,6 +16,8 @@ def tgrappa(kspace, kernel_size=(5, 5), coil_axis=-2, time_axis=-1):
         2+1D multi-coil k-space data to reconstruct from (total of
         4 dimensions).  Missing entries should have exact zeros in
         them.
+    calib_size : array_like, optional
+        Size of calibration region at the center of kspace.
     kernel_size : tuple, optional
         Desired shape of the in-plane calibration regions: (kx, ky).
     coil_axis : int, optional
@@ -20,7 +27,7 @@ def tgrappa(kspace, kernel_size=(5, 5), coil_axis=-2, time_axis=-1):
 
     Notes
     -----
-    Implementation of the method presented in [1]_.
+    Implementation of the method proposed in [1]_.
 
     The idea is to form ACS regions using data from adjacent time
     frames.  For example, in the case of 1D undersampling using
@@ -41,37 +48,91 @@ def tgrappa(kspace, kernel_size=(5, 5), coil_axis=-2, time_axis=-1):
 
     # Move coil and time axes to a place we can find them
     kspace = np.moveaxis(kspace, (coil_axis, time_axis), (-2, -1))
-    sx, sy, _sc, _st = kspace.shape[:]
-    kx, ky = kernel_size[:]
+    sx, sy, _sc, st = kspace.shape[:]
+    cx, cy = calib_size[:]
     sx2, sy2 = int(sx/2), int(sy/2)
-    kx2, ky2 = int(kx/2), int(ky/2)
-    adjx, adjy = int(np.mod(kx, 2)), int(np.mod(ky, 2))
+    cx2, cy2 = int(cx/2), int(cy/2)
+    adjx, adjy = int(np.mod(cx, 2)), int(np.mod(cy, 2))
 
-    # First we need to find out if the calibration regions are even
-    # feasible, that is, if data can be found in each time frame to
-    # synthesize an ACS without any holes
+    # Make sure that it's even possible to create complete ACS, we'll
+    # have problems in the loop if we don't catch it here!
+    if not np.all(np.sum(np.abs(kspace[
+            sx2-cx2:sx2+cx2+adjx,
+            sy2-cy2:sy2+cy2+adjy, ...]), axis=-1)):
+        raise ValueError('Full ACS region cannot be found!')
 
+    # To avoid running GRAPPA more than once on one time frame,
+    # we'll keep track of which frames have been reconstruced:
+    completed_tframes = np.zeros(st, dtype=bool)
 
-    # Find the first feasible kernel -- Strategy: consume time frames
-    # until all kernel elements have been filled.  We won't assume
-    # that overlaps will not happen frame to frame, so we will
-    # appropriately average each kernel position.
-    got_kernel = False
-    calib = []
+    # Initialize the progress bar
+    pbar = tqdm(total=st, leave=False, desc='TGRAPPA')
+
+    # Iterate through all time frames, construct ACS regions, and
+    # run GRAPPA on each time slice
+    res = np.zeros(kspace.shape, dtype=kspace.dtype)
     tt = 0 # time frame index
-    filled = np.zeros((kx, ky), dtype=bool)
-    while not got_kernel:
+    done = False # True when all time frames have been consumed
+    from_end = False # start at the end and go backwards
+    while not done:
 
-        # Might need to consider odd/even kernel sizes
-        calib.append(kspace[
-            sx2-kx2:sx2+kx2+adjx, sy2-ky2:sy2+ky2+adjy, :, tt].copy())
-        filled = np.logical_or(filled, np.abs(calib[tt][..., 0]) > 0)
-        if np.all(filled):
-            got_kernel = True
-        tt += 1
+        # Find next feasible kernel -- Strategy: consume time frames
+        # until all kernel elements have been filled.  We won't
+        # assume that overlaps will not happen frame to frame, so we
+        # will appropriately average each kernel position by keeping
+        # track of how many samples are in a position with 'counts'
+        got_kernel = False
+        calib = []
+        counts = np.zeros((cx, cy), dtype=int)
+        tframes = [] # time frames over which the ACS is valid
+        while not got_kernel:
+            if not completed_tframes[tt]:
+                tframes.append(tt)
+            calib.append(kspace[
+                sx2-cx2:sx2+cx2+adjx,
+                sy2-cy2:sy2+cy2+adjy, :, tt].copy())
+            counts += np.abs(calib[-1][..., 0]) > 0
+            if np.all(counts > 0):
+                got_kernel = True
 
-    # Now average over all time frames to get a single ACS
-    calib =  np.array(calib) # time axis is in front
-    print(calib.shape)
+            # Go to next time frame except maybe for the last ACS
+            if not from_end:
+                tt += 1 # Consume the next time frame
+            else:
+                tt -= 1 # Consume previous time frame
 
-    return 0
+            # If we need more time frames than we have, then we need
+            # to start from the end and come forward.  This can only
+            # happen on the last iteration of the outer loop
+            if not got_kernel and tt == st:
+                # Start at the end
+                tt = st-1
+
+                # Reset ACS, counts, and tframes
+                calib = []
+                counts = np.zeros((cx, cy), dtype=int)
+                tframes = []
+
+                # Let the loop know we want to reverse directions
+                from_end = True
+
+        # Now average over all time frames to get a single ACS
+        calib = np.sum(calib, axis=0)/counts[..., None]
+
+        # This ACS region is valid over all time frames used to
+        # create it.  Run GRAPPA on each valid time frame with calib:
+        for t0 in tframes:
+            res[..., t0] = grappa(
+                kspace[..., t0], calib, kernel_size)
+            completed_tframes[t0] = True
+            pbar.update(1)
+
+        # Stopping condition: end when all time frames are consumed
+        if np.all(completed_tframes):
+            done = True
+
+    # Close out the progress bar
+    pbar.close()
+
+    # Move axes back to where the user had them
+    return np.moveaxis(res, (-1, -2), (time_axis, coil_axis))
