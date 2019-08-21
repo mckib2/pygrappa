@@ -35,7 +35,8 @@ setup(
         'Acquisitions.'),
     long_description=open('README.rst').read(),
     keywords=(
-        'mri grappa parallel-imaging image-reconstruction python'),
+        'mri grappa parallel-imaging image-reconstruction python '
+        'tgrappa'),
     install_requires=[
         "numpy>=1.17.0",
         "matplotlib>=3.1.1",
