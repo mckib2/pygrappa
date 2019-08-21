@@ -33,7 +33,7 @@ if __name__ == '__main__':
     calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
 
     # calibrate a kernel
-    kernel_size = (5, 5)
+    kernel_size = (4, 4)
 
     # undersample by a factor of 2 in both x and y
     kspace[::2, 1::2, :] = 0
