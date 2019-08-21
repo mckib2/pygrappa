@@ -26,6 +26,16 @@ def tgrappa(
     time_axis : int, optional
         Dimension holding time data.
 
+    Returns
+    -------
+    res : array_like
+        Reconstructed k-space data.
+
+    Raises
+    ------
+    ValueError
+        When no complete ACS region can be found.
+
     Notes
     -----
     Implementation of the method proposed in [1]_.
