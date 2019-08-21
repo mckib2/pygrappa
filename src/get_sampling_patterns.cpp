@@ -49,9 +49,11 @@ std::map<unsigned long long int, std::vector<unsigned int> > get_sampling_patter
     // Initializations
     std::multimap<unsigned long long int, unsigned int> patterns;
     unsigned int ii, jj, idx;
-    int ksx2, ksy2;
+    int ksx2, ksy2, adjx, adjy;
     ksx2 = ksx/2;
     ksy2 = ksy/2;
+    adjx = ksx % 2; // same adjustment issue for even/odd kernel sizes
+    adjy = ksy % 2; // see grappa.py source for complete discussion.
 
     // Iterate through all possible overlapping patches of the mask
     // to find unqiue sampling patterns.  Assume zero-padded edges.
@@ -76,8 +78,8 @@ std::map<unsigned long long int, std::vector<unsigned int> > get_sampling_patter
                 int xx, yy;
                 sum = 0;
                 pos = 0;
-                for (xx = -ksx2; xx <= (int)ksx2; xx++) {
-                    for (yy = -ksy2; yy <= (int)ksy2; yy++) {
+                for (xx = -ksx2; xx < (int)(ksx2 + adjx); xx++) {
+                    for (yy = -ksy2; yy < (int)(ksy2 + adjy); yy++) {
                         int wx, wy;
                         wx = (int)ii + xx;
                         wy = (int)jj + yy;

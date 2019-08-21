@@ -33,7 +33,7 @@ from skimage.util import pad, view_as_windows
 
 def grappa(
         kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
-        memmap=False, memmap_filename='out.memmap'):
+        memmap=False, memmap_filename='out.memmap', silent=True):
     '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
@@ -56,6 +56,8 @@ def grappa(
     memmap_filename : str, optional
         Name of memmap to store results in.  File is only saved if
         memmap=True.
+    silent : bool, optional
+        Suppress messages to user.
 
     Returns
     -------
@@ -144,7 +146,8 @@ def grappa(
         # Give P back its coil dimension
         P = np.tile(P[..., None], (1, 1, 1, nc))
 
-        print('P took %g seconds!' % (time() - t0))
+        if not silent:
+            print('P took %g seconds!' % (time() - t0))
         t0 = time()
 
         # Get all overlapping patches of ACS
@@ -154,7 +157,8 @@ def grappa(
             calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
 
         # Report on how long it took to construct windows
-        print('A took %g seconds' % (time() - t0))
+        if not silent:
+            print('A took %g seconds' % (time() - t0))
 
         # Initialize recon array
         recon = np.memmap(
@@ -222,8 +226,9 @@ def grappa(
                 recon[xx, yy, :] = (W @ S[:, None]).squeeze()
 
         # Report on how long it took to train and apply weights
-        print(('Training and application of weights took %g seconds'
-               '' % (time() - t0)))
+        if not silent:
+            print(('Training and application of weights took %g'
+                   'seconds' % (time() - t0)))
 
         # The recon array has been zero padded, so let's crop it down
         # to size and return it either as a memmap to the correct

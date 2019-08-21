@@ -22,7 +22,9 @@ cdef extern from "get_sampling_patterns.h":
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def cgrappa(kspace, calib, kernel_size, lamda=.01, int coil_axis=-1):
+def cgrappa(
+        kspace, calib, kernel_size, lamda=.01, int coil_axis=-1,
+        silent=True):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -69,14 +71,16 @@ def cgrappa(kspace, calib, kernel_size, lamda=.01, int coil_axis=-1):
         &mask_memview[0, 0],
         kx, ky,
         ksx, ksy)
-    print('Find unique sampling patterns: %g' % (time() - t0))
+    if not silent:
+        print('Find unique sampling patterns: %g' % (time() - t0))
 
     # Get all overlapping patches of ACS
     t0 = time()
     A = view_as_windows(
         calib, (ksx, ksy, nc)).reshape((-1, ksx, ksy, nc))
     cdef complex[:, :, :, ::1] A_memview = A
-    print('Make calibration patches: %g' % (time() - t0))
+    if not silent:
+        print('Make calibration patches: %g' % (time() - t0))
 
     # Train and apply weights
     t0 = time()
@@ -119,7 +123,9 @@ def cgrappa(kspace, calib, kernel_size, lamda=.01, int coil_axis=-1):
         # Move to the next sampling pattern
         postincrement(it)
 
-    print('Training and application of weights: %g' % (time() - t0))
+    if not silent:
+        print('Training and application of weights: %g' % (
+            time() - t0))
 
     return np.moveaxis(
         kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis)
