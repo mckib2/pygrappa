@@ -3,7 +3,8 @@
 import numpy as np
 from tqdm import tqdm
 
-from pygrappa import grappa
+# from pygrappa import grappa
+from pygrappa import cgrappa as grappa # need for speed!
 
 def tgrappa(
         kspace, calib_size=(20, 20), kernel_size=(5, 5),

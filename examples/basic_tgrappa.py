@@ -33,8 +33,8 @@ if __name__ == '__main__':
 
     # Reconstuct using TGRAPPA algorithm:
     #    Use 20x20 calibration region
-    #    Kernel size: (5, 5)
-    res = tgrappa(kspace, calib_size=(20, 20), kernel_size=(5, 5))
+    #    Kernel size: (4, 5)
+    res = tgrappa(kspace, calib_size=(20, 20), kernel_size=(4, 5))
 
     # IFFT and stitch coil images together
     res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifft2(
