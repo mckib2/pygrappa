@@ -84,7 +84,7 @@ TGRAPPA does not require calibration data and can be called as:
 
     from pygrappa import tgrappa
     res = tgrappa(
-        kspace, calib_size=(20, 20), kernel_size(5, 5),
+        kspace, calib_size=(20, 20), kernel_size=(5, 5),
         coil_axis=-2, time_axis=-1)
 
 Calibration region size and kernel size must be provided.  The
