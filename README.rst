@@ -56,14 +56,10 @@ choosing Windows.
 
 Steps:
 
-- Download 64-bit fork of MinGW from
-https://sourceforge.net/projects/mingw-w64/
-- Follow this guide:
-https://github.com/orlp/dev-on-windows/wiki/Installing-GCC--&-MSYS2
+- Download 64-bit fork of MinGW from https://sourceforge.net/projects/mingw-w64/
+- Follow this guide: https://github.com/orlp/dev-on-windows/wiki/Installing-GCC--&-MSYS2
 - Now you should be able to use gcc/g++/etc. from CMD-line
-- Modify cygwinccompiler.py similar to
-https://github.com/tgalal/yowsup/issues/2494#issuecomment-388439162
-but using the version number `1916`:
+- Modify cygwinccompiler.py similar to https://github.com/tgalal/yowsup/issues/2494#issuecomment-388439162 but using the version number `1916`:
 
 .. code-block:: python
 
@@ -155,6 +151,7 @@ TGRAPPA does not require calibration data and can be called as:
 .. code-block:: python
 
     from pygrappa import tgrappa
+    sx, sy, ncoils, nt = kspace.shape[:]
     res = tgrappa(
         kspace, calib_size=(20, 20), kernel_size=(5, 5),
         coil_axis=-2, time_axis=-1)
