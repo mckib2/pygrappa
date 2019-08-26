@@ -56,16 +56,20 @@ choosing Windows.
 
 Steps:
 
-- Download 64-bit fork of MinGW from https://sourceforge.net/projects/mingw-w64/
-- Follow this guide: https://github.com/orlp/dev-on-windows/wiki/Installing-GCC--&-MSYS2
+- Download 64-bit fork of MinGW from
+https://sourceforge.net/projects/mingw-w64/
+- Follow this guide:
+https://github.com/orlp/dev-on-windows/wiki/Installing-GCC--&-MSYS2
 - Now you should be able to use gcc/g++/etc. from CMD-line
-- Modify cygwinccompiler.py similar to tgalal/yowsup#2494 but using the version number `1916`:
+- Modify cygwinccompiler.py similar to
+https://github.com/tgalal/yowsup/issues/2494#issuecomment-388439162
+but using the version number `1916`:
 
 .. code-block:: python
 
     def get_msvcr():
-        """Include the appropriate MSVC runtime library if Python was built
-        with MSVC 7.0 or later.
+        """Include the appropriate MSVC runtime library if Python
+        was built with MSVC 7.0 or later.
         """
         msc_pos = sys.version.find('MSC v.')
         if msc_pos != -1:
@@ -89,11 +93,12 @@ Steps:
                 # Visual Studio 2015 / Visual C++ 14.0
                 return ['vcruntime140']    
             else:
-                raise ValueError("Unknown MS Compiler version %s " % msc_ver)
+                raise ValueError(
+                    "Unknown MS Compiler version %s " % msc_ver)
 
 - now run the command:
 
-.. code-block:: python
+.. code-block:: bash
 
     pip install --global-option build_ext --global-option --compiler=mingw32 --global-option -DMS_WIN64 pygrappa
 
