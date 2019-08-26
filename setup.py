@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.4.0',
+    version='0.4.1',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -39,6 +39,7 @@ setup(
         'tgrappa'),
     install_requires=[
         "numpy>=1.17.0",
+        "scipy>=1.3.1",
         "matplotlib>=3.1.1",
         "phantominator>=0.3.1",
         "scikit-image>=0.15.0",
