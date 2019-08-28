@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.5.0',
+    version='0.6.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -36,7 +36,7 @@ setup(
     long_description=open('README.rst').read(),
     keywords=(
         'mri grappa parallel-imaging image-reconstruction python '
-        'tgrappa'),
+        'tgrappa slice-grappa sms split-slice-grappa'),
     install_requires=[
         "numpy>=1.17.0",
         "scipy>=1.3.1",

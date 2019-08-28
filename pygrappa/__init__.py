@@ -6,3 +6,4 @@ from .lustig_grappa import lustig_grappa
 from .grappa import grappa
 from .tgrappa import tgrappa
 from .slicegrappa import slicegrappa
+from .splitslicegrappa import splitslicegrappa
