@@ -41,7 +41,7 @@ setup(
         "numpy>=1.17.0",
         "scipy>=1.3.1",
         "matplotlib>=3.1.1",
-        "phantominator>=0.3.1",
+        "phantominator>=0.3.2",
         "scikit-image>=0.15.0",
         "tqdm>=4.33.0",
     ],
