@@ -23,12 +23,6 @@ if __name__ == '__main__':
     # Shift one slice FOV/2 (SMS-CAIPI)
     ph[..., -1] = np.fft.fftshift(ph[..., -1], axes=0)
 
-    # import matplotlib.pyplot as plt
-    # for ii in range(ph.shape[-1]):
-    #     plt.subplot(ph.shape[-1], 1, ii+1)
-    #     plt.imshow(np.abs(ph[..., 0, ii]), cmap='gray')
-    # plt.show()
-
     # Put into kspace
     ax = (0, 1)
     kspace = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
@@ -45,7 +39,8 @@ if __name__ == '__main__':
     kspace_sms = np.tile(kspace_sms[..., None], (1, 1, 1, nt))
 
     # Separate the slices using Slice-GRAPPA
-    res = slicegrappa(kspace_sms, calib, kernel_size=(5, 5))
+    res = slicegrappa(
+        kspace_sms, calib, kernel_size=(5, 5), prior='kspace')
 
     # IFFT and stitch slices together
     res = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(

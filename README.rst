@@ -9,6 +9,7 @@ Included in the `pygrappa` module are the following:
 
 - `grappa()`
 - `tgrappa()`
+- `slicegrappa()`
 
 
 Installation
@@ -98,6 +99,27 @@ calibration regions will be constructed in a greedy manner: once
 enough time frames have been consumed to create an entire ACS, GRAPPA
 will be run.  TGRAPPA uses the `cgrappa` implementation for its
 speed.
+
+`slicegrappa()` is a Slice-GRAPPA implementation that can be called
+like:
+
+.. code-block:: python
+
+    from pygrappa import slicegrappa
+    sx, sy, ncoils, nt = kspace.shape[:]
+    sx, sy, ncoils, sl = calib.shape[:]
+    res = slicegrappa(kspace, calib, kernel_size(5, 5), prior='sim')
+
+`kspace` is assumed to SMS-like with multiple collapsed slices and
+multiple time frames that each need to be separated.  `calib` are the
+individual slices' kspace data at the same size/resolution.  `prior`
+tells the Slice-GRAPPA algorithm how to construct the sources, that
+is, how to solve T = S W, where T are the targets (calibration data),
+S are the sources, and W are GRAPPA weights. `prior='sim'` creates
+S by simulating the SMS acquisition, i.e., S = sum(calib, slice_axis).
+`prior='kspace'` uses the first time frame from the `kspace` data,
+i.e., S = kspace[1st time frame].  The result is an array containing
+all target slices for all time frames in `kspace`.
 
 Also see the `examples` module.  It has several scripts showing basic
 usage.  Docstrings are also a great resource -- check them out for all
