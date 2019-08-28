@@ -10,7 +10,7 @@ Included in the `pygrappa` module are the following:
 - `grappa()`
 - `tgrappa()`
 - `slicegrappa()`
-
+- `splitslicegrappa()`
 
 Installation
 ============
@@ -89,6 +89,7 @@ TGRAPPA does not require calibration data and can be called as:
 .. code-block:: python
 
     from pygrappa import tgrappa
+
     sx, sy, ncoils, nt = kspace.shape[:]
     res = tgrappa(
         kspace, calib_size=(20, 20), kernel_size=(5, 5),
@@ -106,9 +107,10 @@ like:
 .. code-block:: python
 
     from pygrappa import slicegrappa
+
     sx, sy, ncoils, nt = kspace.shape[:]
     sx, sy, ncoils, sl = calib.shape[:]
-    res = slicegrappa(kspace, calib, kernel_size(5, 5), prior='sim')
+    res = slicegrappa(kspace, calib, kernel_size=(5, 5), prior='sim')
 
 `kspace` is assumed to SMS-like with multiple collapsed slices and
 multiple time frames that each need to be separated.  `calib` are the
@@ -120,6 +122,22 @@ S by simulating the SMS acquisition, i.e., S = sum(calib, slice_axis).
 `prior='kspace'` uses the first time frame from the `kspace` data,
 i.e., S = kspace[1st time frame].  The result is an array containing
 all target slices for all time frames in `kspace`.
+
+Similarly, Split-Slice-GRAPPA can be called like so:
+
+.. code-block:: python
+
+    from pygrappa import splitslicegrappa as ssgrappa
+
+    sx, sy, ncoils, nt = kspace.shape[:]
+    sx, sy, ncoils, sl = calib.shape[:]
+    res = ssgrappa(kspace, calib, kernel_size=(5, 5))
+
+    # Note that pygrappa.splitslicegrappa is an alias for
+    # pygrappa.slicegrappa(split=True), so it can also be called
+    # like this:
+    from pygrappa import slicegrappa
+    res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
 
 Also see the `examples` module.  It has several scripts showing basic
 usage.  Docstrings are also a great resource -- check them out for all
