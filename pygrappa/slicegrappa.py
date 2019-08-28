@@ -6,8 +6,8 @@ from tqdm import trange
 
 def slicegrappa(
         kspace, calib, kernel_size=(5, 5), prior='sim', coil_axis=-2,
-        time_axis=-1, slice_axis=-1, lamda=0.01):
-    '''Slice-GRAPPA.
+        time_axis=-1, slice_axis=-1, lamda=0.01, split=False):
+    '''(Split)-Slice-GRAPPA for SMS reconstruction.
 
     Parameters
     ----------
@@ -34,6 +34,8 @@ def slicegrappa(
             - 'kspace': uses the first time frame of the overlapped
               data as sources, i.e., S = kspace[1st time frame].
 
+        This option is not used for Split-Slice-GRAPPA.
+
     coil_axis : int, optional
         Dimension that holds the coil data.
     time_axis : int, optional
@@ -42,6 +44,8 @@ def slicegrappa(
         Dimension of calib that holds the slice information.
     lamda : float, optional
         Tikhonov regularization for the kernel calibration.
+    split : bool, optional
+        Uses Split-Slice-GRAPPA kernel training method.
 
     Returns
     -------
@@ -49,6 +53,17 @@ def slicegrappa(
         Reconstructed slices for each time frame.  res will always
         return the data in fixed order or shape:
         (nx, ny, num_coils, num_time_frames, num_slices).
+
+    Raises
+    ------
+    NotImplementedError
+        When "prior" is an invalid option.
+
+    Notes
+    -----
+    This function implements both the Slice-GRAPPA algorithm as
+    described in [1]_ and the Split-Slice-GRAPPA algorithm as first
+    described in [3]_.
 
     References
     ----------
@@ -60,6 +75,10 @@ def slicegrappa(
            in k-t BLAST MRI reconstruction." International Conference
            on Medical Image Computing and Computer-Assisted
            Intervention. Springer, Berlin, Heidelberg, 2007.
+    .. [3] Cauley, Stephen F., et al. "Interslice leakage artifact
+           reduction technique for simultaneous multislice
+           acquisitions." Magnetic resonance in medicine 72.1 (2014):
+           93-102.
     '''
 
     # Make sure we know how to construct the sources:
@@ -82,39 +101,61 @@ def slicegrappa(
         calib, ((kx2, kx2), (ky2, ky2), (0, 0), (0, 0)),
         mode='constant')
 
-    # Figure out how to construct the sources:
-    if prior == 'sim':
-        # Source data from SMS simulated calibration data.  This is
-        # constructing the "prior" like k-t BLAST does, using the
-        # calibration data to form the aliased/overlapped images.
-        # This requires the single-band images to be in the same
-        # spatial locations as the SMS data.
-        S = view_as_windows(np.sum(
-            calib, axis=-1), (kx, ky, nc)).reshape((-1, kx*ky*nc))
-    elif prior == 'kspace':
-        # Source data from the first time frame of the kspace data.
-        S = view_as_windows(np.ascontiguousarray(
-            kspace[..., 0]), (kx, ky, nc)).reshape((-1, kx*ky*nc))
+    # Figure out how to construct the sources (only relevant for
+    # Slice-GRAPPA, not Split-Slice-GRAPPA):
+    if not split:
+        if prior == 'sim':
+            # Source data from SMS simulated calibration data.  This
+            # is constructing the "prior" like k-t BLAST does, using
+            # the calibration data to form the aliased/overlapped
+            # images.  This requires the single-band images to be in
+            # the same spatial locations as the SMS data.
+            S = view_as_windows(np.sum(
+                calib, axis=-1), (kx, ky, nc)).reshape((-1, kx*ky*nc))
+        elif prior == 'kspace':
+            # Source data from the first time frame of the
+            # kspace data.
+            S = view_as_windows(np.ascontiguousarray(
+                kspace[..., 0]), (kx, ky, nc)).reshape((-1, kx*ky*nc))
 
-    # Train a kernel for each target slice
-    W = np.zeros((cs, S.shape[-1], nc), dtype=calib.dtype)
+    # Train a kernel for each target slice -- use Split-Slice-GRAPPA
+    # if the user asked for it, else use Slice-GRAPPA
+    W = np.zeros((cs, kx*ky*nc, nc), dtype=calib.dtype)
     for sl in range(cs):
 
         # Train GRAPPA kernel for the current slice
         T = calib[kx2:-kx2, ky2:-ky2, :, sl].reshape((-1, nc))
-        ShS = S.conj().T @ S
-        ShT = S.conj().T @ T
-        lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
-        W[sl, ...] = np.linalg.solve(
-            ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+        if not split:
+            # Regular old Slice-GRAPPA
+            ShS = S.conj().T @ S
+            ShT = S.conj().T @ T
+            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
+            W[sl, ...] = np.linalg.solve(
+                ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+        else:
+            # Split-Slice-GRAPPA for all your slice leakage needs!
+            # Equation (7) from ref. [3]:
+            MhM = np.zeros((kx*ky*nc,)*2, dtype=calib.dtype)
 
-        # # Check to make sure it does what we think it's doing
-        # res[..., sl] = (S @ W[sl, ...]).reshape((nx, ny, nc))
-        # import matplotlib.pyplot as plt
-        # res0 = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
-        #     res[..., sl], axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
-        # plt.imshow(np.sqrt(np.sum(np.abs(res0)**2, axis=-1)))
-        # plt.show()
+            # This might be inefficient as we're getting patches
+            # for every single slice for every slice kernel, but it
+            # does run pretty fast and it's pretty memory intensive
+            # to get all patches for all slices outside of the loop.
+            # Maybe use temporary files?
+            for jj in range(cs):
+                calib0 = view_as_windows(np.ascontiguousarray(
+                    calib[..., jj]), (kx, ky, nc)).reshape(
+                        (-1, kx*ky*nc))
+                MhM += calib0.conj().T @ calib0
+
+                # Find and save the target calibration slice, Mz:
+                if jj == sl:
+                    Mz = calib0
+
+            MhT = Mz.conj().T @ T
+            lamda0 = lamda*np.linalg.norm(MhM)/MhM.shape[0]
+            W[sl, ...] = np.linalg.solve(
+                MhM + lamda0*np.eye(MhM.shape[0]), MhT)
 
     # Now pull apart slices for each time frame
     res = np.zeros((nx, ny, nc, nt, cs), dtype=kspace.dtype)
