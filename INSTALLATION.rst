@@ -60,7 +60,7 @@ Steps:
 
 .. code-block:: bash
 
-    pip install --global-option build_ext --global-option
+    pip install --global-option build_ext --global-option \
         --compiler=mingw32 --global-option -DMS_WIN64 pygrappa
 
 Hopefully this works for you.  Refer to
