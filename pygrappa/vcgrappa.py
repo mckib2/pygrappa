@@ -15,6 +15,10 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     only change I can see is stacking the conjugate coils in the
     coil dimension.
 
+    This function is a wrapper of pygrappa.cgrappa().  The existing
+    coils are conjugated, added to the coil dimension, and passed
+    through along with all other arguments.
+
     References
     ----------
     .. [1] Blaimer, Martin, et al. "Virtual coil concept for improved
