@@ -23,8 +23,8 @@ cdef extern from "get_sampling_patterns.h":
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def cgrappa(
-        kspace, calib, kernel_size, lamda=.01, int coil_axis=-1,
-        silent=True):
+        kspace, calib, kernel_size=(5, 5), lamda=.01,
+        int coil_axis=-1, silent=True):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)

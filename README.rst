@@ -9,6 +9,7 @@ Included in the `pygrappa` module are the following:
 
 - `grappa()`
 - `tgrappa()`
+- `vcgrappa()`
 - `slicegrappa()`
 - `splitslicegrappa()`
 
@@ -100,6 +101,11 @@ calibration regions will be constructed in a greedy manner: once
 enough time frames have been consumed to create an entire ACS, GRAPPA
 will be run.  TGRAPPA uses the `cgrappa` implementation for its
 speed.
+
+`vcgrappa()` is a VC-GRAPPA implementation that simply constructs
+conjugate virtual coils, appends them to the coil dimension, and
+passes everything through to `cgrappa()`.  The function signature
+is identical to `pygrappa.grappa()`.
 
 `slicegrappa()` is a Slice-GRAPPA implementation that can be called
 like:
