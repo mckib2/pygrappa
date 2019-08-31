@@ -113,7 +113,7 @@ def grappa(
 
     # Notice that all coils have same sampling pattern, so choose
     # the 0th one arbitrarily for the mask
-    mask = np.abs(kspace[..., 0]) > 0
+    mask = np.ascontiguousarray(np.abs(kspace[..., 0]) > 0)
 
     # Store windows in temporary files so we don't overwhelm memory
     with NTF() as fP, NTF() as fA, NTF() as frecon:
