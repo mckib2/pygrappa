@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.6.0',
+    version='0.7.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
