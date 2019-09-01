@@ -24,7 +24,7 @@ cdef extern from "get_sampling_patterns.h":
 @cython.wraparound(False)
 def cgrappa(
         kspace, calib, kernel_size=(5, 5), lamda=.01,
-        int coil_axis=-1, silent=True, ret_weights=False):
+        int coil_axis=-1, silent=True, Wsupp=None, ret_weights=False):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -100,14 +100,19 @@ def cgrappa(
             (ksx, ksy)).astype(bool)
         P = np.tile(P[..., None], (1, 1, nc))
 
-        # Train the weights for this pattern
-        S = A[:, P]
-        T = A_memview[:, ksx2, ksy2, :]
-        ShS = S.conj().T @ S
-        ShT = S.conj().T @ T
-        lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
-        W = np.linalg.solve(
-            ShS + lamda0*np.eye(ShS.shape[0]), ShT).T
+        # If the user supplied weights, let's use them; if not, train
+        if not Wsupp:
+            # Train the weights for this pattern
+            S = A[:, P]
+            T = A_memview[:, ksx2, ksy2, :]
+            ShS = S.conj().T @ S
+            ShT = S.conj().T @ T
+            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
+            W = np.linalg.solve(
+                ShS + lamda0*np.eye(ShS.shape[0]), ShT).T
+        else:
+            # Grab the next set of weights
+            W = Wsupp.pop(0)
 
         if ret_weights:
             Ws.append(W)
