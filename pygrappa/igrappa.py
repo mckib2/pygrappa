@@ -40,6 +40,10 @@ def igrappa(
 
     Returns
     -------
+    res : array_like
+        k-space data where missing entries have been filled in.
+    mse : array_like, optional
+        MSE at each iteration.  Returned if ref not None.
 
     Raises
     ------
