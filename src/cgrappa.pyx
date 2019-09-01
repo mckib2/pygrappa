@@ -24,7 +24,7 @@ cdef extern from "get_sampling_patterns.h":
 @cython.wraparound(False)
 def cgrappa(
         kspace, calib, kernel_size=(5, 5), lamda=.01,
-        int coil_axis=-1, silent=True):
+        int coil_axis=-1, silent=True, ret_weights=False):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -83,6 +83,8 @@ def cgrappa(
         print('Make calibration patches: %g' % (time() - t0))
 
     # Train and apply weights
+    if ret_weights: # if the user wants weights, add 'em to the list
+        Ws = []
     t0 = time()
     it = res.begin()
     while(it != res.end()):
@@ -107,6 +109,9 @@ def cgrappa(
         W = np.linalg.solve(
             ShS + lamda0*np.eye(ShS.shape[0]), ShT).T
 
+        if ret_weights:
+            Ws.append(W)
+
         # For each hole that uses this pattern, fill in the recon
         idx = dereference(it).second
         x, y = np.unravel_index(idx, (kx, ky))
@@ -127,5 +132,9 @@ def cgrappa(
         print('Training and application of weights: %g' % (
             time() - t0))
 
+    # Give the user the weights if desired
+    if ret_weights:
+        return(np.moveaxis(
+            kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis), Ws)
     return np.moveaxis(
         kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis)
