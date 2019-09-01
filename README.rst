@@ -7,11 +7,12 @@ available, so I decided to release this simple one.
 
 Included in the `pygrappa` module are the following:
 
-- `grappa()`
-- `tgrappa()`
-- `vcgrappa()`
-- `slicegrappa()`
-- `splitslicegrappa()`
+- GRAPPA: `grappa()`
+- VC-GRAPPA: `vcgrappa()`
+- iGRAPPA: `igrappa()`
+- TGRAPPA: `tgrappa()`
+- Slice-GRAPPA: `slicegrappa()`
+- Split-Slice-GRAPPA: `splitslicegrappa()`
 
 Installation
 ============
@@ -85,6 +86,26 @@ using Cython.  It runs about twice as fast but is considered
 experimental.  It will probably become the default GRAPPA
 implementation in future releases.
 
+`vcgrappa()` is a VC-GRAPPA implementation that simply constructs
+conjugate virtual coils, appends them to the coil dimension, and
+passes everything through to `cgrappa()`.  The function signature
+is identical to `pygrappa.grappa()`.
+
+`igrappa()` is an Iterative-GRAPPA implementation that can be called
+as follows:
+
+.. code-block:: python
+
+    from pygrappa import igrappa
+    res = igrappa(kspace, calib, kernel_size=(5, 5))
+
+    # You can also provide the reference kspace to get the MSE at
+    # each iteration, showing you the performance.  Regularization
+    # parameter k (as described in paper) can also be provided:
+    res, mse = igrappa(kspace, calib, k=0.6, ref=ref_kspace)
+
+`igrappa()` makes calls to `cgrappa()` on the back end.
+
 TGRAPPA does not require calibration data and can be called as:
 
 .. code-block:: python
@@ -101,11 +122,6 @@ calibration regions will be constructed in a greedy manner: once
 enough time frames have been consumed to create an entire ACS, GRAPPA
 will be run.  TGRAPPA uses the `cgrappa` implementation for its
 speed.
-
-`vcgrappa()` is a VC-GRAPPA implementation that simply constructs
-conjugate virtual coils, appends them to the coil dimension, and
-passes everything through to `cgrappa()`.  The function signature
-is identical to `pygrappa.grappa()`.
 
 `slicegrappa()` is a Slice-GRAPPA implementation that can be called
 like:
