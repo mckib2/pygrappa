@@ -24,7 +24,7 @@ cdef extern from "get_sampling_patterns.h":
 @cython.wraparound(False)
 def cgrappa(
         kspace, calib, kernel_size=(5, 5), lamda=.01,
-        int coil_axis=-1, silent=True):
+        int coil_axis=-1, silent=True, Wsupp=None, ret_weights=False):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -83,6 +83,8 @@ def cgrappa(
         print('Make calibration patches: %g' % (time() - t0))
 
     # Train and apply weights
+    if ret_weights: # if the user wants weights, add 'em to the list
+        Ws = []
     t0 = time()
     it = res.begin()
     while(it != res.end()):
@@ -98,14 +100,22 @@ def cgrappa(
             (ksx, ksy)).astype(bool)
         P = np.tile(P[..., None], (1, 1, nc))
 
-        # Train the weights for this pattern
-        S = A[:, P]
-        T = A_memview[:, ksx2, ksy2, :]
-        ShS = S.conj().T @ S
-        ShT = S.conj().T @ T
-        lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
-        W = np.linalg.solve(
-            ShS + lamda0*np.eye(ShS.shape[0]), ShT).T
+        # If the user supplied weights, let's use them; if not, train
+        if not Wsupp:
+            # Train the weights for this pattern
+            S = A[:, P]
+            T = A_memview[:, ksx2, ksy2, :]
+            ShS = S.conj().T @ S
+            ShT = S.conj().T @ T
+            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
+            W = np.linalg.solve(
+                ShS + lamda0*np.eye(ShS.shape[0]), ShT).T
+        else:
+            # Grab the next set of weights
+            W = Wsupp.pop(0)
+
+        if ret_weights:
+            Ws.append(W)
 
         # For each hole that uses this pattern, fill in the recon
         idx = dereference(it).second
@@ -127,5 +137,9 @@ def cgrappa(
         print('Training and application of weights: %g' % (
             time() - t0))
 
+    # Give the user the weights if desired
+    if ret_weights:
+        return(np.moveaxis(
+            kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis), Ws)
     return np.moveaxis(
         kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis)
