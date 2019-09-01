@@ -3,7 +3,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
-from skimage.measure import compare_nrmse
 
 from pygrappa import igrappa, cgrappa
 from utils import gaussian_csm
@@ -16,19 +15,14 @@ if __name__ == '__main__':
     csm = gaussian_csm(N, N, ncoil)
     ph = shepp_logan(N)[..., None]*csm
 
-    # Add a little noise to spice things up
-    std = .001
-    n = (np.random.normal(0, std, ph.shape) +
-         1j*np.random.normal(0, std, ph.shape))
-    ph += n
-
     # Throw into k-space
     ax = (0, 1)
     kspace = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
         ph, axes=ax), axes=ax), axes=ax)
+    ref = kspace.copy()
 
-    # 20x20 ACS region
-    pad = 10
+    # Small ACS region: 4x4
+    pad = 2
     ctr = int(N/2)
     calib = kspace[ctr-pad:ctr+pad, ctr-pad:ctr+pad, :].copy()
 
@@ -38,7 +32,7 @@ if __name__ == '__main__':
 
     # Reconstruct using both GRAPPA and iGRAPPA
     res_grappa = cgrappa(kspace, calib)
-    res_igrappa = igrappa(kspace, calib)
+    res_igrappa, mse = igrappa(kspace, calib, ref=ref)
 
     # Bring back to image space
     imspace_igrappa = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
@@ -52,13 +46,18 @@ if __name__ == '__main__':
     ph = shepp_logan(N)
 
     # Take a look
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 2, 1)
     plt.imshow(cc_igrappa, cmap='gray')
     plt.title('iGRAPPA')
-    plt.xlabel('NRMSE: %g' % compare_nrmse(ph, cc_igrappa))
 
-    plt.subplot(1, 2, 2)
+    plt.subplot(2, 2, 2)
     plt.imshow(cc_grappa, cmap='gray')
     plt.title('GRAPPA')
-    plt.xlabel('NRMSE: %g' % compare_nrmse(ph, cc_grappa))
+
+    plt.subplot2grid((2, 2), (1, 0), colspan=2)
+    plt.plot(np.arange(mse.size), mse)
+    plt.title('iGRAPPA MSE vs iteration')
+    plt.xlabel('iteration')
+    plt.ylabel('MSE')
+
     plt.show()
