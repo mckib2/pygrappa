@@ -10,6 +10,7 @@ Included in the `pygrappa` module are the following:
 - GRAPPA: `grappa()`
 - VC-GRAPPA: `vcgrappa()`
 - iGRAPPA: `igrappa()`
+- hp-GRAPA: `hpgrappa()`
 - TGRAPPA: `tgrappa()`
 - Slice-GRAPPA: `slicegrappa()`
 - Split-Slice-GRAPPA: `splitslicegrappa()`
@@ -105,6 +106,15 @@ as follows:
     res, mse = igrappa(kspace, calib, k=0.6, ref=ref_kspace)
 
 `igrappa()` makes calls to `cgrappa()` on the back end.
+
+`hpgrappa()` implements the High-Pass GRAPPA (hp-GRAPPA) algorithm.
+It requires FOV to construct an appropriate high pass filter.  It can
+be called as:
+
+.. code-block:: python
+
+    from pygrappa import hpgrappa
+    res = hpgrappa(kspace, caliv, fov=(FOV_x, FOV_y))
 
 TGRAPPA does not require calibration data and can be called as:
 
