@@ -10,6 +10,7 @@ Included in the `pygrappa` module are the following:
 - GRAPPA: `grappa()`
 - VC-GRAPPA: `vcgrappa()`
 - iGRAPPA: `igrappa()`
+- hp-GRAPA: `hpgrappa()`
 - TGRAPPA: `tgrappa()`
 - Slice-GRAPPA: `slicegrappa()`
 - Split-Slice-GRAPPA: `splitslicegrappa()`
@@ -44,6 +45,10 @@ See INSTALLATION.rst for more info on installing under Windows.
 
 Usage
 =====
+
+See the `examples` module.  It has several scripts showing basic
+usage.  Docstrings are also a great resource -- check them out for all
+possible arguments and usage info.
 
 `pygrappa.grappa()` is called with undersampled k-space data and
 calibration data (usually a fully sampled portion of the center of
@@ -106,6 +111,15 @@ as follows:
 
 `igrappa()` makes calls to `cgrappa()` on the back end.
 
+`hpgrappa()` implements the High-Pass GRAPPA (hp-GRAPPA) algorithm.
+It requires FOV to construct an appropriate high pass filter.  It can
+be called as:
+
+.. code-block:: python
+
+    from pygrappa import hpgrappa
+    res = hpgrappa(kspace, caliv, fov=(FOV_x, FOV_y))
+
 TGRAPPA does not require calibration data and can be called as:
 
 .. code-block:: python
@@ -160,7 +174,3 @@ Similarly, Split-Slice-GRAPPA can be called like so:
     # like this:
     from pygrappa import slicegrappa
     res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
-
-Also see the `examples` module.  It has several scripts showing basic
-usage.  Docstrings are also a great resource -- check them out for all
-possible arguments and usage info.
