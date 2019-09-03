@@ -46,6 +46,10 @@ See INSTALLATION.rst for more info on installing under Windows.
 Usage
 =====
 
+See the `examples` module.  It has several scripts showing basic
+usage.  Docstrings are also a great resource -- check them out for all
+possible arguments and usage info.
+
 `pygrappa.grappa()` is called with undersampled k-space data and
 calibration data (usually a fully sampled portion of the center of
 k-space).  The unsampled points in k-space should be exactly 0:
@@ -170,7 +174,3 @@ Similarly, Split-Slice-GRAPPA can be called like so:
     # like this:
     from pygrappa import slicegrappa
     res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
-
-Also see the `examples` module.  It has several scripts showing basic
-usage.  Docstrings are also a great resource -- check them out for all
-possible arguments and usage info.
