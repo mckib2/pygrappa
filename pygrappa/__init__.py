@@ -9,3 +9,4 @@ from .slicegrappa import slicegrappa
 from .splitslicegrappa import splitslicegrappa
 from .vcgrappa import vcgrappa
 from .igrappa import igrappa
+from .hpgrappa import hpgrappa

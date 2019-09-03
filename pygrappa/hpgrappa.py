@@ -2,13 +2,32 @@
 
 import numpy as np
 
-def hpgrappa(kspace, calib, fov, coil_axis=-1):
+from pygrappa import cgrappa
+
+def hpgrappa(
+        kspace, calib, fov, kernel_size=(5, 5), w=None, c=None,
+        ret_filter=False, coil_axis=-1, lamda=0.01, silent=True):
     '''High-pass GRAPPA.
 
     Parameters
     ----------
     fov : tuple, (FOV_x, FOV_y)
-        Field of view (in ?).
+        Field of view (in m).
+    w : float, optional
+        Filter parameter: determines the smoothness of the filter
+        boundary.
+    c : float, optional
+        Filter parameter: sets the cutoff frequency.
+    ret_filter : bool, optional
+        Returns the high pass filter determined by (w, c).
+
+    Notes
+    -----
+    If w and/or c are None, then the closest values listed in
+    Table 1 from [1]_ will be used.
+
+    F2 described by Equation [2] in [1]_ is used to generate the
+    high pass filter.
 
     References
     ----------
@@ -19,14 +38,31 @@ def hpgrappa(kspace, calib, fov, coil_axis=-1):
            Resonance in Medicine 59.3 (2008): 642-649.
     '''
 
+    # Pass GRAPPA arguments forward
+    grappa_args = {
+        'kernel_size': kernel_size,
+        'coil_axis': -1,
+        'lamda': lamda,
+        'silent': silent
+    }
+
     # Put the coil dim in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
     kx, ky, nc = kspace.shape[:]
     cx, cy, nc = calib.shape[:]
+    kx2, ky2 = int(kx/2), int(ky/2)
+    cx2, cy2 = int(cx/2), int(cy/2)
+
+    # Get filter parameters if None provided
+    if w is None or c is None:
+        _w, _c = _filter_parameters(nc, np.min([cx, cy]))
+        if w is None:
+            w = _w
+        if c is None:
+            c = _c
 
     # We'll need the filter, seeing as this is high-pass GRAPPA
-    w, c = _filter_parameters(nc, np.min(cx, cy)) # min or max?
     fov_x, fov_y = fov[:]
     kxx, kyy = np.meshgrid(
         kx*np.linspace(-1, 1, kx)/(fov_x*2), # I think this gives
@@ -34,6 +70,26 @@ def hpgrappa(kspace, calib, fov, coil_axis=-1):
     F2 = (1 - 1/(1 + np.exp((np.sqrt(kxx**2 + kyy**2) - c)/w)) +
           1/(1 + np.exp((np.sqrt(kxx**2 + kyy**2) + c)/w)))
 
+    # Apply the filter to both kspace and calibration data
+    kspace_fil = kspace*F2[..., None]
+    calib_fil = calib*F2[kx2-cx2:kx2+cx2, ky2-cy2:ky2+cy2, None]
+
+    # Do regular old GRAPPA on filtered data
+    res = cgrappa(kspace_fil, calib_fil, **grappa_args)
+
+    # Inverse filter
+    res = res/F2[..., None]
+
+    # Restore measured data
+    mask = np.abs(kspace[..., 0]) > 0
+    res[mask, :] = kspace[mask, :]
+    res[kx2-cx2:kx2+cx2, ky2-cy2:ky2+cy2, :] = calib
+    res = np.moveaxis(res, -1, coil_axis)
+
+    # Return the filter if user asked for it
+    if ret_filter:
+        return(res, F2)
+    return res
 
 def _filter_parameters(ncoils, num_acs_lines):
     '''Table 1: predefined filter parameters from [1]_.
