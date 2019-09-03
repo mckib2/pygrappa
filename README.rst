@@ -118,7 +118,7 @@ be called as:
 .. code-block:: python
 
     from pygrappa import hpgrappa
-    res = hpgrappa(kspace, caliv, fov=(FOV_x, FOV_y))
+    res = hpgrappa(kspace, calib, fov=(FOV_x, FOV_y))
 
 TGRAPPA does not require calibration data and can be called as:
 
