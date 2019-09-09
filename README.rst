@@ -7,55 +7,14 @@ available, so I decided to release this simple one.
 
 Included in the `pygrappa` module are the following:
 
-- GRAPPA: `grappa()` [1]_
-- VC-GRAPPA: `vcgrappa()` [2]_
-- iGRAPPA: `igrappa()` [3]_
-- hp-GRAPA: `hpgrappa()` [4]_
-- Segmented-GRAPPA: `seggrappa()` [5]_
-- TGRAPPA: `tgrappa()` [6]_
-- Slice-GRAPPA: `slicegrappa()` [7]_
-- Split-Slice-GRAPPA: `splitslicegrappa()` [8]_
-
-References
-==========
-.. [1] Griswold, Mark A., et al. "Generalized autocalibrating
-       partially parallel acquisitions (GRAPPA)." Magnetic
-       Resonance in Medicine: An Official Journal of the
-       International Society for Magnetic Resonance in Medicine
-       47.6 (2002): 1202-1210.
-.. [2] Blaimer, Martin, et al. "Virtual coil concept for improved
-       parallel MRI employing conjugate symmetric signals."
-       Magnetic Resonance in Medicine: An Official Journal of the
-       International Society for Magnetic Resonance in Medicine
-       61.1 (2009): 93-102.
-.. [3] Zhao, Tiejun, and Xiaoping Hu. "Iterative GRAPPA (iGRAPPA)
-       for improved parallel imaging reconstruction." Magnetic
-       Resonance in Medicine: An Official Journal of the
-       International Society for Magnetic Resonance in Medicine
-       59.4 (2008): 903-907.
-.. [4] Huang, Feng, et al. "High‐pass GRAPPA: An image support
-       reduction technique for improved partially parallel
-       imaging." Magnetic Resonance in Medicine: An Official
-       Journal of the International Society for Magnetic
-       Resonance in Medicine 59.3 (2008): 642-649.
-.. [5] Park, Jaeseok, et al. "Artifact and noise suppression in
-       GRAPPA imaging using improved k‐space coil calibration and
-       variable density sampling." Magnetic Resonance in
-       Medicine: An Official Journal of the International Society
-       for Magnetic Resonance in Medicine 53.1 (2005): 186-193.
-.. [6] Breuer, Felix A., et al. "Dynamic autocalibrated parallel
-       imaging using temporal GRAPPA (TGRAPPA)." Magnetic
-       Resonance in Medicine: An Official Journal of the
-       International Society for Magnetic Resonance in Medicine
-       53.4 (2005): 981-985.
-.. [7] Setsompop, Kawin, et al. "Blipped‐controlled aliasing in
-       parallel imaging for simultaneous multislice echo planar
-       imaging with reduced g‐factor penalty." Magnetic resonance
-       in medicine 67.5 (2012): 1210-1224.
-.. [8] Cauley, Stephen F., et al. "Interslice leakage artifact
-       reduction technique for simultaneous multislice
-       acquisitions." Magnetic resonance in medicine 72.1 (2014):
-       93-102.
+- [1]_ GRAPPA: `grappa()`
+- [2]_ VC-GRAPPA: `vcgrappa()`
+- [3]_ iGRAPPA: `igrappa()`
+- [4]_ hp-GRAPA: `hpgrappa()`
+- [5]_ Segmented-GRAPPA: `seggrappa()`
+- [6]_ TGRAPPA: `tgrappa()`
+- [7]_ Slice-GRAPPA: `slicegrappa()`
+- [8]_ Split-Slice-GRAPPA: `splitslicegrappa()`
 
 Installation
 ============
@@ -229,3 +188,44 @@ Similarly, Split-Slice-GRAPPA can be called like so:
     # like this:
     from pygrappa import slicegrappa
     res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
+
+References
+==========
+.. [1] Griswold, Mark A., et al. "Generalized autocalibrating
+       partially parallel acquisitions (GRAPPA)." Magnetic
+       Resonance in Medicine: An Official Journal of the
+       International Society for Magnetic Resonance in Medicine
+       47.6 (2002): 1202-1210.
+.. [2] Blaimer, Martin, et al. "Virtual coil concept for improved
+       parallel MRI employing conjugate symmetric signals."
+       Magnetic Resonance in Medicine: An Official Journal of the
+       International Society for Magnetic Resonance in Medicine
+       61.1 (2009): 93-102.
+.. [3] Zhao, Tiejun, and Xiaoping Hu. "Iterative GRAPPA (iGRAPPA)
+       for improved parallel imaging reconstruction." Magnetic
+       Resonance in Medicine: An Official Journal of the
+       International Society for Magnetic Resonance in Medicine
+       59.4 (2008): 903-907.
+.. [4] Huang, Feng, et al. "High‐pass GRAPPA: An image support
+       reduction technique for improved partially parallel
+       imaging." Magnetic Resonance in Medicine: An Official
+       Journal of the International Society for Magnetic
+       Resonance in Medicine 59.3 (2008): 642-649.
+.. [5] Park, Jaeseok, et al. "Artifact and noise suppression in
+       GRAPPA imaging using improved k‐space coil calibration and
+       variable density sampling." Magnetic Resonance in
+       Medicine: An Official Journal of the International Society
+       for Magnetic Resonance in Medicine 53.1 (2005): 186-193.
+.. [6] Breuer, Felix A., et al. "Dynamic autocalibrated parallel
+       imaging using temporal GRAPPA (TGRAPPA)." Magnetic
+       Resonance in Medicine: An Official Journal of the
+       International Society for Magnetic Resonance in Medicine
+       53.4 (2005): 981-985.
+.. [7] Setsompop, Kawin, et al. "Blipped‐controlled aliasing in
+       parallel imaging for simultaneous multislice echo planar
+       imaging with reduced g‐factor penalty." Magnetic resonance
+       in medicine 67.5 (2012): 1210-1224.
+.. [8] Cauley, Stephen F., et al. "Interslice leakage artifact
+       reduction technique for simultaneous multislice
+       acquisitions." Magnetic resonance in medicine 72.1 (2014):
+       93-102.
