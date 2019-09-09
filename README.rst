@@ -7,14 +7,14 @@ available, so I decided to release this simple one.
 
 Included in the `pygrappa` module are the following:
 
-- [1]_ GRAPPA: `grappa()`
-- [2]_ VC-GRAPPA: `vcgrappa()`
-- [3]_ iGRAPPA: `igrappa()`
-- [4]_ hp-GRAPA: `hpgrappa()`
-- [5]_ Segmented-GRAPPA: `seggrappa()`
-- [6]_ TGRAPPA: `tgrappa()`
-- [7]_ Slice-GRAPPA: `slicegrappa()`
-- [8]_ Split-Slice-GRAPPA: `splitslicegrappa()`
+- GRAPPA [1]_: `grappa()`
+- VC-GRAPPA [2]_: `vcgrappa()`
+- iGRAPPA [3]_: `igrappa()`
+- hp-GRAPPA [4]_: `hpgrappa()`
+- Segmented-GRAPPA [5]_: `seggrappa()`
+- TGRAPPA [6]_: `tgrappa()`
+- Slice-GRAPPA [7]_: `slicegrappa()`
+- Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
 
 Installation
 ============
