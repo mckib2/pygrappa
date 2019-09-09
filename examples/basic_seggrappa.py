@@ -1,29 +1,11 @@
-'''Demonstrate how to implement Segmented GRAPPA.
-
-Notes
------
-A modified implementation of the method described in [1]_.
-
-Instead of separating the reconstructions of upper and lower kspaces
-by upper and lower ACS regions, I found it more convienent to do the
-entire reconstruction twice (one for each ACS region) and then
-average the results.
-
-References
-----------
-.. [1] Park, Jaeseok, et al. "Artifact and noise suppression in
-       GRAPPA imaging using improved k‐space coil calibration and
-       variable density sampling." Magnetic Resonance in
-       Medicine: An Official Journal of the International Society
-       for Magnetic Resonance in Medicine 53.1 (2005): 186-193.
-'''
+'''Demonstrate how to use Segmented GRAPPA.'''
 
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 from skimage.measure import compare_nrmse
 
-from pygrappa import cgrappa
+from pygrappa import cgrappa, seggrappa
 from utils import gaussian_csm
 
 if __name__ == '__main__':
@@ -49,10 +31,8 @@ if __name__ == '__main__':
     # Undersample kspace
     kspace[:, ::2, :] = 0
 
-    # Reconstruct segmented
-    res_upper = cgrappa(kspace, calib_upper)
-    res_lower = cgrappa(kspace, calib_lower)
-    res_seg = (res_upper + res_lower)/2
+    # Reconstruct using segmented GRAPPA with separate ACS regions
+    res_seg = seggrappa(kspace, [calib_lower, calib_upper])
 
     # Reconstruct using single calibration region at the center
     res_grappa = cgrappa(kspace, calib)
