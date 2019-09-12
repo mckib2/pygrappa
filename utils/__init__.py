@@ -1,3 +1,4 @@
 '''Bring functions to correct level for import.'''
 
-from .csm import gaussian_csm
+from .gaussian_csm import gaussian_csm
+from .disjoint_csm import disjoint_csm

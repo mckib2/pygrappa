@@ -11,3 +11,4 @@ from .vcgrappa import vcgrappa
 from .igrappa import igrappa
 from .hpgrappa import hpgrappa
 from .seggrappa import seggrappa
+from .grappaop import grappaop
