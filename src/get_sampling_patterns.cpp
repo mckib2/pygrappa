@@ -2,6 +2,7 @@
 #include <vector>
 #include <map>
 #include <climits>
+#include <stdio.h>
 
 /* get_sampling_patterns:
     Given binary mask, find unique kernel-sized sampling patterns.
