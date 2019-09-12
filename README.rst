@@ -2,8 +2,9 @@ About
 =====
 
 GRAPPA is a popular parallel imaging reconstruction algorithm.
-Unfortunately there aren't a lot of easy to use Python implementations
-available, so I decided to release this simple one.
+Unfortunately there aren't a lot of easy to use Python
+implementations of it or its many variants available, so I decided to
+release this simple package.
 
 Included in the `pygrappa` module are the following:
 
@@ -15,6 +16,7 @@ Included in the `pygrappa` module are the following:
 - TGRAPPA [6]_: `tgrappa()`
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
+- GRAPPA operator [9]_: `grappaop()`
 
 Installation
 ============
@@ -51,9 +53,11 @@ See the `examples` module.  It has several scripts showing basic
 usage.  Docstrings are also a great resource -- check them out for all
 possible arguments and usage info.
 
-`pygrappa.grappa()` is called with undersampled k-space data and
-calibration data (usually a fully sampled portion of the center of
-k-space).  The unsampled points in k-space should be exactly 0:
+`pygrappa.grappa()` implements a GRAPPA ([1]_) for arbitrarily
+sampled Cartesian datasets.  It is called with undersampled k-space
+data and calibration data (usually a fully sampled portion of the
+center of k-space).  The unsampled points in k-space should be
+exactly 0:
 
 .. code-block:: python
 
@@ -88,17 +92,16 @@ called like so:
 
 This function uses much of the same code as the Python grappa()
 implementation, but has certain parts written in C++ and all compiled
-using Cython.  It runs about twice as fast but is considered
-experimental.  It will probably become the default GRAPPA
-implementation in future releases.
+using Cython.  It runs about twice as fast.  It will probably become
+the default GRAPPA implementation in future releases.
 
-`vcgrappa()` is a VC-GRAPPA implementation that simply constructs
-conjugate virtual coils, appends them to the coil dimension, and
-passes everything through to `cgrappa()`.  The function signature
-is identical to `pygrappa.grappa()`.
+`vcgrappa()` is a VC-GRAPPA ([2]_) implementation that simply
+constructs conjugate virtual coils, appends them to the coil
+dimension, and passes everything through to `cgrappa()`.  The
+function signature is identical to `pygrappa.grappa()`.
 
-`igrappa()` is an Iterative-GRAPPA implementation that can be called
-as follows:
+`igrappa()` is an Iterative-GRAPPA ([3]_) implementation that can be
+called as follows:
 
 .. code-block:: python
 
@@ -112,19 +115,20 @@ as follows:
 
 `igrappa()` makes calls to `cgrappa()` on the back end.
 
-`hpgrappa()` implements the High-Pass GRAPPA (hp-GRAPPA) algorithm.
-It requires FOV to construct an appropriate high pass filter.  It can
-be called as:
+`hpgrappa()` implements the High-Pass GRAPPA (hp-GRAPPA) algorithm
+([4]_). It requires FOV to construct an appropriate high pass filter.
+It can be called as:
 
 .. code-block:: python
 
     from pygrappa import hpgrappa
     res = hpgrappa(kspace, calib, fov=(FOV_x, FOV_y))
 
-`seggrappa()` is a generalized Segmented GRAPPA implementation.  It
-is supplied a list of calibration regions, `cgrappa` is run for each,
-and all the reconstructions are averaged together to yield the final
-image.  It can be called with all the normal `cgrappa` arguments:
+`seggrappa()` is a generalized Segmented GRAPPA implementation ([5]_).
+It is supplied a list of calibration regions, `cgrappa` is run for
+each, and all the reconstructions are averaged together to yield the
+final image.  It can be called with all the normal `cgrappa`
+arguments:
 
 .. code-block:: python
 
@@ -134,7 +138,8 @@ image.  It can be called with all the normal `cgrappa` arguments:
     cx2, cy2, ncoil = calib2.shape[:]
     res = seggrappa(kspace, [calib1, calib2])
 
-TGRAPPA does not require calibration data and can be called as:
+TGRAPPA is a Temporal GRAPPA implementation ([6]_) and does not
+require calibration data.  It can be called as:
 
 .. code-block:: python
 
@@ -151,8 +156,8 @@ enough time frames have been consumed to create an entire ACS, GRAPPA
 will be run.  TGRAPPA uses the `cgrappa` implementation for its
 speed.
 
-`slicegrappa()` is a Slice-GRAPPA implementation that can be called
-like:
+`slicegrappa()` is a Slice-GRAPPA ([7]_) implementation that can be
+called like:
 
 .. code-block:: python
 
@@ -173,7 +178,7 @@ S by simulating the SMS acquisition, i.e., S = sum(calib, slice_axis).
 i.e., S = kspace[1st time frame].  The result is an array containing
 all target slices for all time frames in `kspace`.
 
-Similarly, Split-Slice-GRAPPA can be called like so:
+Similarly, Split-Slice-GRAPPA ([8]_) can be called like so:
 
 .. code-block:: python
 
@@ -188,6 +193,16 @@ Similarly, Split-Slice-GRAPPA can be called like so:
     # like this:
     from pygrappa import slicegrappa
     res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
+
+`grappaop` returns two unit GRAPPA operators ([9]_, [10]_) of a 2D
+calibration dataset:
+
+.. code-block:: python
+
+    from pygrappa import grappaop
+
+    sx, sy, ncoils = calib.shape[:]
+    Gx, Gy = grappaop(calib, coil_axis=-1)
 
 References
 ==========
@@ -229,3 +244,10 @@ References
        reduction technique for simultaneous multislice
        acquisitions." Magnetic resonance in medicine 72.1 (2014):
        93-102.
+.. [9] Griswold, Mark A., et al. "Parallel magnetic resonance
+       imaging using the GRAPPA operator formalism." Magnetic
+       resonance in medicine 54.6 (2005): 1553-1556.
+.. [10] Blaimer, Martin, et al. "2D‐GRAPPA‐operator for faster 3D
+        parallel MRI." Magnetic Resonance in Medicine: An Official
+        Journal of the International Society for Magnetic Resonance
+        in Medicine 56.6 (2006): 1359-1364.
