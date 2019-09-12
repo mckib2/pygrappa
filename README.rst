@@ -53,7 +53,7 @@ See the `examples` module.  It has several scripts showing basic
 usage.  Docstrings are also a great resource -- check them out for all
 possible arguments and usage info.
 
-`pygrappa.grappa()` implements a GRAPPA ([1]_) for arbitrarily
+`pygrappa.grappa()` implements GRAPPA ([1]_) for arbitrarily
 sampled Cartesian datasets.  It is called with undersampled k-space
 data and calibration data (usually a fully sampled portion of the
 center of k-space).  The unsampled points in k-space should be
@@ -63,9 +63,18 @@ exactly 0:
 
     from pygrappa import grappa
 
+    # These next two lines are to show you the sizes of kspace and
+    # calib -- you need to bring your own data.  It doesn't matter
+    # where the coil dimension is, you just need to let 'grappa' know
+    # when you call it by providing the 'coil_axis' argument
     sx, sy, ncoils = kspace.shape[:]
     cx, cy, ncoils = calib.shape[:]
+
+    # Here's the actual reconstruction
     res = grappa(kspace, calib, kernel_size=(5, 5), coil_axis=-1)
+
+    # Here's the resulting shape of the reconstruction.  The coil
+    # axis will end up in the same place you provided it in
     sx, sy, ncoils = res.shape[:]
 
 If calibration data is in the k-space data, simply extract it (make
@@ -78,8 +87,11 @@ to the original k-space data):
 
     sx, sy, ncoils = kspace.shape[:] # center 20 lines are ACS
     ctr, pd = int(sy/2), 10
-    calib = kspace[:, ctr-pd:ctr+pad, :].copy()
-    res = grappa(kspace, calib, kernel_size=(5, 5), coil_axis=-1)
+    calib = kspace[:, ctr-pd:ctr+pad, :].copy() # call copy()!
+
+    # coil_axis=-1 is default, so if coil dimension is last we don't
+    # need to explicity provide it
+    res = grappa(kspace, calib, kernel_size=(5, 5))
     sx, sy, ncoils = res.shape[:]
 
 A very similar GRAPPA implementation with the same interface can be
@@ -194,8 +206,8 @@ Similarly, Split-Slice-GRAPPA ([8]_) can be called like so:
     from pygrappa import slicegrappa
     res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
 
-`grappaop` returns two unit GRAPPA operators ([9]_, [10]_) of a 2D
-calibration dataset:
+`grappaop` returns two unit GRAPPA operators ([9]_, [10]_) found from
+a 2D calibration dataset:
 
 .. code-block:: python
 
@@ -203,6 +215,9 @@ calibration dataset:
 
     sx, sy, ncoils = calib.shape[:]
     Gx, Gy = grappaop(calib, coil_axis=-1)
+
+See the examples to see how to use the GRAPPA operators to
+reconstruct datasets.
 
 References
 ==========
