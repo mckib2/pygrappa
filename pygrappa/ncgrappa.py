@@ -3,7 +3,7 @@
 import numpy as np
 from scipy.spatial import cKDTree # pylint: disable=E0611
 
-def ncgrappa(kx, ky, k, calib, kernel_size, coil_axis=-1):
+def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis=-1):
     '''Non-Cartesian GRAPPA.
 
     Parameters
@@ -17,8 +17,7 @@ def ncgrappa(kx, ky, k, calib, kernel_size, coil_axis=-1):
         coil dimension will be assumed to be last unless coil_axis=0.
         Unsampled points should be exactly 0.
     calib : array_like
-        Cartesian calibration data, usually the fully sampled center
-        of kspace.
+
     kernel_size : float
         Radius of kernel.
     coil_axis : int, optional
@@ -38,20 +37,78 @@ def ncgrappa(kx, ky, k, calib, kernel_size, coil_axis=-1):
 
     # Assume k has coil at end unless user says it's upfront.  We
     # want to assume that coils are in the back of calib and k:
-    calib = np.moveaxis(calib, coil_axis, -1)
-    if coil_axis == 0:
-        k = np.moveaxis(k, coil_axis, -1)
+    # calib = np.moveaxis(calib, coil_axis, -1)
+    # if coil_axis == 0:
+    #     k = np.moveaxis(k, coil_axis, -1)
 
-    # Find all unsampled points
-    idx = np.argwhere(np.abs(k[:, 0]) == 0)
-    print(idx)
+    # Find all sampled and unsampled points
+    mask = np.abs(k[:, 0]) > 0
+    idx_unsampled = np.argwhere(~mask).squeeze()
+    idx_sampled = np.argwhere(mask).squeeze()
 
-    # Identify all the constellations for calibration
-    kxy = np.concatenate((kx[None, :], ky[None, :]), axis=0)
-    kdtree = cKDTree(kxy)
-    print(kdtree)
+    # Identify all the constellations for calibration using the
+    # sampled kspace points
+    kxy = np.concatenate((kx[:, None], ky[:, None]), axis=-1)
+    kdtree = cKDTree(kxy[idx_sampled, :])
 
     # For each un‐sampled k‐space point, query the kd‐tree with the
     # prescribed distance (i.e., GRAPPA kernel size)
-    # constellations = kdtree.query_ball_point(
-    #     kxy[idx, ...], r=kernel_size)
+    constellations = kdtree.query_ball_point(
+        kxy[idx_unsampled, :], r=kernel_size)
+
+    # # Look at one to make sure we're doing what we think we're doing
+    # import matplotlib.pyplot as plt
+    # c = 500
+    # plt.scatter(
+    #     kx[idx_sampled][constellations[c]],
+    #     ky[idx_sampled][constellations[c]])
+    # plt.plot(kx[idx_unsampled[c]], ky[idx_unsampled[c]], 'r.')
+    # plt.show()
+
+    # Make an interpolator for the calibration data
+    from scipy.interpolate import CloughTocher2DInterpolator
+    cxy = np.concatenate((cx[:, None], cy[:, None]), axis=-1)
+    f = CloughTocher2DInterpolator(cxy, calib)
+
+    # For each constellation, let's train weights and fill in a hole
+    for ii, con in enumerate(constellations):
+        Txy = kxy[idx_unsampled[ii]]
+        Sxy = kxy[idx_sampled][con]
+        Pxy = Sxy - Txy
+
+        S = f(Pxy)
+        T = f([0, 0])
+        print(S.shape, T.shape)
+
+        ShS = S.conj().T @ S
+        ShT = S.conj().T @ T
+        W = np.linalg.solve(ShS, ShT)
+        print(W.shape)
+        assert False
+
+    # # Now we need to find all the unique constellations
+    # P = dict()
+    # for ii, con in enumerate(constellations):
+    #     T = kxy[idx_unsampled[ii]]
+    #     S = kxy[idx_sampled][con]
+    #
+    #     # Move everything to be relative to the target
+    #     P0 = S - T
+
+
+
+    #     # Try to find the existing constellation
+    #     key = P0.tostring()
+    #     if key in P:
+    #         P[key].append(ii)
+    #     else:
+    #         P[key] = [ii]
+    #
+    #     if ii == 500:
+    #         import matplotlib.pyplot as plt
+    #         plt.scatter(S[:, 0], S[:, 1])
+    #         plt.plot(T[0], T[1], 'r.')
+    #         plt.show()
+    #
+    # keys = list(P.keys())
+    # print(len(keys))
