@@ -71,19 +71,23 @@ def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis=-1):
     f = CloughTocher2DInterpolator(cxy, calib)
 
     # For each constellation, let's train weights and fill in a hole
+    T = f([0, 0]).squeeze()
     for ii, con in enumerate(constellations):
         Txy = kxy[idx_unsampled[ii]]
         Sxy = kxy[idx_sampled][con]
         Pxy = Sxy - Txy
 
         S = f(Pxy)
-        T = f([0, 0])
         print(S.shape, T.shape)
 
-        ShS = S.conj().T @ S
-        ShT = S.conj().T @ T
-        W = np.linalg.solve(ShS, ShT)
-        print(W.shape)
+        # T = W S
+        # (8) = (1, 24) @ (24, 8)
+        TSh = T @ S.conj().T
+        SSh = S @ S.conj().T
+        W = np.linalg.solve(SSh, TSh)
+        print(T)
+        print(W @ S)
+
         assert False
 
     # # Now we need to find all the unique constellations
