@@ -16,10 +16,16 @@ from Cython.Build import cythonize
 
 import numpy as np
 
-extensions = Extension(
-    'pygrappa.cgrappa',
-    ['src/cgrappa.pyx', 'src/get_sampling_patterns.cpp'],
-    include_dirs=['src/', np.get_include()])
+extensions = [
+    Extension(
+        'pygrappa.cgrappa',
+        ['src/cgrappa.pyx', 'src/get_sampling_patterns.cpp'],
+        include_dirs=['src/', np.get_include()]),
+    Extension(
+        'pygrappa.idft2d',
+        ['src/dft.pyx'],
+        include_dirs=[np.get_include()])
+]
 
 setup(
     ext_modules=cythonize(extensions),
