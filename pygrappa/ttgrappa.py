@@ -61,9 +61,6 @@ def ttgrappa(
     calib = np.moveaxis(calib, (coil_axis, time_axis), (-1, -2))
     _sx, nt, _nc = calib.shape[:]
 
-    # For through k-space calibration, we'll need to find all
-    # geometries within a certain radius
-
     # Find target locations
     mask = np.abs(kspace[..., 0]) > 0
     sampled = np.argwhere(mask).squeeze()
@@ -75,7 +72,7 @@ def ttgrappa(
     t0 = time()
     kdtree = cKDTree(cxy)
     _, idx = kdtree.query(kxy[holes, :], k=kernel_size+1)
-    idx = idx[..., 1:] # first will always be the target, remove it
+    idx = idx[..., 1:].squeeze() # first will always be the target
     print('Took %g seconds to find neighbors' % (time() - t0))
 
     # Get targets, sources, and weights.  Make sure to collapse the
@@ -83,6 +80,7 @@ def ttgrappa(
     t0 = time()
     S = calib[idx, ...].reshape((idx.shape[0]*nt, -1))
     T = calib[holes, ...].reshape((holes.shape[0]*nt, -1))
+
     ShS = S.conj().T @ S
     ShT = S.conj().T @ T
     lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
