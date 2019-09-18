@@ -21,10 +21,10 @@ extensions = [
         'pygrappa.cgrappa',
         ['src/cgrappa.pyx', 'src/get_sampling_patterns.cpp'],
         include_dirs=['src/', np.get_include()]),
-    Extension(
-        'pygrappa.idft2d',
-        ['src/dft.pyx'],
-        include_dirs=[np.get_include()])
+    # Extension(
+    #     'pygrappa.idft2d',
+    #     ['src/dft.pyx'],
+    #     include_dirs=[np.get_include()])
 ]
 
 setup(
