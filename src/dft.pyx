@@ -21,21 +21,18 @@ def idft2d(kx, ky, k, M, N):
         Size of reconstructed image.
     '''
 
-    # Normalize spatial frequencies
-    kx = kx/(2*np.max(np.abs(kx)))
-    ky = ky/(2*np.max(np.abs(ky)))
-    kx = kx + 1
-    ky = ky + 1
+    # Normalize spatial frequencies to be in [0, 1]
+    # kx0 = kx/(2*np.max(np.abs(kx)))
+    # ky0 = ky/(2*np.max(np.abs(ky)))
+    # kx0 = kx + 1
+    # ky0 = ky + 1
 
     F = np.zeros((M, N), dtype='complex')
     yy, xx = np.meshgrid(
-        np.linspace(-M/2, M/2, M),
-        np.linspace(-N/2, N/2, N))
+        np.linspace(-np.pi, np.pi, M),
+        np.linspace(-np.pi, np.pi, N))
 
     for ii in range(k.size):
-        exp = np.exp(1j*2*np.pi*(kx[ii]*xx + ky[ii]*yy))
+        exp = np.exp(1j*(kx[ii]*xx + ky[ii]*yy))
         F += exp*k[ii]
-
-    # I think we need some density compensation...  Voronoi weights?
-
-    return F
+    return F/kx.size
