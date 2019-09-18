@@ -24,23 +24,25 @@ References
        (TOMS) 36.4 (2009): 19.
 '''
 
+from time import time
+
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import griddata
 from phantominator import kspace_shepp_logan, radial
-
 try:
     from bart import bart # pylint: disable=E0401
     FOUND_BART = True
 except ModuleNotFoundError:
     FOUND_BART = False
 
+from utils import gridder
+
 if __name__ == '__main__':
 
     # Demo params
     sx, spokes, nc = 128, 128, 4
-    of = 2 # oversampling factor for gridding
-    method = 'linear' # interpolation strategy, see scipy.griddata()
+    os = 2 # oversampling factor for gridding
+    method = 'linear' # interpolation strategy for gridding
 
     # Helper functions for sum-of-squares coil combine and ifft2
     sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
@@ -49,12 +51,12 @@ if __name__ == '__main__':
 
     # If you have BART installed, you could replicate this demo with
     # the following:
-    # Make a radial trajectory, we'll have to mess with it later to
-    # get it to look like pygrappa usually assumes it is
     if FOUND_BART:
+        # Make a radial trajectory, we'll have to mess with it later
+        # to get it to look like pygrappa usually assumes it is
         traj = bart(1, 'traj -r -x %d -y %d' % (sx, spokes))
 
-        # Define a wrapper function for BART's nufft function,
+        # Make a wrapper function for BART's nufft function,
         # assumes 2D
         bart_nufft = lambda x0: bart(
             1, 'nufft -i -t -d %d:%d:1' % (sx, sx),
@@ -68,29 +70,34 @@ if __name__ == '__main__':
         bart_ky = traj[1, ...].real.flatten()
         bart_k = kspace.reshape((-1, nc))
 
+        # Do the thing
+        t0 = time()
+        bart_imspace = bart_nufft(bart_k)
+        bart_time = time() - t0
+
         # Check it out
         plt.figure()
-        plt.imshow(sos(bart_nufft(bart_k)))
+        plt.imshow(sos(bart_imspace))
         plt.title('BART NUFFT')
+        plt.xlabel('Recon: %g sec' % bart_time)
         plt.show(block=False)
 
 
     # The phantominator module also supports arbitrary kspace
-    # sampling:
+    # sampling for a single coil:
     kx, ky = radial(sx, spokes)
-    k = kspace_shepp_logan(kx, ky)[..., None]
+    k = kspace_shepp_logan(kx, ky)
+    k = np.tile(k[:, None], (1, nc)) # "multicoil"
 
-    # We will prefer a gridding approach to keep things simple:
-    pad = int(sx*(of - 1)/2)
-    xx, yy = np.meshgrid(
-        np.linspace(np.min(kx), np.max(kx), sx*of),
-        np.linspace(np.min(ky), np.max(ky), sx*of))
-    grid_kspace = griddata((kx, ky), k, (xx, yy), method=method)
-    grid_imspace = ifft(grid_kspace)[pad:-pad, pad:-pad, :]
-    grid_imspace = np.flipud(grid_imspace) # match BART orientation
+    # We will prefer a gridding approach to keep things simple.  The
+    # helper function gridder wraps scipy.interpolate.griddata():
+    t0 = time()
+    grid_imspace = gridder(kx, ky, k, sx, sx, os=os, method=method)
+    grid_time = time() - t0
 
     # Take a gander
     plt.figure()
-    plt.imshow(sos(grid_imspace))
-    plt.title('scipy.griddata')
+    plt.imshow(np.rot90(sos(grid_imspace)))
+    plt.title('scipy.interpolate.griddata')
+    plt.xlabel('Recon: %g sec' % grid_time)
     plt.show()
