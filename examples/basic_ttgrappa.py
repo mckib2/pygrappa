@@ -2,27 +2,50 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from phantominator import radial
+from scipy.interpolate import griddata
 
 from bart import bart # pylint: disable=E0401
 
 from pygrappa import ttgrappa
 
+def gridder(kx, ky, k, os=2, method='linear'):
+    '''Helper function to grid non-Cartesian data.'''
+
+    ifft = lambda x0: np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+        np.nan_to_num(x0), axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
+
+    pad = int(sx*(os - 1)/2)
+    yy, xx = np.meshgrid(
+        np.linspace(np.min(kx), np.max(kx), sx*os),
+        np.linspace(np.min(ky), np.max(ky), sx*os))
+    grid_kspace = griddata((kx, ky), k, (xx, yy), method=method)
+    return ifft(grid_kspace)[pad:-pad, pad:-pad, :]
+
 if __name__ == '__main__':
 
-    # Get phantom from BART since phantominator doesn't have
-    # arbitrary sampling yet...
+    # Define a radial trajectory
     sx, spokes, nc = 128, 128, 8
-    traj = bart(1, 'traj -r -x %d -y %d' % (sx, spokes))
-    nufft = lambda x0: bart(
-        1, 'nufft -i -t -d %d:%d:1' % (sx, sx),
-        traj, x0.reshape((1, sx, spokes, nc))).squeeze()
+    kx, ky = radial(sx, spokes)
+
+    # We need to reorder the samples like this for easier
+    # undersampling...
+    kx = np.reshape(kx, (sx, spokes)).flatten('F')
+    ky = np.reshape(ky, (sx, spokes)).flatten('F')
+    kxy = np.concatenate((kx[:, None], ky[:, None]), axis=1)
+
+    # Make it look like BART trajectory so we can get samples...
+    # traj = bart(1, 'traj -r -x %d -y %d' % (sx, spokes))
+    traj = np.concatenate((
+        kx.reshape((1, sx, spokes)),
+        ky.reshape((1, sx, spokes)),
+        np.zeros((1, sx, spokes))), axis=0)
+
+    # Get phantom from BART since phantominator doesn't have
+    # arbitrary sampling for multicoil Shepp-Logan yet...
     kspace = bart(1, 'phantom -k -s %d -t' % nc, traj)
 
     # Get the trajectory and kspace samples
-    kx = traj[0, ...].real.flatten()
-    ky = traj[1, ...].real.flatten()
-    kx /= np.max(np.abs(kx))
-    ky /= np.max(np.abs(ky))
     k = kspace.reshape((-1, nc))
 
     # Get some calibration data
@@ -42,14 +65,14 @@ if __name__ == '__main__':
     # Let's take a look
     sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
     plt.subplot(1, 3, 1)
-    plt.imshow(sos(nufft(k)))
+    plt.imshow(sos(gridder(kx, ky, k)))
     plt.title('Undersampled')
 
     plt.subplot(1, 3, 2)
-    plt.imshow(sos(nufft(kspace)))
+    plt.imshow(sos(gridder(kx, ky, kspace.reshape((-1, nc)))))
     plt.title('True')
 
     plt.subplot(1, 3, 3)
-    plt.imshow(sos(nufft(res)))
+    plt.imshow(sos(gridder(kx, ky, res)))
     plt.title('Through-time GRAPPA')
     plt.show()
