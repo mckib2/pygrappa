@@ -3,24 +3,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import radial
-from scipy.interpolate import griddata
-
 from bart import bart # pylint: disable=E0401
 
 from pygrappa import ttgrappa
-
-def gridder(kx, ky, k, os=2, method='linear'):
-    '''Helper function to grid non-Cartesian data.'''
-
-    ifft = lambda x0: np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        np.nan_to_num(x0), axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
-
-    pad = int(sx*(os - 1)/2)
-    yy, xx = np.meshgrid(
-        np.linspace(np.min(kx), np.max(kx), sx*os),
-        np.linspace(np.min(ky), np.max(ky), sx*os))
-    grid_kspace = griddata((kx, ky), k, (xx, yy), method=method)
-    return ifft(grid_kspace)[pad:-pad, pad:-pad, :]
+from utils import gridder
 
 if __name__ == '__main__':
 
@@ -64,15 +50,16 @@ if __name__ == '__main__':
 
     # Let's take a look
     sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+    gridder0 = lambda x0: gridder(kx, ky, x0, sx=sx, sy=sx)
     plt.subplot(1, 3, 1)
-    plt.imshow(sos(gridder(kx, ky, k)))
+    plt.imshow(sos(gridder0(k)))
     plt.title('Undersampled')
 
     plt.subplot(1, 3, 2)
-    plt.imshow(sos(gridder(kx, ky, kspace.reshape((-1, nc)))))
+    plt.imshow(sos(gridder0(kspace.reshape((-1, nc)))))
     plt.title('True')
 
     plt.subplot(1, 3, 3)
-    plt.imshow(sos(gridder(kx, ky, res)))
+    plt.imshow(sos(gridder0(res)))
     plt.title('Through-time GRAPPA')
     plt.show()
