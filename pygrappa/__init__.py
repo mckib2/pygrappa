@@ -2,7 +2,6 @@
 
 # GRAPPA
 from .cgrappa import cgrappa # pylint: disable=E0611
-from .idft2d import idft2d # pylint: disable=E0611
 from .lustig_grappa import lustig_grappa
 from .grappa import grappa
 from .tgrappa import tgrappa
