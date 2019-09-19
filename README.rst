@@ -17,6 +17,7 @@ Included in the `pygrappa` module are the following:
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
 - GRAPPA operator [9]_: `grappaop()`
+- Through-time GRAPPA [11]_: `ttgrappa()`
 
 Installation
 ============
@@ -219,6 +220,26 @@ a 2D calibration dataset:
 See the examples to see how to use the GRAPPA operators to
 reconstruct datasets.
 
+`ttgrappa` implements the Through-time GRAPPA algorithm.  It accepts
+arbitrary k-space sampling locations and measurements along with
+corresponding fully sampled calibration data.  The kernel is
+specified by the number of points desired, not a tuple as is usually
+the case:
+
+.. code-block:: python
+
+    from pygrappa import ttgrappa
+
+    # kx, ky are both 1D arrays describing the points (kx, ky)
+    # sampled in kspace.  kspace is a matrix with two dimensions:
+    # (meas., coil) corresponding to the measurements takes at each
+    # (kx, ky) from each coil.  (cx, cy) and calib are similarly
+    # supplied.  kernel_size is the numbe of nearest neighbors used
+    # for the least squares fit.  25 corresponds to a kernel size of
+    # (5, 5) for Cartesian GRAPPA:
+
+    res = ttgrappa(kx, ky, kspace, cx, cy, calib, kernel_size=25)
+
 References
 ==========
 .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
@@ -266,3 +287,6 @@ References
         parallel MRI." Magnetic Resonance in Medicine: An Official
         Journal of the International Society for Magnetic Resonance
         in Medicine 56.6 (2006): 1359-1364.
+.. [11] Seiberlich, Nicole, et al. "Improved radial GRAPPA
+        calibration for real‐time free‐breathing cardiac imaging."
+        Magnetic resonance in medicine 65.2 (2011): 492-505.

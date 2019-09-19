@@ -12,3 +12,5 @@ from .igrappa import igrappa
 from .hpgrappa import hpgrappa
 from .seggrappa import seggrappa
 from .grappaop import grappaop
+from .ncgrappa import ncgrappa
+from .ttgrappa import ttgrappa
