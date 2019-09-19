@@ -36,6 +36,11 @@ def ttgrappa(
     lamda : float, optional
         Tikhonov regularization for the kernel calibration.
 
+    Returns
+    -------
+    res : array_like
+        The reconstructed measurements with the same size as kspace.
+
     Notes
     -----
     Implements the through-time GRAPPA algorithm for non-Cartesian
