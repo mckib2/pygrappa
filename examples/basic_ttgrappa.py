@@ -2,47 +2,36 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from phantominator import radial
-from bart import bart # pylint: disable=E0401
+from phantominator import radial, kspace_shepp_logan
 
 from pygrappa import ttgrappa
 from utils import gridder
 
 if __name__ == '__main__':
 
-    # Define a radial trajectory
+    # Simulate a radial trajectory
     sx, spokes, nc = 128, 128, 8
     kx, ky = radial(sx, spokes)
 
-    # We need to reorder the samples like this for easier
-    # undersampling...
+    # We reorder the samples like this for easier undersampling later
     kx = np.reshape(kx, (sx, spokes)).flatten('F')
     ky = np.reshape(ky, (sx, spokes)).flatten('F')
-    kxy = np.concatenate((kx[:, None], ky[:, None]), axis=1)
 
-    # Make it look like BART trajectory so we can get samples...
-    # traj = bart(1, 'traj -r -x %d -y %d' % (sx, spokes))
-    traj = np.concatenate((
-        kx.reshape((1, sx, spokes)),
-        ky.reshape((1, sx, spokes)),
-        np.zeros((1, sx, spokes))), axis=0)
+    # Sample Shepp-Logan at points (kx, ky) with nc coils:
+    kspace = kspace_shepp_logan(kx, ky, ncoil=nc)
+    k = kspace.copy()
 
-    # Get phantom from BART since phantominator doesn't have
-    # arbitrary sampling for multicoil Shepp-Logan yet...
-    kspace = bart(1, 'phantom -k -s %d -t' % nc, traj)
-
-    # Get the trajectory and kspace samples
-    k = kspace.reshape((-1, nc))
-
-    # Get some calibration data
+    # Get some calibration data -- ideally we would want to simulate
+    # something other than the image we're going to reconstruct, but
+    # since this is just proof of concept, we'll go ahead
     cx = kx.copy()
     cy = ky.copy()
     calib = k.copy()
     # calib = np.tile(calib[:, None, :], (1, 2, 1))
-    calib = calib[:, None, :]
+    calib = calib[:, None, :] # middle axis is the through-time dim
 
-    # Undersample
-    k[::4] = 0
+    # Undersample: R=2
+    k[::2] = 0
 
     # Reconstruct with Non-Cartesian GRAPPA
     res = ttgrappa(
