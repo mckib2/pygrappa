@@ -220,11 +220,11 @@ a 2D calibration dataset:
 See the examples to see how to use the GRAPPA operators to
 reconstruct datasets.
 
-`ttgrappa` implements the Through-time GRAPPA algorithm.  It accepts
-arbitrary k-space sampling locations and measurements along with
-corresponding fully sampled calibration data.  The kernel is
-specified by the number of points desired, not a tuple as is usually
-the case:
+`ttgrappa` implements the Through-time GRAPPA algorithm ([11]_).
+It accepts arbitrary k-space sampling locations and measurements
+along with corresponding fully sampled calibration data.  The kernel
+is specified by the number of points desired, not a tuple as is
+usually the case:
 
 .. code-block:: python
 
@@ -234,7 +234,7 @@ the case:
     # sampled in kspace.  kspace is a matrix with two dimensions:
     # (meas., coil) corresponding to the measurements takes at each
     # (kx, ky) from each coil.  (cx, cy) and calib are similarly
-    # supplied.  kernel_size is the numbe of nearest neighbors used
+    # supplied.  kernel_size is the numbee of nearest neighbors used
     # for the least squares fit.  25 corresponds to a kernel size of
     # (5, 5) for Cartesian GRAPPA:
 
