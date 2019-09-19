@@ -40,7 +40,7 @@ from utils import gridder
 if __name__ == '__main__':
 
     # Demo params
-    sx, spokes, nc = 128, 128, 4
+    sx, spokes, nc = 128, 128, 8
     os = 2 # oversampling factor for gridding
     method = 'linear' # interpolation strategy for gridding
 
@@ -84,10 +84,9 @@ if __name__ == '__main__':
 
 
     # The phantominator module also supports arbitrary kspace
-    # sampling for a single coil:
+    # sampling for multiple coils:
     kx, ky = radial(sx, spokes)
-    k = kspace_shepp_logan(kx, ky)
-    k = np.tile(k[:, None], (1, nc)) # "multicoil"
+    k = kspace_shepp_logan(kx, ky, ncoil=nc)
 
     # We will prefer a gridding approach to keep things simple.  The
     # helper function gridder wraps scipy.interpolate.griddata():
@@ -97,7 +96,7 @@ if __name__ == '__main__':
 
     # Take a gander
     plt.figure()
-    plt.imshow(np.rot90(sos(grid_imspace)))
+    plt.imshow(sos(grid_imspace))
     plt.title('scipy.interpolate.griddata')
     plt.xlabel('Recon: %g sec' % grid_time)
     plt.show()
