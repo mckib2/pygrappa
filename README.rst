@@ -17,7 +17,7 @@ Included in the `pygrappa` module are the following:
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
 - GRAPPA operator [9]_: `grappaop()`
-- Through-time GRAPPA [11]_ [12]_: `ttgrappa()`
+- Through-time GRAPPA/PARS [11]_ [12]_: `ttgrappa()`
 
 Installation
 ============
