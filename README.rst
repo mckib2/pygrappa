@@ -47,12 +47,24 @@ Installation under a Unix-based platform should then be as easy as:
 
 See INSTALLATION.rst for more info on installing under Windows.
 
-Usage
-=====
+Examples
+========
 
 See the `examples` module.  It has several scripts showing basic
 usage.  Docstrings are also a great resource -- check them out for all
 possible arguments and usage info.
+
+You can run examples from the command line by calling them like this:
+
+.. code-block:: bash
+
+    python -m pygrappa.examples.[example-name]
+
+    # For example, if I wanted to try out TGRAPPA:
+    python -m pygrappa.examples.basic_tgrappa
+
+Usage
+=====
 
 `pygrappa.grappa()` implements GRAPPA ([1]_) for arbitrarily
 sampled Cartesian datasets.  It is called with undersampled k-space
