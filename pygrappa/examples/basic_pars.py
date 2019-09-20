@@ -3,6 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import radial, kspace_shepp_logan
+from phantominator.kspace import _kspace_ellipse_sens
+from phantominator.sens_coeffs import _sens_coeffs
 
 from pygrappa import ttgrappa # ttgrappa and PARS are basically same
 from utils import gridder
@@ -21,12 +23,16 @@ if __name__ == '__main__':
     kspace = kspace_shepp_logan(kx, ky, ncoil=nc)
     k = kspace.copy()
 
-    # Get some calibration data -- ideally we would want to simulate
-    # something other than the image we're going to reconstruct, but
-    # since this is just proof of concept, we'll go ahead
+    # Get some calibration data -- for PARS, we train using coil
+    # sensitivity maps.  Here's a hacky way to get those:
+    coeffs = []
+    for ii in range(nc):
+        coeffs.append(_sens_coeffs(ii))
+    coeffs = np.array(coeffs)
+    calib = _kspace_ellipse_sens(kx, ky, 0, 0, 1, .9, .9, 0, coeffs).T
+
     cx = kx.copy()
     cy = ky.copy()
-    calib = k.copy()
     calib = calib[:, None, :] # middle axis is the through-time dim
 
     # Undersample: R=2
@@ -34,7 +40,7 @@ if __name__ == '__main__':
 
     # Reconstruct with PARS by setting kernel_radius
     res = ttgrappa(
-        kx, ky, k, cx, cy, calib, kernel_radius=5, coil_axis=-1)
+        kx, ky, k, cx, cy, calib, kernel_radius=1.1)
 
     # Let's take a look
     sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
