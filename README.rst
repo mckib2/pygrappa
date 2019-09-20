@@ -17,7 +17,7 @@ Included in the `pygrappa` module are the following:
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
 - GRAPPA operator [9]_: `grappaop()`
-- Through-time GRAPPA [11]_: `ttgrappa()`
+- Through-time GRAPPA [11]_ [12]_: `ttgrappa()`
 
 Installation
 ============
@@ -232,7 +232,7 @@ a 2D calibration dataset:
 See the examples to see how to use the GRAPPA operators to
 reconstruct datasets.
 
-`ttgrappa` implements the Through-time GRAPPA algorithm ([11]_).
+`ttgrappa` implements the through-time GRAPPA algorithm ([11]_).
 It accepts arbitrary k-space sampling locations and measurements
 along with corresponding fully sampled calibration data.  The kernel
 is specified by the number of points desired, not a tuple as is
@@ -246,11 +246,31 @@ usually the case:
     # sampled in kspace.  kspace is a matrix with two dimensions:
     # (meas., coil) corresponding to the measurements takes at each
     # (kx, ky) from each coil.  (cx, cy) and calib are similarly
-    # supplied.  kernel_size is the numbee of nearest neighbors used
+    # supplied.  kernel_size is the number of nearest neighbors used
     # for the least squares fit.  25 corresponds to a kernel size of
     # (5, 5) for Cartesian GRAPPA:
 
     res = ttgrappa(kx, ky, kspace, cx, cy, calib, kernel_size=25)
+
+PARS [12]_ is almost nearly equivalent to through-time GRAPPA.  To
+call PARS, simply give `ttgrappa` the kernel_radius argument
+instead of kernel_size:
+
+.. code-block:: python
+
+    from pygrappa import ttgrappa
+
+    # Notice that we can specify that maximum number of source points
+    # in the kernel -- this will help with speed
+    res = ttgrappa(
+        kx, ky, kspace, cy, cy, calib, kernel_radius=5,
+        max_kernel_size=25, coil_axis=-1)
+
+In general, PARS is slower in this Python implementation because
+the size of the kernels change from target point to target point,
+so we have to loop over every single one.  It also seems to not do
+as well as through-time GRAPPA.  I have implemented it here for
+historical curiosity.
 
 References
 ==========
@@ -302,3 +322,9 @@ References
 .. [11] Seiberlich, Nicole, et al. "Improved radial GRAPPA
         calibration for real‐time free‐breathing cardiac imaging."
         Magnetic resonance in medicine 65.2 (2011): 492-505.
+.. [12] Yeh, Ernest N., et al. "3Parallel magnetic resonance
+        imaging with adaptive radius in k‐space (PARS):
+        Constrained image reconstruction using k‐space locality in
+        radiofrequency coil encoded data." Magnetic Resonance in
+        Medicine: An Official Journal of the International Society
+        for Magnetic Resonance in Medicine 53.6 (2005): 1383-1392.
