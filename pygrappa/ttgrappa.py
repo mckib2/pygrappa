@@ -125,7 +125,6 @@ def ttgrappa(
     # PARS:
     else:
         idx = kdtree.query_ball_point(kxy[holes, :], r=kernel_radius)
-        # idx = np.asarray(idx)
         print('Took %g seconds to find points in ball' % (
             time() - t0))
 
