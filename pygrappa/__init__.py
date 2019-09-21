@@ -14,3 +14,4 @@ from .seggrappa import seggrappa
 from .grappaop import grappaop
 from .ncgrappa import ncgrappa
 from .ttgrappa import ttgrappa
+from .pars import pars
