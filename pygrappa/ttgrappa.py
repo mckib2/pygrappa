@@ -127,7 +127,7 @@ def ttgrappa(
         res = np.zeros(kspace.shape, dtype=kspace.dtype)
         for ii, idx0 in tqdm(
                 enumerate(idx), total=len(idx), leave=False,
-                desc='PARS'):
+                desc='Through-Time GRAPPA'):
 
             # First element from the kdtree will be the target
             idx00 = idx0[1:]
