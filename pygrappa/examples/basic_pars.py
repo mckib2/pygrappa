@@ -17,7 +17,7 @@ if __name__ == '__main__':
     sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
 
     # Simulate a radial trajectory
-    sx, spokes, nc = 128, 128, 8
+    sx, spokes, nc = 256, 256, 8
     kx, ky = radial(sx, spokes)
 
     # We reorder the samples like this for easier undersampling later
@@ -42,25 +42,27 @@ if __name__ == '__main__':
         tx, ty, 0, 0, 1, .95, .95, 0, coeffs).T
     sens = ifft(calib.reshape((sx, sx, nc)))
 
+    # BART's phantom function has a better way to simulate coil
+    # sensitivity maps, see examples/bart_pars.py
+
     # Undersample: R=2
     k[::2] = 0
 
     # Reconstruct with PARS by setting kernel_radius
-    res = pars(kx, ky, k, sens, kernel_size=25)
+    res = pars(kx, ky, k, sens, kernel_radius=.8)
 
     # Let's take a look
     gridder0 = lambda x0: gridder(kx, ky, x0, sx=sx, sy=sx)
 
     plt.subplot(1, 3, 1)
+    plt.imshow(sos(gridder0(kspace.reshape((-1, nc)))))
+    plt.title('Truth')
+
+    plt.subplot(1, 3, 2)
     plt.imshow(sos(gridder0(k)))
     plt.title('Undersampled')
 
-    plt.subplot(1, 3, 2)
-    plt.imshow(sos(gridder0(kspace.reshape((-1, nc)))))
-    plt.title('True')
-
     plt.subplot(1, 3, 3)
-    plt.imshow(sos(ifft(res)))
-    # plt.imshow(sos(sens))
+    plt.imshow(sos(res))
     plt.title('PARS')
     plt.show()
