@@ -17,7 +17,8 @@ Included in the `pygrappa` module are the following:
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
 - GRAPPA operator [9]_: `grappaop()`
-- Through-time GRAPPA/PARS [11]_ [12]_: `ttgrappa()`
+- Through-time GRAPPA [11]_: `ttgrappa()`
+- PARS [12]_: `pars()`
 
 Installation
 ============
@@ -252,25 +253,24 @@ usually the case:
 
     res = ttgrappa(kx, ky, kspace, cx, cy, calib, kernel_size=25)
 
-PARS [12]_ is almost nearly equivalent to through-time GRAPPA.  To
-call PARS, simply give `ttgrappa` the kernel_radius argument
-instead of kernel_size:
+PARS [12]_ is an older parallel imaging algorithm, but it checks out.
+It can be called like so:
 
 .. code-block:: python
 
-    from pygrappa import ttgrappa
+    from pygrappa import pars
 
-    # Notice that we can specify that maximum number of source points
-    # in the kernel -- this will help with speed
-    res = ttgrappa(
-        kx, ky, kspace, cy, cy, calib, kernel_radius=5,
-        max_kernel_size=25, coil_axis=-1)
+    # Notice we provide the image domain coil sensitivity maps: sens
+    res = pars(kx, ky, kspace, sens, kernel_radius=.8, coil_axis=-1)
+
+    # You can use kernel_size instead of kernel_radius, but it seems
+    # that kernel_radius gives better reconstructions.
 
 In general, PARS is slower in this Python implementation because
 the size of the kernels change from target point to target point,
-so we have to loop over every single one.  It also seems to not do
-as well as through-time GRAPPA.  I have implemented it here for
-historical curiosity.
+so we have to loop over every single one.  Notice that `pars` returns
+the image domain reconstruction on the Cartesian grid, not
+interpolated k-space as most methods in this package do.
 
 References
 ==========
