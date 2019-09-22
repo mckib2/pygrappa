@@ -32,13 +32,13 @@ def ttgrappa(
         Number of points to use as sources for kernel training.  This
         many nearest neighbors to the targets will be chosen.
     kernel_radius : float, optional
-        The PARS radius.  If not None, this radius will be used
-        instead of kernel_size.  All sources within this radius of
-        the target will be chosen.  Has units same as kx, ky.
+        If not None, this radius will be used instead of kernel_size.
+        All sources within this radius of the target will be chosen.
+        Has units same as kx, ky.
     max_kernel_size : int, optional
-        Only for PARS.  Maximum number of points in ball.  If more
-        sources are found, then randomly choose max_kernel_size of
-        them.
+        Maximum number of points in ball when using kernel_radius.
+        If more sources are found, then randomly choose
+        max_kernel_size of them.
     coil_axis : int, optional
         Dimension of kspace and calib holding coil data.
     time_axis : int, optional
@@ -60,9 +60,6 @@ def ttgrappa(
     to [2]_.  This simplifies searches for kernel geometries and
     helps make this implementation trajectory agnostic.
 
-    If kernel_radius is provided, then this reconstruction is
-    equivalent to PARS [3]_.
-
     References
     ----------
     .. [1] Seiberlich, Nicole, et al. "Improved radial GRAPPA
@@ -72,12 +69,6 @@ def ttgrappa(
            2D/3D non‐Cartesian sampling trajectories with rapid
            calibration." Magnetic resonance in medicine 82.3 (2019):
            1101-1112.
-    .. [3] Yeh, Ernest N., et al. "3Parallel magnetic resonance
-           imaging with adaptive radius in k‐space (PARS):
-           Constrained image reconstruction using k‐space locality in
-           radiofrequency coil encoded data." Magnetic Resonance in
-           Medicine: An Official Journal of the International Society
-           for Magnetic Resonance in Medicine 53.6 (2005): 1383-1392.
     '''
 
     # Move da coils to da back and time_axis to the middle
@@ -122,7 +113,7 @@ def ttgrappa(
 
         print('Took %g seconds to apply weights' % (time()- t0))
 
-    # PARS:
+    # use kernel_radius
     else:
         idx = kdtree.query_ball_point(kxy[holes, :], r=kernel_radius)
         print('Took %g seconds to find points in ball' % (
