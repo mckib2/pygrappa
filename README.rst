@@ -16,7 +16,7 @@ Included in the `pygrappa` module are the following:
 - TGRAPPA [6]_: `tgrappa()`
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
-- GRAPPA operator [9]_: `grappaop()`
+- GRAPPA operator [9]_: `grappaop()`, `radialgrappaop()`
 - Through-time GRAPPA [11]_: `ttgrappa()`
 - PARS [12]_: `pars()`
 
@@ -221,7 +221,7 @@ Similarly, Split-Slice-GRAPPA ([8]_) can be called like so:
     res = slicegrappa(kspace, calib, kernel_size=(5, 5), split=True)
 
 `grappaop` returns two unit GRAPPA operators ([9]_, [10]_) found from
-a 2D calibration dataset:
+a 2D Cartesian calibration dataset:
 
 .. code-block:: python
 
@@ -232,6 +232,21 @@ a 2D calibration dataset:
 
 See the examples to see how to use the GRAPPA operators to
 reconstruct datasets.
+
+Similarly, `radialgrappaop()` returns two unit GRAPPA operators [13]_
+found from a radial calibration dataset:
+
+.. code-block:: python
+
+    from pygrappa import radialgrappaop
+    sx, nr = kx.shape[:] # sx: number of samples along each spoke
+    sx, nr = ky.shape[:] # nr: number of rays/spokes
+    sx, nr, nc = k.shape[:] # nc is number of coils
+
+    res = radialgrappaop(kx, ky, k)
+
+For large number of coils, warnings will appear about matrix
+logarithms and exponents, but I think it should be fine.
 
 `ttgrappa` implements the through-time GRAPPA algorithm ([11]_).
 It accepts arbitrary k-space sampling locations and measurements
@@ -328,3 +343,8 @@ References
         radiofrequency coil encoded data." Magnetic Resonance in
         Medicine: An Official Journal of the International Society
         for Magnetic Resonance in Medicine 53.6 (2005): 1383-1392.
+.. [13] Seiberlich, Nicole, et al. "Self‐calibrating GRAPPA
+        operator gridding for radial and spiral trajectories."
+        Magnetic Resonance in Medicine: An Official Journal of the
+        International Society for Magnetic Resonance in Medicine
+        59.4 (2008): 930-935.
