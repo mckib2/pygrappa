@@ -16,7 +16,7 @@ Included in the `pygrappa` module are the following:
 - TGRAPPA [6]_: `tgrappa()`
 - Slice-GRAPPA [7]_: `slicegrappa()`
 - Split-Slice-GRAPPA [8]_: `splitslicegrappa()`
-- GRAPPA operator [9]_: `grappaop()`, `radialgrappaop()`
+- GRAPPA operator [9]_, [13]_: `grappaop()`, `radialgrappaop()`
 - Through-time GRAPPA [11]_: `ttgrappa()`
 - PARS [12]_: `pars()`
 
@@ -243,7 +243,7 @@ found from a radial calibration dataset:
     sx, nr = ky.shape[:] # nr: number of rays/spokes
     sx, nr, nc = k.shape[:] # nc is number of coils
 
-    res = radialgrappaop(kx, ky, k)
+    Gx, Gy = radialgrappaop(kx, ky, k)
 
 For large number of coils, warnings will appear about matrix
 logarithms and exponents, but I think it should be fine.
