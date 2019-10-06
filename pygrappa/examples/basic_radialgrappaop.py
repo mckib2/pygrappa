@@ -11,14 +11,14 @@ from pygrappa import radialgrappaop, grog
 if __name__ == '__main__':
 
     # Radially sampled Shepp-Logan
-    N, spokes, nc = 128, 128, 8
+    N, spokes, nc = 288, 72, 8
     kx, ky = radial(N, spokes)
     kx = np.reshape(kx, (N, spokes), 'F').flatten()
     ky = np.reshape(ky, (N, spokes), 'F').flatten()
     k = kspace_shepp_logan(kx, ky, ncoil=nc)
 
     # Reduce dimensionality
-    nc = 3
+    nc = 4
     U, S, Vh = np.linalg.svd(k, full_matrices=False)
     k = U[:, :nc] @ np.diag(S[:nc]) @ Vh[:nc, :nc]
 
