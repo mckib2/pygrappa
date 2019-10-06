@@ -19,6 +19,7 @@ Included in the `pygrappa` module are the following:
 - GRAPPA operator [9]_, [13]_: `grappaop()`, `radialgrappaop()`
 - Through-time GRAPPA [11]_: `ttgrappa()`
 - PARS [12]_: `pars()`
+- GROG [14]_: `grog()`
 
 Installation
 ============
@@ -46,7 +47,8 @@ Installation under a Unix-based platform should then be as easy as:
 
     pip install pygrappa
 
-See INSTALLATION.rst for more info on installing under Windows.
+You will need a C/C++ compiler.  See INSTALLATION.rst for more info
+on installing under Windows.
 
 Examples
 ========
@@ -287,6 +289,18 @@ so we have to loop over every single one.  Notice that `pars` returns
 the image domain reconstruction on the Cartesian grid, not
 interpolated k-space as most methods in this package do.
 
+GROG [14]_ is called with trajectory information and unit GRAPPA
+operators Gx and Gy:
+
+.. code-block:: python
+
+    from pygrappa import grog
+
+    # (N, M) is the resolution of the desired Cartesian grid
+    res = grog(kx, ky, k, N, M, Gx, Gy)
+
+See `examples.basic_radialgrappaop.py` for usage example.
+
 References
 ==========
 .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
@@ -344,6 +358,11 @@ References
         Medicine: An Official Journal of the International Society
         for Magnetic Resonance in Medicine 53.6 (2005): 1383-1392.
 .. [13] Seiberlich, Nicole, et al. "Self‐calibrating GRAPPA
+        operator gridding for radial and spiral trajectories."
+        Magnetic Resonance in Medicine: An Official Journal of the
+        International Society for Magnetic Resonance in Medicine
+        59.4 (2008): 930-935.
+.. [14] Seiberlich, Nicole, et al. "Self‐calibrating GRAPPA
         operator gridding for radial and spiral trajectories."
         Magnetic Resonance in Medicine: An Official Journal of the
         International Society for Magnetic Resonance in Medicine
