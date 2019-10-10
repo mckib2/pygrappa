@@ -7,6 +7,8 @@ from scipy.cluster.vq import whiten
 import matplotlib.pyplot as plt
 from phantominator import radial, kspace_shepp_logan
 from skimage.measure import compare_nrmse, compare_ssim
+from skimage.morphology import convex_hull_image
+from skimage.filters import threshold_li
 
 from pygrappa import radialgrappaop, grog
 
@@ -45,7 +47,11 @@ if __name__ == '__main__':
     ky = ky.flatten()
     k = np.reshape(k, (-1, nc))
     t0 = time()
-    res = grog(kx, ky, k, N, N, Gx, Gy)
+    res, Dx, Dy = grog(kx, ky, k, N, N, Gx, Gy, ret_dicts=True)
+    print('Gridded in %g seconds' % (time() - t0))
+
+    t0 = time()
+    res = grog(kx, ky, k, N, N, Gx, Gy, Dx=Dx, Dy=Dy)
     print('Gridded in %g seconds' % (time() - t0))
 
     # Get the Cartesian grid
@@ -54,6 +60,7 @@ if __name__ == '__main__':
         np.linspace(np.min(ky), np.max(ky), N))
     tx, ty = tx.flatten(), ty.flatten()
     kc = kspace_shepp_logan(tx, ty, ncoil=nc)
+    kc = whiten(kc)
     outside = np.argwhere(
         np.sqrt(tx**2 + ty**2) > np.max(kx)).squeeze()
     kc[outside] = 0 # keep region of support same as radial
@@ -68,7 +75,8 @@ if __name__ == '__main__':
     plt.subplot(nx, ny, 1)
     true = sos(ifft(kc))
     true /= np.max(true.flatten())
-    mask = true > .1
+    thresh = threshold_li(true)
+    mask = convex_hull_image(true > thresh)
     true *= mask
     plt.imshow(true)
     plt.title('Cartesian Sampled')
@@ -86,6 +94,6 @@ if __name__ == '__main__':
     nrmse = compare_nrmse(true, scgrog)
     ssim = compare_ssim(true, scgrog)
     plt.xlabel('NRMSE: %g, SSIM: %g' % (nrmse, ssim))
-    print(nrmse, ssim)
+    # print(nrmse, ssim)
 
     plt.show()
