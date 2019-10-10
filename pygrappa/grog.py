@@ -11,7 +11,7 @@ def _make_key(key, precision):
 
 def grog(
         kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75,
-        coil_axis=-1, ret_image=False):
+        coil_axis=-1, ret_image=False, flip_flop=False):
     '''GRAPPA operator gridding.
 
     Parameters
@@ -34,6 +34,9 @@ def grog(
         Axis holding coil data.
     ret_image : bool, optional
         Return image space result instead of k-space.
+    flip_flop : bool, optional
+        Randomly shift the order of Gx and Gy application to achieve
+        commutativity on average.
 
     Returns
     -------
@@ -108,6 +111,11 @@ def grog(
                     Dy[key] = np.linalg.pinv(Dy[np.abs(key)])
             Gyf = Dy[key]
 
+            # Expect to do an equal number of Gxf @ Gyf and Gyf @ Gxf,
+            # that is, expect commutativity
+            if flip_flop and np.random.rand(1) > .5:
+                Gxf, Gyf = Gyf, Gxf
+
             # Start the averaging (accumulation step)
             res[inside[ii], :] += Gxf @ Gyf @ k[idx0, :]
 
@@ -118,7 +126,7 @@ def grog(
     N4, M4 = int(N/4), int(M/4)
     ax = (0, 1)
     im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        res.reshape((N, M, nc)),
+        res.reshape((N, M, nc), order='F'),
         axes=ax), axes=ax), axes=ax)[N4:-N4, M4:-M4, :]
     if ret_image:
         return im
