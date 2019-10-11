@@ -52,8 +52,14 @@ setup(
     python_requires='>=3.5',
 
     # And now for Cython generated files...
-    ext_modules=[Extension(
-        "pygrappa.cgrappa",
-        ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
-        include_dirs=['src/'])]
+    ext_modules=[
+        Extension(
+            "pygrappa.cgrappa",
+            ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
+            include_dirs=['src/']),
+        Extension(
+            "pygrappa.grog_powers",
+            ["src/grog_powers.cpp"],
+            include_dirs=['src/'])
+        ]
 )
