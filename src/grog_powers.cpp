@@ -2771,7 +2771,7 @@ static PyObject *__pyx_pf_8pygrappa_11grog_powers_grog_powers(CYTHON_UNUSED PyOb
  *     for ii in range(N):
  *         M = len(idx[ii])             # <<<<<<<<<<<<<<
  *         for jj in range(M):
- *             dx.insert(round((tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dx.insert(round(
  */
     __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_idx, __pyx_v_ii, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -2783,89 +2783,137 @@ static PyObject *__pyx_pf_8pygrappa_11grog_powers_grog_powers(CYTHON_UNUSED PyOb
  *     for ii in range(N):
  *         M = len(idx[ii])
  *         for jj in range(M):             # <<<<<<<<<<<<<<
- *             dx.insert(round((tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
- *             dy.insert(round((ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+ *             dx.insert(round(
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
  */
     __pyx_t_7 = __pyx_v_M;
     __pyx_t_8 = __pyx_t_7;
     for (__pyx_t_9 = 0; __pyx_t_9 < __pyx_t_8; __pyx_t_9+=1) {
       __pyx_v_jj = __pyx_t_9;
 
+      /* "src/grog_powers.pyx":34
+ *         for jj in range(M):
+ *             dx.insert(round(
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)             # <<<<<<<<<<<<<<
+ *             dy.insert(round(
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+ */
+      __pyx_t_10 = __pyx_v_ii;
+      __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_idx, __pyx_v_ii, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_t_11 = __Pyx_GetItemInt(__pyx_t_2, __pyx_v_jj, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __pyx_t_6 = __Pyx_PyIndex_AsSsize_t(__pyx_t_11); if (unlikely((__pyx_t_6 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __pyx_t_12 = __pyx_t_6;
+      __pyx_t_11 = PyFloat_FromDouble((((*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_tx_memview.data) + __pyx_t_10)) ))) - (*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_kx_memview.data) + __pyx_t_12)) )))) * __pyx_v_pval)); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+
       /* "src/grog_powers.pyx":33
  *         M = len(idx[ii])
  *         for jj in range(M):
- *             dx.insert(round((tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)             # <<<<<<<<<<<<<<
- *             dy.insert(round((ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
- * 
+ *             dx.insert(round(             # <<<<<<<<<<<<<<
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dy.insert(round(
  */
-      __pyx_t_10 = __pyx_v_ii;
-      __pyx_t_2 = __Pyx_GetItemInt(__pyx_v_idx, __pyx_v_ii, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_11 = __Pyx_GetItemInt(__pyx_t_2, __pyx_v_jj, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_11);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_6 = __Pyx_PyIndex_AsSsize_t(__pyx_t_11); if (unlikely((__pyx_t_6 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_12 = __pyx_t_6;
-      __pyx_t_11 = PyFloat_FromDouble((((*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_tx_memview.data) + __pyx_t_10)) ))) - (*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_kx_memview.data) + __pyx_t_12)) )))) * __pyx_v_pval)); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_11);
       __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_round, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_11 = PyFloat_FromDouble(__pyx_v_pval); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_13 = __Pyx_PyNumber_Divide(__pyx_t_2, __pyx_t_11); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_13);
-      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_14 = __pyx_PyFloat_AsDouble(__pyx_t_13); if (unlikely((__pyx_t_14 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 33, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-      (void)(__pyx_v_dx.insert(__pyx_t_14));
 
       /* "src/grog_powers.pyx":34
  *         for jj in range(M):
- *             dx.insert(round((tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
- *             dy.insert(round((ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)             # <<<<<<<<<<<<<<
+ *             dx.insert(round(
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)             # <<<<<<<<<<<<<<
+ *             dy.insert(round(
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+ */
+      __pyx_t_11 = PyFloat_FromDouble(__pyx_v_pval); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_11);
+      __pyx_t_13 = __Pyx_PyNumber_Divide(__pyx_t_2, __pyx_t_11); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_13);
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+      __pyx_t_14 = __pyx_PyFloat_AsDouble(__pyx_t_13); if (unlikely((__pyx_t_14 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
+
+      /* "src/grog_powers.pyx":33
+ *         M = len(idx[ii])
+ *         for jj in range(M):
+ *             dx.insert(round(             # <<<<<<<<<<<<<<
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dy.insert(round(
+ */
+      (void)(__pyx_v_dx.insert(__pyx_t_14));
+
+      /* "src/grog_powers.pyx":36
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dy.insert(round(
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)             # <<<<<<<<<<<<<<
  * 
  *     return(dx, dy)
  */
       __pyx_t_15 = __pyx_v_ii;
-      __pyx_t_13 = __Pyx_GetItemInt(__pyx_v_idx, __pyx_v_ii, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_13 = __Pyx_GetItemInt(__pyx_v_idx, __pyx_v_ii, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
-      __pyx_t_11 = __Pyx_GetItemInt(__pyx_t_13, __pyx_v_jj, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_GetItemInt(__pyx_t_13, __pyx_v_jj, unsigned int, 0, __Pyx_PyInt_From_unsigned_int, 0, 0, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-      __pyx_t_6 = __Pyx_PyIndex_AsSsize_t(__pyx_t_11); if (unlikely((__pyx_t_6 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyIndex_AsSsize_t(__pyx_t_11); if (unlikely((__pyx_t_6 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __pyx_t_16 = __pyx_t_6;
-      __pyx_t_11 = PyFloat_FromDouble((((*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_ty_memview.data) + __pyx_t_15)) ))) - (*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_ky_memview.data) + __pyx_t_16)) )))) * __pyx_v_pval)); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_11 = PyFloat_FromDouble((((*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_ty_memview.data) + __pyx_t_15)) ))) - (*((double *) ( /* dim=0 */ ((char *) (((double *) __pyx_v_ky_memview.data) + __pyx_t_16)) )))) * __pyx_v_pval)); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_13 = __Pyx_PyObject_CallOneArg(__pyx_builtin_round, __pyx_t_11); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 34, __pyx_L1_error)
+
+      /* "src/grog_powers.pyx":35
+ *             dx.insert(round(
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dy.insert(round(             # <<<<<<<<<<<<<<
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+ * 
+ */
+      __pyx_t_13 = __Pyx_PyObject_CallOneArg(__pyx_builtin_round, __pyx_t_11); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 35, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_11 = PyFloat_FromDouble(__pyx_v_pval); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 34, __pyx_L1_error)
+
+      /* "src/grog_powers.pyx":36
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dy.insert(round(
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)             # <<<<<<<<<<<<<<
+ * 
+ *     return(dx, dy)
+ */
+      __pyx_t_11 = PyFloat_FromDouble(__pyx_v_pval); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_13, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_13, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_14 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_14 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 34, __pyx_L1_error)
+      __pyx_t_14 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_14 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+      /* "src/grog_powers.pyx":35
+ *             dx.insert(round(
+ *                 (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
+ *             dy.insert(round(             # <<<<<<<<<<<<<<
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+ * 
+ */
       (void)(__pyx_v_dy.insert(__pyx_t_14));
     }
   }
 
-  /* "src/grog_powers.pyx":36
- *             dy.insert(round((ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+  /* "src/grog_powers.pyx":38
+ *                 (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
  * 
  *     return(dx, dy)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = __pyx_convert_unordered_set_to_py_double(__pyx_v_dx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_2 = __pyx_convert_unordered_set_to_py_double(__pyx_v_dx); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_11 = __pyx_convert_unordered_set_to_py_double(__pyx_v_dy); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_11 = __pyx_convert_unordered_set_to_py_double(__pyx_v_dy); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_13 = PyTuple_New(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_13 = PyTuple_New(2); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_13);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_2);
