@@ -60,6 +60,10 @@ setup(
         Extension(
             "pygrappa.grog_powers",
             ["src/grog_powers.cpp"],
-            include_dirs=['src/'])
+            include_dirs=['src/']),
+        Extension(
+            "pygrappa.grog_gridding",
+            ["src/grog_gridding.cpp"],
+            include_dirs=['src/']),
         ]
 )

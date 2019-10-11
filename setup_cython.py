@@ -24,7 +24,11 @@ extensions = [
     Extension(
         'pygrappa.grog_powers',
         ['src/grog_powers.pyx'],
-        include_dirs=['src/', np.get_include()])
+        include_dirs=['src/', np.get_include()]),
+    Extension(
+        'pygrappa.grog_gridding',
+        ['src/grog_gridding.pyx'],
+        include_dirs=['src/', np.get_include()]),
 ]
 
 setup(
