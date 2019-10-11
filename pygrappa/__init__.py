@@ -17,3 +17,5 @@ from .ttgrappa import ttgrappa
 from .pars import pars
 from .radialgrappaop import radialgrappaop
 from .grog import grog
+from .grog_powers import grog_powers # pylint: disable=E0611
+from .kspa import kspa

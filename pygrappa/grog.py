@@ -7,6 +7,8 @@ from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.linalg import fractional_matrix_power as fmp
 from tqdm import tqdm
 
+from pygrappa.grog_powers import grog_powers
+
 def _make_key(key, precision):
     '''Dictionary keys.'''
     return np.around(key, decimals=int(precision))
@@ -95,13 +97,8 @@ def grog(
     cnts = [len(idx0) if idx0 else 1 for idx0 in idx]
     res = np.zeros((N*M, nc), dtype=k.dtype)
 
-    # Find all required fractional matrix powers -- this takes a
-    # surprisingly long time to run!
     t0 = time()
-    key_x, key_y = set(), set()
-    for ii, (tx0, ty0) in enumerate(zip(tx, ty)):
-        key_x.update(_make_key(tx0 - kx[idx[ii]], precision))
-        key_y.update(_make_key(ty0 - ky[idx[ii]], precision))
+    key_x, key_y = grog_powers(tx, ty, kx, ky, idx, precision)
     print('Took %g seconds to find required powers' % (time() - t0))
 
     # If we have provided dictionaries, whitle down the work to only
