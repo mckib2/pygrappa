@@ -8,6 +8,7 @@ from scipy.linalg import fractional_matrix_power as fmp
 from tqdm import tqdm
 
 from pygrappa.grog_powers import grog_powers
+from pygrappa.grog_gridding import grog_gridding
 
 def _make_key(key, precision):
     '''Dictionary keys.'''
@@ -94,7 +95,6 @@ def grog(
     kxy = np.concatenate((kx[:, None], ky[:, None]), axis=-1)
     kdtree = cKDTree(kxy)
     idx = kdtree.query_ball_point(txy, r=radius)
-    cnts = [len(idx0) if idx0 else 1 for idx0 in idx]
     res = np.zeros((N*M, nc), dtype=k.dtype)
 
     t0 = time()
@@ -126,27 +126,9 @@ def grog(
         'Took %g seconds to precompute fractional matrix powers' % (
             time() - t0))
 
-    # Do the gridding!
-    for ii, (cnts0, tx0, ty0) in tqdm(
-            enumerate(zip(cnts, tx, ty)),
-            total=idx.size, leave=False):
-
-        # Each Cartesian target may have many source points.
-        # Accumulate all of these and then average:
-        for idx0 in idx[ii]:
-            Gxf = Dx[_make_key(tx0 - kx[idx0], precision)]
-            Gyf = Dy[_make_key(ty0 - ky[idx0], precision)]
-
-            # Expect to do an equal number of Gxf @ Gyf and Gyf @ Gxf,
-            # that is, expect commutativity
-            if flip_flop and np.random.rand(1) > .5:
-                Gxf, Gyf = Gyf, Gxf
-
-            # Start the averaging (accumulation step)
-            res[inside[ii], :] += Gxf @ Gyf @ k[idx0, :]
-
-        # Finish the averaging (dividing step)
-        res[inside[ii], :] /= cnts0
+    # res is modified inplace
+    grog_gridding(
+        tx, ty, kx, ky, k, idx, res, inside, Dx, Dy, precision)
 
     # Remove the oversampling factor and return in kspace
     N4, M4 = int(N/4), int(M/4)
