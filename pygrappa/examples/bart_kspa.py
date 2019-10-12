@@ -11,7 +11,7 @@ from utils import gridder
 
 if __name__ == '__main__':
 
-    sx, spokes, nc = 50, 50, 4
+    sx, spokes, nc = 16, 16, 4
     traj = bart(1, 'traj -r -x%d -y%d' % (sx, spokes))
     kx, ky = traj[0, ...].real.flatten(), traj[1, ...].real.flatten()
 
@@ -20,15 +20,17 @@ if __name__ == '__main__':
     k = bart(1, 'phantom -k -s%d -t' % nc, traj).reshape((-1, nc))
     print('Took %g seconds to simulate %d coils' % (time() - t0, nc))
     sens = bart(1, 'phantom -S%d -x%d' % (nc, sx)).squeeze()
+    # ksens = bart(1, 'fft -u 3', sens)
 
     # Undersample
     ku = k.copy()
-    # ku[::2] = 0
+    # ku[::4] = 0
 
     # Reconstruct using kSPA
-    res = kspa(kx, ky, ku, sens, ws=12)
-    fil = np.hamming(sx)[:, None]*np.hamming(sx)[None, :]
-    res = res*fil**2
+    res = kspa(kx, ky, ku, sens)
+    # assert False
+    # fil = np.hamming(sx)[:, None]*np.hamming(sx)[None, :]
+    # res = res*fil
     plt.imshow(np.abs(res))
     plt.show()
 
