@@ -1,38 +1,39 @@
 # distutils: language = c++
 # cython: language_level=3
 
-import numpy as np
 cimport numpy as np
 from libcpp.unordered_set cimport unordered_set
+from libcpp.vector cimport vector
 cimport cython
+
+cdef extern from "math.h":
+    double round(double d)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 def grog_powers(
-        tx, ty, kx, ky, idx,
-        int precision
+        const double[::1] tx,
+        const double[::1] ty,
+        const double[::1] kx,
+        const double[::1] ky,
+        const vector[vector[int]] idx,
+        const unsigned int precision
     ):
     '''Find unique fractional matrix powers.'''
 
     cdef:
-        double[::1] tx_memview = tx
-        double[::1] ty_memview = ty
-        double[::1] kx_memview = kx
-        double[::1] ky_memview = ky
-
         unordered_set[double] dx, dy
-
-        unsigned int ii, N, M
+        unsigned int ii, N, M, idx0
         double pval
 
     pval = 10.0**precision
-    N = tx.size
+    N = len(tx)
     for ii in range(N):
-        M = len(idx[ii])
+        M = idx[ii].size()
         for jj in range(M):
-            dx.insert(round(
-                (tx_memview[ii] - kx_memview[idx[ii][jj]])*pval)/pval)
-            dy.insert(round(
-                (ty_memview[ii] - ky_memview[idx[ii][jj]])*pval)/pval)
+            idx0 = idx[ii][jj]
+            dx.insert(round((tx[ii] - kx[idx0])*pval)/pval)
+            dy.insert(round((ty[ii] - ky[idx0])*pval)/pval)
 
-    return(dx, dy)
+    return dx, dy
