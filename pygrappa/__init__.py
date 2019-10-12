@@ -19,4 +19,4 @@ from .radialgrappaop import radialgrappaop
 from .grog import grog
 from .grog_powers import grog_powers # pylint: disable=E0611
 from .grog_gridding import grog_gridding # pylint: disable=E0611
-from .kspa import kspa
+# from .kspa import kspa
