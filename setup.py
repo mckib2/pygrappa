@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.13.0',
+    version='0.13.1',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -52,8 +52,18 @@ setup(
     python_requires='>=3.5',
 
     # And now for Cython generated files...
-    ext_modules=[Extension(
-        "pygrappa.cgrappa",
-        ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
-        include_dirs=['src/'])]
+    ext_modules=[
+        Extension(
+            "pygrappa.cgrappa",
+            ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
+            include_dirs=['src/']),
+        Extension(
+            "pygrappa.grog_powers",
+            ["src/grog_powers.cpp"],
+            include_dirs=['src/']),
+        Extension(
+            "pygrappa.grog_gridding",
+            ["src/grog_gridding.cpp"],
+            include_dirs=['src/']),
+        ]
 )

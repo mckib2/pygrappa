@@ -1,17 +1,23 @@
 '''Python implmentation of the GROG algorithm.'''
 
+from time import time
+
 import numpy as np
 from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.linalg import fractional_matrix_power as fmp
 from tqdm import tqdm
+
+from pygrappa.grog_powers import grog_powers
+from pygrappa.grog_gridding import grog_gridding
 
 def _make_key(key, precision):
     '''Dictionary keys.'''
     return np.around(key, decimals=int(precision))
 
 def grog(
-        kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75,
-        coil_axis=-1, ret_image=False):
+        kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75, Dx=None,
+        Dy=None, coil_axis=-1, ret_image=False, ret_dicts=False,
+        flip_flop=False):
     '''GRAPPA operator gridding.
 
     Parameters
@@ -30,15 +36,24 @@ def grog(
     radius : float, optional
         Radius of ball in k-space to from Cartesian targets from
         which to select source points.
+    Dx, Dy : dict, optional
+        Dictionaries of precomputed fractional matrix powers.
     coil_axis : int, optional
         Axis holding coil data.
     ret_image : bool, optional
         Return image space result instead of k-space.
+    ret_dicts : bool, optional
+        Return dictionaries of fractional matrix powers.
+    flip_flop : bool, optional
+        Randomly shift the order of Gx and Gy application to achieve
+        commutativity on average.
 
     Returns
     -------
     res : array_like
         Cartesian gridded k-space (or image).
+    Dx, Dy : dict, optional
+        Fractional matrix power dictionary for both Gx and Gy.
 
     Notes
     -----
@@ -80,47 +95,57 @@ def grog(
     kxy = np.concatenate((kx[:, None], ky[:, None]), axis=-1)
     kdtree = cKDTree(kxy)
     idx = kdtree.query_ball_point(txy, r=radius)
-    cnts = [len(idx0) if idx0 else 1 for idx0 in idx]
     res = np.zeros((N*M, nc), dtype=k.dtype)
-    Dx, Dy = {}, {}
-    for ii, (cnts0, tx0, ty0) in tqdm(
-            enumerate(zip(cnts, tx, ty)),
-            total=idx.size, leave=False):
 
-        # Each Cartesian target may have many source points.
-        # Accumulate all of these and then average:
-        for idx0 in idx[ii]:
-            # Construct dictionary for Gx
-            dx = tx0 - kx[idx0]
-            key = _make_key(dx, precision)
-            if key not in Dx:
-                Dx[np.abs(key)] = fmp(Gx, np.abs(key))
-                if np.sign(key) < 0:
-                    Dx[key] = np.linalg.pinv(Dx[np.abs(key)])
-            Gxf = Dx[key]
+    t0 = time()
+    key_x, key_y = grog_powers(tx, ty, kx, ky, idx, precision)
+    print('Took %g seconds to find required powers' % (time() - t0))
 
-            # Construct dictionary for Gy
-            dy = ty0 - ky[idx0]
-            key = _make_key(dy, precision)
-            if key not in Dy:
-                Dy[np.abs(key)] = fmp(Gy, np.abs(key))
-                if np.sign(key) < 0:
-                    Dy[key] = np.linalg.pinv(Dy[np.abs(key)])
-            Gyf = Dy[key]
+    # If we have provided dictionaries, whitle down the work to only
+    # those powers not already computed
+    t0 = time()
+    if Dx:
+        key_x = key_x - set(Dx.keys())
+    else:
+        Dx = {}
+    if Dy:
+        key_y = key_y - set(Dy.keys())
+    else:
+        Dy = {}
 
-            # Start the averaging (accumulation step)
-            res[inside[ii], :] += Gxf @ Gyf @ k[idx0, :]
+    # Precompute deficient matrix powers
+    for key0 in tqdm(key_x, leave=False, desc='Dx'):
+        Dx[np.abs(key0)] = fmp(Gx, np.abs(key0))
+        if np.sign(key0) < 0:
+            Dx[key0] = np.linalg.pinv(Dx[np.abs(key0)])
+    for key0 in tqdm(key_y, leave=False, desc='Dy'):
+        Dy[np.abs(key0)] = fmp(Gy, np.abs(key0))
+        if np.sign(key0) < 0:
+            Dy[key0] = np.linalg.pinv(Dy[np.abs(key0)])
+    print(
+        'Took %g seconds to precompute fractional matrix powers' % (
+            time() - t0))
 
-        # Finish the averaging (dividing step)
-        res[inside[ii], :] /= cnts0
+    # res is modified inplace
+    grog_gridding(
+        tx, ty, kx, ky, k, idx, res, inside.astype(np.uint32),
+        Dx, Dy, precision)
 
     # Remove the oversampling factor and return in kspace
     N4, M4 = int(N/4), int(M/4)
     ax = (0, 1)
     im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        res.reshape((N, M, nc)),
+        res.reshape((N, M, nc), order='F'),
         axes=ax), axes=ax), axes=ax)[N4:-N4, M4:-M4, :]
     if ret_image:
-        return im
-    return np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
-        im, axes=ax), axes=ax), axes=ax)
+        retVal = im
+    else:
+        retVal = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
+            im, axes=ax), axes=ax), axes=ax)
+
+    # If the user asked for the precomputed dictionaries back, add
+    # them to the tuple of returned values
+    if ret_dicts:
+        retVal = (retVal, Dx, Dy)
+
+    return retVal
