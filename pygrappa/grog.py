@@ -128,7 +128,8 @@ def grog(
 
     # res is modified inplace
     grog_gridding(
-        tx, ty, kx, ky, k, idx, res, inside, Dx, Dy, precision)
+        tx, ty, kx, ky, k, idx, res, inside.astype(np.uint32),
+        Dx, Dy, precision)
 
     # Remove the oversampling factor and return in kspace
     N4, M4 = int(N/4), int(M/4)
