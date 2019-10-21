@@ -3,8 +3,8 @@
 from functools import partial
 
 import numpy as np
-from sklearn.metrics import pairwise # where the kernels live
 from pygrappa import cgrappa
+from utils.kernels import polynomial_kernel
 
 def nlgrappa(
         kspace, calib, kernel_size=(5, 5), ml_kernel='polynomial',
@@ -19,7 +19,8 @@ def nlgrappa(
     ml_kernel : {
             'linear', 'polynomial', 'sigmoid', 'rbf',
             'laplacian', 'chi2'}, optional
-        Kernel functions from scikit-learn metrics.pairwise module.
+        Kernel functions modeled on scikit-learn metrics.pairwise
+        module but which can handle complex-valued inputs.
     ml_kernel_args : dict or None, optional
         Arguments to pass to kernel functions.
     coil_axis : int, optional
@@ -46,12 +47,12 @@ def nlgrappa(
 
     # Get the correct kernel:
     _phi = {
-        'linear': pairwise.linear_kernel,
-        'polynomial': pairwise.polynomial_kernel,
-        'sigmoid': pairwise.sigmoid_kernel,
-        'rbf': pairwise.rbf_kernel,
-        'laplacian': pairwise.laplacian_kernel,
-        'chi2': pairwise.chi2_kernel,
+        # 'linear': linear_kernel,
+        'polynomial': polynomial_kernel,
+        # 'sigmoid': sigmoid_kernel,
+        # 'rbf': rbf_kernel,
+        # 'laplacian': laplacian_kernel,
+        # 'chi2': chi2_kernel,
     }[ml_kernel]
 
     # Get default args if none were passed in
@@ -66,7 +67,9 @@ def nlgrappa(
     phi = partial(_phi, **ml_kernel_args)
 
     # Get the extra "virtual" channels using kernel function, phi
+    vkspace = phi(kspace)
+    vcalib = phi(calib)
 
     # Pass onto cgrappa for the heavy lifting
     return cgrappa(
-        kspace, calib, kernel_size=kernel_size, coil_axis=-1)
+        vkspace, vcalib, kernel_size=kernel_size, coil_axis=-1)
