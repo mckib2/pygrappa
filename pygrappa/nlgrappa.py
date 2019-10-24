@@ -28,10 +28,17 @@ def nlgrappa(
 
     Returns
     -------
+    res : array_like
+        Reconstructed k-space.
 
     Notes
     -----
     Implements the algorithm described in [1]_.
+
+    Bias term is removed from polynomial kernel as it adds a PSF-like
+    overlay onto the reconstruction.
+
+    Currently only `polynomial` method is implemented.
 
     References
     ----------
@@ -58,9 +65,7 @@ def nlgrappa(
     # Get default args if none were passed in
     if ml_kernel_args is None:
         ml_kernel_args = {
-            'gamma': 1,
-            'coef0': 1,
-            'degree': 2
+            'cross_term_neighbors': 1,
         }
 
     # Pass arguments to kernel function
@@ -74,5 +79,5 @@ def nlgrappa(
     return np.moveaxis(
         cgrappa(
             vkspace, vcalib, kernel_size=kernel_size, coil_axis=-1,
-            nc_desired=nc),
+            nc_desired=nc, lamda=0),
         -1, coil_axis)
