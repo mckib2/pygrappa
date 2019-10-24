@@ -24,7 +24,8 @@ cdef extern from "get_sampling_patterns.h":
 @cython.wraparound(False)
 def cgrappa(
         kspace, calib, kernel_size=(5, 5), lamda=.01,
-        int coil_axis=-1, silent=True, Wsupp=None, ret_weights=False):
+        int coil_axis=-1, silent=True, Wsupp=None,
+        ret_weights=False, nc_desired=None):
 
     # Put coil axis in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -57,6 +58,11 @@ def cgrappa(
     ksx2, ksy2 = int(ksx/2), int(ksy/2)
     adjx = np.mod(ksx, 2)
     adjy = np.mod(ksy, 2)
+
+    # We may want a different number of target coils than source
+    # coils (e.g., NL-GRAPPA or VC-GRAPPA)
+    if nc_desired is None:
+        nc_desired = nc
 
     # Pad the arrays
     kspace = pad(
@@ -104,7 +110,7 @@ def cgrappa(
         if not Wsupp:
             # Train the weights for this pattern
             S = A[:, P]
-            T = A_memview[:, ksx2, ksy2, :]
+            T = A_memview[:, ksx2, ksy2, :nc_desired]
             ShS = S.conj().T @ S
             ShT = S.conj().T @ T
             lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
@@ -128,7 +134,7 @@ def cgrappa(
             # Collect sources for this hole and apply weights
             S = kspace[xx-ksx2:xx+ksx2+adjx, yy-ksy2:yy+ksy2+adjy, :]
             S = S[P]
-            kspace[xx, yy, :] = (W @ S[:, None]).squeeze()
+            kspace[xx, yy, :nc_desired] = (W @ S[:, None]).squeeze()
 
         # Move to the next sampling pattern
         postincrement(it)
@@ -140,6 +146,6 @@ def cgrappa(
     # Give the user the weights if desired
     if ret_weights:
         return(np.moveaxis(
-            kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis), Ws)
+            kspace[ksx2:-ksx2, ksy2:-ksy2, :nc_desired], -1, coil_axis), Ws)
     return np.moveaxis(
-        kspace[ksx2:-ksx2, ksy2:-ksy2, :], -1, coil_axis)
+        kspace[ksx2:-ksx2, ksy2:-ksy2, :nc_desired], -1, coil_axis)
