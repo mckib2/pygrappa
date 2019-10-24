@@ -43,7 +43,7 @@ def nlgrappa(
     # Coils to the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
-    _kx, _ky, _nc = kspace.shape[:]
+    _kx, _ky, nc = kspace.shape[:]
 
     # Get the correct kernel:
     _phi = {
@@ -71,5 +71,8 @@ def nlgrappa(
     vcalib = phi(calib)
 
     # Pass onto cgrappa for the heavy lifting
-    return cgrappa(
-        vkspace, vcalib, kernel_size=kernel_size, coil_axis=-1)
+    return np.moveaxis(
+        cgrappa(
+            vkspace, vcalib, kernel_size=kernel_size, coil_axis=-1,
+            nc_desired=nc),
+        -1, coil_axis)
