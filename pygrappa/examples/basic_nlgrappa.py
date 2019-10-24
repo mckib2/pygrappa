@@ -10,7 +10,7 @@ from utils import gaussian_csm
 
 if __name__ == '__main__':
 
-    N, nc = 256, 8
+    N, nc = 256, 16
     ph = shepp_logan(N)[..., None]*gaussian_csm(N, N, nc)
 
     # Put into kspace
@@ -20,22 +20,19 @@ if __name__ == '__main__':
 
     # 20x20 calibration region
     ctr = int(N/2)
-    pad = 10
+    pad = 20
     calib = kspace[ctr-pad:ctr+pad, ctr-pad:ctr+pad, :].copy()
 
-    # # Undersample: R=4
-    # kspace4x1 = kspace.copy()
-    # kspace4x1[1::4, ...] = 0
-    # kspace4x1[2::4, ...] = 0
-    # kspace4x1[3::4, ...] = 0
-    kspace4x1 = kspace.copy()
-    kspace4x1[1::3, ...] = 0
-    kspace4x1[2::3, ...] = 0
+    # Undersample: R=3
+    kspace3x1 = kspace.copy()
+    kspace3x1[1::3, ...] = 0
+    kspace3x1[2::3, ...] = 0
 
     # Reconstruct using both GRAPPA and VC-GRAPPA
-    res_grappa = cgrappa(kspace4x1.copy(), calib)
-    res_nlgrappa = nlgrappa(kspace4x1.copy(), calib)
-    print(res_nlgrappa.shape)
+    res_grappa = cgrappa(kspace3x1.copy(), calib)
+    res_nlgrappa = nlgrappa(
+        kspace3x1.copy(), calib, ml_kernel='polynomial',
+        ml_kernel_args={'cross_term_neighbors': 0})
 
     # Bring back to image space
     imspace_nlgrappa = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
