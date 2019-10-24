@@ -2,7 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.measure import compare_nrmse
+from skimage.metrics import normalized_root_mse as compare_nrmse # pylint: disable=E0611,E0401
 from phantominator import shepp_logan
 
 from pygrappa import nlgrappa, cgrappa
@@ -32,11 +32,10 @@ if __name__ == '__main__':
     kspace4x1[1::3, ...] = 0
     kspace4x1[2::3, ...] = 0
 
-    # res = nlgrappa(kspace, calib)
-
     # Reconstruct using both GRAPPA and VC-GRAPPA
     res_grappa = cgrappa(kspace4x1.copy(), calib)
     res_nlgrappa = nlgrappa(kspace4x1.copy(), calib)
+    print(res_nlgrappa.shape)
 
     # Bring back to image space
     imspace_nlgrappa = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
@@ -49,6 +48,10 @@ if __name__ == '__main__':
         np.sum(np.abs(imspace_nlgrappa)**2, axis=-1))
     cc_grappa = np.sqrt(np.sum(np.abs(imspace_grappa)**2, axis=-1))
     ph = shepp_logan(N)
+
+    cc_nlgrappa /= np.max(cc_nlgrappa.flatten())
+    cc_grappa /= np.max(cc_grappa.flatten())
+    ph /= np.max(cc_grappa.flatten())
 
     # Take a look
     plt.subplot(1, 2, 1)
