@@ -20,25 +20,31 @@ def polynomial_kernel(X, degree, gamma, coef0):
 
     sx, sy, nc = X.shape[:]
 
-    # Get the mask
-    mask = np.abs(X[..., 0]) > 0
+    # # Get the mask
+    # mask = np.abs(X[..., 0]) > 0
 
-    # We need the coil images
-    ax = (0, 1)
-    ims = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        X, axes=ax), axes=ax), axes=ax)
+    # # We need the coil images
+    # ax = (0, 1)
+    # ims = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+    #     X, axes=ax), axes=ax), axes=ax)
 
     # Build up a new coil set
     res = []
 
     # coil layer
-    res.append(ims*np.sqrt(2))
+    # res.append(ims*np.sqrt(2))
+    res.append(X*np.sqrt(2))
+
+    # # virtual coil layer (for testing)
+    # res.append(np.conj(ims*np.sqrt(2)))
 
     # 1s layer
     res.append(np.ones((sx, sy, 1)))
 
     # squared-coil layer
+    # res.append(ims*np.conj(ims))
     # res.append(ims**2)
+    res.append(np.abs(X)**2)
 
     for ii in range(nc):
         for jj in range(nc):
@@ -46,12 +52,16 @@ def polynomial_kernel(X, degree, gamma, coef0):
                 continue
             if np.abs(ii - jj) > 1:
                 continue
+            # res.append(
+            #     (ims[..., ii]*ims[..., jj]*np.sqrt(2))[..., None])
             res.append(
-                (ims[..., ii]*ims[..., jj]*np.sqrt(2))[..., None])
+                (X[..., ii]*np.conj(X[..., jj])*np.sqrt(2))[
+                    ..., None])
 
     res = np.concatenate(res, axis=-1)
-    return np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
-        res, axes=ax), axes=ax), axes=ax)#*mask[..., None]
+    # return np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
+    #     res, axes=ax), axes=ax), axes=ax)*mask[..., None]
+    return res#*mask[..., None]
 
     # # Mag and phase?  How to do phase?
     # M = np.reshape(np.abs(X), (-1, nc))
