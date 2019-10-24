@@ -20,6 +20,7 @@ Included in the `pygrappa` module are the following:
 - Through-time GRAPPA [11]_: `ttgrappa()`
 - PARS [12]_: `pars()`
 - GROG [14]_: `grog()`
+- NL-GRAPPA [15]_: `nlgrappa()`
 
 Installation
 ============
@@ -301,6 +302,17 @@ operators Gx and Gy:
 
 See `examples.basic_radialgrappaop.py` for usage example.
 
+NL-GRAPPA uses machine learning feature augmentation to reduce model-
+based reconstruction error [15]_.  It can be called like so:
+
+.. code-block:: python
+
+    from pygrappa import nlgrappa
+    res = nlgrappa(
+        kspace, calib, ml_kernel_args={'cross_term_neighbors': 2})
+
+You might need to play around with the arguments to get good images.
+
 References
 ==========
 .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
@@ -367,3 +379,6 @@ References
         Magnetic Resonance in Medicine: An Official Journal of the
         International Society for Magnetic Resonance in Medicine
         59.4 (2008): 930-935.
+.. [15] Chang, Yuchou, Dong Liang, and Leslie Ying. "Nonlinear
+        GRAPPA: A kernel approach to parallel MRI reconstruction."
+        Magnetic resonance in medicine 68.3 (2012): 730-740.
