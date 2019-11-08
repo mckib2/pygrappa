@@ -17,7 +17,7 @@ def _make_key(key, precision):
 def grog(
         kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75, Dx=None,
         Dy=None, coil_axis=-1, ret_image=False, ret_dicts=False,
-        flip_flop=False):
+        use_primefac=False):
     '''GRAPPA operator gridding.
 
     Parameters
@@ -44,9 +44,9 @@ def grog(
         Return image space result instead of k-space.
     ret_dicts : bool, optional
         Return dictionaries of fractional matrix powers.
-    flip_flop : bool, optional
-        Randomly shift the order of Gx and Gy application to achieve
-        commutativity on average.
+    use_primefac : bool, optional
+        Use prime factorization to speed-up fractional matrix
+        power precomputations.
 
     Returns
     -------
@@ -114,14 +114,74 @@ def grog(
         Dy = {}
 
     # Precompute deficient matrix powers
-    for key0 in tqdm(key_x, leave=False, desc='Dx'):
-        Dx[np.abs(key0)] = fmp(Gx, np.abs(key0))
-        if np.sign(key0) < 0:
-            Dx[key0] = np.linalg.pinv(Dx[np.abs(key0)])
-    for key0 in tqdm(key_y, leave=False, desc='Dy'):
-        Dy[np.abs(key0)] = fmp(Gy, np.abs(key0))
-        if np.sign(key0) < 0:
-            Dy[key0] = np.linalg.pinv(Dy[np.abs(key0)])
+    if use_primefac:
+        # Precompute matrix powers using prime factorization
+        from primefac import factorint # pylint: disable=E0401
+        scale_fac = 10**precision
+
+        # Start a dictionary of fractional matrix powers
+        frac_mats_x = {}
+        frac_mats_y = {}
+
+        # First thing we need is the scale factor, note that we will
+        # assume the inverse!
+        lscale_fac = np.log(scale_fac)
+        frac_mats_x[lscale_fac] = np.linalg.pinv(fmp(Gx, lscale_fac))
+        frac_mats_y[lscale_fac] = np.linalg.pinv(fmp(Gy, lscale_fac))
+
+        for keyx0, keyy0 in tqdm(
+                zip(key_x, key_y), total=len(key_x), leave=False,
+                desc='Dxy'):
+
+            dx0 = np.exp(np.abs(keyx0))*scale_fac
+            dy0 = np.exp(np.abs(keyy0))*scale_fac
+            rx = factorint(int(dx0))
+            ry = factorint(int(dy0))
+
+            # Component fractional powers are log of prime factors;
+            # add in the scale_fac term here so we get it during the
+            # multi_dot later.  We explicitly cast to integer because
+            # sometimes we run into an MPZ object that doesn't play
+            # nice with numpy
+            lpx = np.log(np.array(
+                [int(r) for r in rx.keys()] + [scale_fac])).squeeze()
+            lpy = np.log(np.array(
+                [int(r) for r in ry.keys()] + [scale_fac])).squeeze()
+            lpx_unique = np.unique(lpx)
+            lpy_unique = np.unique(lpy)
+
+            # Compute new fractional matrix powers we haven't seen
+            for lpxu in lpx_unique:
+                if lpxu not in frac_mats_x:
+                    frac_mats_x[lpxu] = fmp(Gx, lpxu)
+            for lpyu in lpy_unique:
+                if lpyu not in frac_mats_y:
+                    frac_mats_y[lpyu] = fmp(Gy, lpyu)
+
+            # Now compose all the matrices together for this point
+            nx = list(rx.values()) + [1] # +1 to account for scale_fac
+            ny = list(ry.values()) + [1]
+            Dx[np.abs(keyx0)] = np.linalg.multi_dot([
+                np.linalg.matrix_power(frac_mats_x[lpx0], n0) for
+                lpx0, n0 in zip(lpx, nx)])
+            Dy[np.abs(keyy0)] = np.linalg.multi_dot([
+                np.linalg.matrix_power(frac_mats_y[lpy0], n0) for
+                lpy0, n0 in zip(lpy, ny)])
+
+            if np.sign(keyx0) < 0:
+                Dx[keyx0] = np.linalg.pinv(Dx[np.abs(keyx0)])
+            if np.sign(keyy0) < 0:
+                Dy[keyy0] = np.linalg.pinv(Dy[np.abs(keyy0)])
+
+    else:
+        for key0 in tqdm(key_x, leave=False, desc='Dx'):
+            Dx[np.abs(key0)] = fmp(Gx, np.abs(key0))
+            if np.sign(key0) < 0:
+                Dx[key0] = np.linalg.pinv(Dx[np.abs(key0)])
+        for key0 in tqdm(key_y, leave=False, desc='Dy'):
+            Dy[np.abs(key0)] = fmp(Gy, np.abs(key0))
+            if np.sign(key0) < 0:
+                Dy[key0] = np.linalg.pinv(Dy[np.abs(key0)])
     print(
         'Took %g seconds to precompute fractional matrix powers' % (
             time() - t0))
