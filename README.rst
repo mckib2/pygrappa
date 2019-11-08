@@ -300,6 +300,10 @@ operators Gx and Gy:
     # (N, M) is the resolution of the desired Cartesian grid
     res = grog(kx, ky, k, N, M, Gx, Gy)
 
+    # Precomputations of fractional matrix powers can be accelerated
+    # using a prime factorization technique submitted to ISMRM 2020:
+    res = grog(kx, ky, k, N, M, Gx, Gy, use_primefac=True)
+
 See `examples.basic_radialgrappaop.py` for usage example.
 
 NL-GRAPPA uses machine learning feature augmentation to reduce model-
