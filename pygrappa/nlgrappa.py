@@ -4,7 +4,7 @@ from functools import partial
 
 import numpy as np
 from pygrappa import cgrappa
-from utils.kernels import polynomial_kernel
+from pygrappa.kernels import polynomial_kernel
 
 def nlgrappa(
         kspace, calib, kernel_size=(5, 5), ml_kernel='polynomial',
