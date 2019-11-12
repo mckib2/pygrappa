@@ -13,6 +13,14 @@ from pygrappa import grog, radialgrappaop
 
 if __name__ == '__main__':
 
+    # Make sure we have the primefac-fork
+    try:
+        import primefac # pylint: disable=W0611
+    except ImportError:
+        raise ImportError('Need to install fork of primefac: '
+                          'https://github.com/elliptic-shiho/'
+                          'primefac-fork')
+
     # Radially sampled Shepp-Logan
     N, spokes, nc = 288, 72, 8
     kx, ky = radial(N, spokes)
