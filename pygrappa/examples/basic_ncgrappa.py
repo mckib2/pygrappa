@@ -56,5 +56,5 @@ if __name__ == '__main__':
     # plt.legend()
     # plt.show()
 
-    # Reconstruct with Non-Cartesian GRAPPA
-    ncgrappa(kx, ky, k, cx, cy, calib, kernel_size=.1, coil_axis=-1)
+    # Reconstruct with Non-Cartesian GRAPPA -- not working currently!
+    # ncgrappa(kx, ky, k, cx, cy, calib, kernel_size=.1, coil_axis=-1)
