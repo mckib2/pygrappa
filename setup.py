@@ -4,9 +4,9 @@ Notes
 -----
 Developers: to build C++ code:
 
-.. code-block:: python
+.. code-block:: bash
 
-    python3 setup.py build_ext --inplace
+    source make_cython.sh
 '''
 
 from setuptools import setup, Extension, find_packages
@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.14.0',
+    version='0.14.1',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -38,14 +38,14 @@ setup(
         'mri grappa parallel-imaging image-reconstruction python '
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
         'igrappa hp-grappa segmented-grappa grappa-operator '
-        'through-time-grappa pars grog'),
+        'through-time-grappa pars grog nonlinear-grappa'),
     install_requires=[
-        "numpy>=1.17.0",
-        "scipy>=1.3.1",
+        "numpy>=1.17.4",
+        "scipy>=1.3.2",
         "matplotlib>=3.1.1",
-        "phantominator>=0.4.3",
-        "scikit-image>=0.15.0",
-        "tqdm>=4.33.0",
+        "phantominator>=0.4.4",
+        "scikit-image>=0.16.2",
+        "tqdm>=4.35.0",
     ],
     cmdclass={'build_ext': build_ext},
     setup_requires=['numpy'],
