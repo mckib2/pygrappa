@@ -31,6 +31,15 @@ def cgrappa(
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
 
+    # Quick fix for Issue #41: cgrappa breaks for some nonsquare
+    # matrices.  Seems like the issue is incorrect indices returned
+    # by src/get_sampling_patterns.cpp.  Seems to work if first
+    # dimension is < second dimension
+    issue41_swap_dims = kspace.shape[0] > kspace.shape[1]
+    if issue41_swap_dims:
+        kspace = np.moveaxis(kspace, 1, 0)
+        calib = np.moveaxis(calib, 1, 0)
+
     # Make sure we're contiguous
     kspace = np.ascontiguousarray(kspace)
     mask = np.ascontiguousarray(
@@ -142,6 +151,14 @@ def cgrappa(
     if not silent:
         print('Training and application of weights: %g' % (
             time() - t0))
+
+    # Reverse axis swapping for Issue #41. First axis needed to be
+    # larger than second, can put in correct places now that we're
+    # done
+    if issue41_swap_dims:
+        kspace = np.moveaxis(kspace, 0, 1)
+        if ret_weights:
+            Ws = [np.moveaxis(Ws0, 0, 1) for Ws0 in Ws]
 
     # Give the user the weights if desired
     if ret_weights:
