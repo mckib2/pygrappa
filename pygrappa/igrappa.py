@@ -2,7 +2,7 @@
 
 import numpy as np
 from tqdm import trange
-from skimage.measure import compare_mse
+from skimage.metrics import mean_squared_error as compare_mse # pylint: disable=E0611,E0401
 
 from pygrappa import cgrappa
 
