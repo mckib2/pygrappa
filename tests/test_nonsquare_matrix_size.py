@@ -17,6 +17,7 @@ if __name__ == '__main__':
 
     # Sizes we want
     N, M, nc = 300, 192, 8
+    calib_lines = 20
 
     # Make square kspace
     assert N >= M, 'First must be largest dim!'
@@ -25,23 +26,30 @@ if __name__ == '__main__':
         shepp_logan(N))[..., None]*gaussian_csm(N, N, nc)
 
     # Trim down to make nonsquare
-    pad = int((N - M)/2)
-    imspace = imspace[:, pad:-pad, :]
-    kspace = fft(imspace)
+    # 1st > 2nd
+    trim = int((N - M)/2)
+    pad = int(calib_lines/2)
+    imspace1 = imspace[:, trim:-trim, :]
+    kspace1 = fft(imspace1)
+    calib1 = kspace1[N2-pad:N2+pad, ...].copy()
+    kspace1[::2, ...] = 0 # Undersample: R=2
 
-    # Get calib region
-    calib_lines = 20
-    pd = int(calib_lines/2)
-    calib = kspace[N2-pd:N2+pd, ...].copy()
-    print(calib.shape)
-
-    # Undersample: R=2
-    kspace[::2, ...] = 0
+    # 2nd > 1st
+    imspace2 = imspace[trim:-trim, ...]
+    kspace2 = fft(imspace2)
+    calib2 = kspace2[:, N2-pad:N2+pad, :].copy()
+    kspace2[:, ::2, :] = 0
 
     # Do the thing
-    res = cgrappa(kspace, calib, kernel_size=(5, 5), coil_axis=-1)
-    print(res.shape)
+    res1 = cgrappa(kspace1, calib1, kernel_size=(5, 5), coil_axis=-1)
+    res2 = cgrappa(kspace2, calib2, kernel_size=(5, 5), coil_axis=-1)
 
-    sos = np.sqrt(np.sum(np.abs(ifft(res))**2, axis=-1))
-    plt.imshow(sos)
+    # Show sum-of-squares results
+    sos1 = np.sqrt(np.sum(np.abs(ifft(res1))**2, axis=-1))
+    sos2 = np.sqrt(np.sum(np.abs(ifft(res2))**2, axis=-1))
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(sos1)
+    plt.subplot(1, 2, 2)
+    plt.imshow(sos2)
     plt.show()
