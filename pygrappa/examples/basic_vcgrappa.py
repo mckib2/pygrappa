@@ -12,15 +12,9 @@ if __name__ == '__main__':
 
     # Simple phantom
     N = 128
-    ncoil = 5
+    ncoil = 8
     csm = gaussian_csm(N, N, ncoil)
     ph = shepp_logan(N)[..., None]*csm
-
-    # Add a little noise to spice things up
-    std = .001
-    n = (np.random.normal(0, std, ph.shape) +
-         1j*np.random.normal(0, std, ph.shape))
-    ph += n
 
     # Throw into k-space
     ax = (0, 1)
@@ -52,14 +46,38 @@ if __name__ == '__main__':
     cc_grappa = np.sqrt(np.sum(np.abs(imspace_grappa)**2, axis=-1))
     ph = shepp_logan(N)
 
+    # Normalize
+    cc_vcgrappa /= np.max(cc_vcgrappa.flatten())
+    cc_grappa /= np.max(cc_grappa.flatten())
+    ph /= np.max(ph.flatten())
+
     # Take a look
-    plt.subplot(1, 2, 1)
+    nx, ny = 2, 2
+    plt.subplot(nx, ny, 1)
     plt.imshow(cc_vcgrappa, cmap='gray')
     plt.title('VC-GRAPPA')
     plt.xlabel('NRMSE: %g' % compare_nrmse(ph, cc_vcgrappa))
 
-    plt.subplot(1, 2, 2)
+    plt.subplot(nx, ny, 2)
     plt.imshow(cc_grappa, cmap='gray')
     plt.title('GRAPPA')
     plt.xlabel('NRMSE: %g' % compare_nrmse(ph, cc_grappa))
+
+    # Check residuals
+    cc_vcgrappa_resid = ph - cc_vcgrappa
+    cc_grappa_resid = ph - cc_grappa
+    plt_args = {
+        'vmin': 0,
+        'vmax': np.max(np.concatenate(
+            (cc_vcgrappa_resid, cc_grappa_resid)).flatten()),
+        'cmap': 'gray'
+    }
+
+    plt.subplot(nx, ny, 3)
+    plt.imshow(np.abs(cc_vcgrappa_resid), **plt_args)
+    plt.ylabel('Residuals')
+
+    plt.subplot(nx, ny, 4)
+    plt.imshow(np.abs(cc_grappa_resid), **plt_args)
+
     plt.show()
