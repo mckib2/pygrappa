@@ -3170,7 +3170,7 @@ static PyObject *__pyx_pf_8pygrappa_7cgrappa_cgrappa(CYTHON_UNUSED PyObject *__p
 
   /* "src/cgrappa.pyx":38
  *     # by src/get_sampling_patterns.cpp.  Seems to work if first
- *     # dimension is >= second dimension
+ *     # dimension is < second dimension
  *     issue41_swap_dims = kspace.shape[0] > kspace.shape[1]             # <<<<<<<<<<<<<<
  *     if issue41_swap_dims:
  *         kspace = np.moveaxis(kspace, 1, 0)
@@ -3192,7 +3192,7 @@ static PyObject *__pyx_pf_8pygrappa_7cgrappa_cgrappa(CYTHON_UNUSED PyObject *__p
   __pyx_t_1 = 0;
 
   /* "src/cgrappa.pyx":39
- *     # dimension is >= second dimension
+ *     # dimension is < second dimension
  *     issue41_swap_dims = kspace.shape[0] > kspace.shape[1]
  *     if issue41_swap_dims:             # <<<<<<<<<<<<<<
  *         kspace = np.moveaxis(kspace, 1, 0)
@@ -3328,7 +3328,7 @@ static PyObject *__pyx_pf_8pygrappa_7cgrappa_cgrappa(CYTHON_UNUSED PyObject *__p
     __pyx_t_1 = 0;
 
     /* "src/cgrappa.pyx":39
- *     # dimension is >= second dimension
+ *     # dimension is < second dimension
  *     issue41_swap_dims = kspace.shape[0] > kspace.shape[1]
  *     if issue41_swap_dims:             # <<<<<<<<<<<<<<
  *         kspace = np.moveaxis(kspace, 1, 0)
