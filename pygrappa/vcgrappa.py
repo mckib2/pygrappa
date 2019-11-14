@@ -32,25 +32,19 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
 
-    # Create conjugate virtual coils for kspace
-    ax = (0, 1)
-    vc_kspace = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        kspace, axes=ax), axes=ax), axes=ax)
-    vc_kspace = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
-        np.conj(vc_kspace), axes=ax), axes=ax), axes=ax)
-    # Make sure zeros stay the same through FFTs:
-    vc_kspace = vc_kspace*(np.abs(kspace) > 0)
-    kspace = np.concatenate((kspace, vc_kspace), axis=-1)
+    # We only need to return the number of coils we are provided
+    nc = kspace.shape[-1]
 
-    # Create conjugate virtual coils for calib
-    vc_calib = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        calib, axes=ax), axes=ax), axes=ax)
-    vc_calib = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
-        np.conj(vc_calib), axes=ax), axes=ax), axes=ax)
+    # Create conjugate virtual coils for kspace using properties
+    # of Fourier transform
+    vc_kspace = np.rot90(np.conj(kspace), 2)
+    vc_calib = np.rot90(np.conj(calib), 2)
+    kspace = np.concatenate((kspace, vc_kspace), axis=-1)
     calib = np.concatenate((calib, vc_calib), axis=-1)
 
     # Pass through to GRAPPA
-    return grappa(kspace, calib, coil_axis=-1, *args, **kwargs)
+    return grappa(
+        kspace, calib, coil_axis=-1, nc_desired=nc, *args, **kwargs)
 
 if __name__ == '__main__':
     pass
