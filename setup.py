@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.14.2',
+    version='0.15.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -38,7 +38,7 @@ setup(
         'mri grappa parallel-imaging image-reconstruction python '
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
         'igrappa hp-grappa segmented-grappa grappa-operator '
-        'through-time-grappa pars grog nonlinear-grappa'),
+        'through-time-grappa pars grog nonlinear-grappa g-factor'),
     install_requires=[
         "numpy>=1.17.4",
         "scipy>=1.3.2",
