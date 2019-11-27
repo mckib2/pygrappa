@@ -40,9 +40,8 @@ create and activate mine like this:
     python3 -m venv /venvs/pygrappa
     source /venvs/pygrappa/bin/activate
 
-More information can be found in the venv_ documentation:
-
-.. _venv https://docs.python.org/3/library/venv.html
+More information can be found in the
+`venv https://docs.python.org/3/library/venv.html`_ documentation:
 
 Installation under a Unix-based platform should then be as easy as:
 
