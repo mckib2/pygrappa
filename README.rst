@@ -42,6 +42,8 @@ create and activate mine like this:
 
 More information can be found in the venv_ documentation:
 
+.. _venv https://docs.python.org/3/library/venv.html
+
 Installation under a Unix-based platform should then be as easy as:
 
 .. code-block:: bash
@@ -396,5 +398,3 @@ References
 .. [15] Chang, Yuchou, Dong Liang, and Leslie Ying. "Nonlinear
         GRAPPA: A kernel approach to parallel MRI reconstruction."
         Magnetic resonance in medicine 68.3 (2012): 730-740.
-
-.. _venv https://docs.python.org/3/library/venv.html
