@@ -326,7 +326,7 @@ acceleration factors in x and y:
 .. code-block:: python
 
     from pygrappa import gfactor
-    g = gfactor(coil_sens, Rx, Ry)
+    g = gfactor(sens, Rx, Ry)
 
 References
 ==========
