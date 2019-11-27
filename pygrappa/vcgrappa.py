@@ -13,7 +13,8 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     -----
     Implements modifications to GRAPPA as described in [1]_.  The
     only change I can see is stacking the conjugate coils in the
-    coil dimension.
+    coil dimension.  For best results, make sure there is a suitably
+    chosen background phase variation as described in the paper.
 
     This function is a wrapper of pygrappa.cgrappa().  The existing
     coils are conjugated, added to the coil dimension, and passed
@@ -31,20 +32,30 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     # Move coil axis to end
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
+    ax = (0, 1)
 
-    # We only need to return the number of coils we are provided
+    # We will return twice the number of coils we started with
     nc = kspace.shape[-1]
 
-    # Create conjugate virtual coils for kspace using properties
-    # of Fourier transform
-    vc_kspace = np.rot90(np.conj(kspace), 2)
-    vc_calib = np.rot90(np.conj(calib), 2)
+    # In and out of kspace to get conjugate coils
+    vc_kspace = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+        kspace, axes=ax), axes=ax), axes=ax)
+    vc_kspace = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
+        np.conj(vc_kspace), axes=ax), axes=ax), axes=ax)
+
+    # Same deal for calib...
+    vc_calib = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+        calib, axes=ax), axes=ax), axes=ax)
+    vc_calib = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
+        np.conj(vc_calib), axes=ax), axes=ax), axes=ax)
+
+    # Put all our ducks in a row...
     kspace = np.concatenate((kspace, vc_kspace), axis=-1)
     calib = np.concatenate((calib, vc_calib), axis=-1)
 
     # Pass through to GRAPPA
     return grappa(
-        kspace, calib, coil_axis=-1, nc_desired=nc, *args, **kwargs)
+        kspace, calib, coil_axis=-1, nc_desired=2*nc, *args, **kwargs)
 
 if __name__ == '__main__':
     pass
