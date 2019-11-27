@@ -21,6 +21,7 @@ Included in the `pygrappa` module are the following:
 - PARS [12]_: `pars()`
 - GROG [14]_: `grog()`
 - NL-GRAPPA [15]_: `nlgrappa()`
+- g-factor map: `gfactor()`
 
 Installation
 ============
@@ -316,6 +317,16 @@ based reconstruction error [15]_.  It can be called like so:
         kspace, calib, ml_kernel_args={'cross_term_neighbors': 2})
 
 You might need to play around with the arguments to get good images.
+
+g-factor maps show geometry factor and a general sense of how well
+parallel imaging techniques like GRAPPA will work.  Coil sensitities
+must be known for to use this function as well as integer
+acceleration factors in x and y:
+
+.. code-block:: python
+
+    from pygrappa import gfactor
+    g = gfactor(coil_sens, Rx, Ry)
 
 References
 ==========
