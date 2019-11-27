@@ -13,22 +13,28 @@ if __name__ == '__main__':
     # Simple phantom
     N = 128
     ncoil = 8
+    _, phi = np.meshgrid( # background phase variation
+        np.linspace(-np.pi, np.pi, N),
+        np.linspace(-np.pi, np.pi, N))
+    phi = np.exp(1j*phi)
     csm = gaussian_csm(N, N, ncoil)
-    ph = shepp_logan(N)[..., None]*csm
+    ph = shepp_logan(N)*phi
+    ph = ph[..., None]*csm
 
     # Throw into k-space
     ax = (0, 1)
     kspace = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
         ph, axes=ax), axes=ax), axes=ax)
 
-    # 20x20 ACS region
-    pad = 10
+    # 24 ACS lines
+    pad = 12
     ctr = int(N/2)
-    calib = kspace[ctr-pad:ctr+pad, ctr-pad:ctr+pad, :].copy()
+    calib = kspace[ctr-pad:ctr+pad, ...].copy()
 
-    # R=2x2
-    kspace[::2, 1::2, :] = 0
-    kspace[1::2, ::2, :] = 0
+    # R=4
+    kspace[1::4, ...] = 0
+    kspace[2::4, ...] = 0
+    kspace[3::4, ...] = 0
 
     # Reconstruct using both GRAPPA and VC-GRAPPA
     res_grappa = grappa(kspace, calib)
@@ -66,16 +72,17 @@ if __name__ == '__main__':
     # Check residuals
     cc_vcgrappa_resid = ph - cc_vcgrappa
     cc_grappa_resid = ph - cc_grappa
+    fac = np.max(np.concatenate(
+        (cc_vcgrappa_resid, cc_grappa_resid)).flatten())
     plt_args = {
         'vmin': 0,
-        'vmax': np.max(np.concatenate(
-            (cc_vcgrappa_resid, cc_grappa_resid)).flatten()),
+        'vmax': fac,
         'cmap': 'gray'
     }
 
     plt.subplot(nx, ny, 3)
     plt.imshow(np.abs(cc_vcgrappa_resid), **plt_args)
-    plt.ylabel('Residuals')
+    plt.ylabel('Residuals (x%d)' % int(1/fac + .5))
 
     plt.subplot(nx, ny, 4)
     plt.imshow(np.abs(cc_grappa_resid), **plt_args)
