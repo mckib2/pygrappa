@@ -68,11 +68,28 @@ def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
 def gfactor_single_coil_R2(coil, Rx=2, Ry=1):
     '''Specific example of a single homogeneous coil, R=2.
 
+    Parameters
+    ----------
+    coil : array_like
+        Single coil sensitivity.
+    Ry : int,
+        x acceleration
+    Ry : int
+        y acceleration
+
+    Returns
+    -------
+    g : array_like
+        g-factor map
 
     Notes
     -----
     Analytical solution for a single, homogeneous coil with an
     undersampling factor of R=2.  Equation 11 in [2]_.
+
+    Comparing head-to-head with pygrappa.gfactor(), this does
+    produce different results.  I don't know which one is more
+    correct...
 
     References
     ----------
