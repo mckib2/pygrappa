@@ -29,6 +29,13 @@ def gridder(
         Strategy for interpolation used by
         scipy.interpolate.griddata().  See scipy docs for complete
         list of options.
+
+    Returns
+    -------
+    imspace : array_like, optional
+        If ifft=True.
+    kspace : array_like, optional
+        If ifft=False.
     '''
 
     # Move coil data to the back
