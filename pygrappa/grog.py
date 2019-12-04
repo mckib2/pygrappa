@@ -17,7 +17,7 @@ def _make_key(key, precision):
 def grog(
         kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75, Dx=None,
         Dy=None, coil_axis=-1, ret_image=False, ret_dicts=False,
-        use_primefac=False):
+        use_primefac=False, remove_os=True, inverse=False):
     '''GRAPPA operator gridding.
 
     Parameters
@@ -47,6 +47,11 @@ def grog(
     use_primefac : bool, optional
         Use prime factorization to speed-up fractional matrix
         power precomputations.
+    remove_os : bool, optional
+        Remove oversampling factor.
+    inverse : bool, optional
+        Do the inverse gridding operation, i.e., Cartesian points to
+        (kx, ky).
 
     Returns
     -------
@@ -72,30 +77,49 @@ def grog(
     k = np.moveaxis(k, coil_axis, -1)
     _ns, nc = k.shape[:]
 
-    # We have samples at (kx, ky).  We want new samples on a
-    # Cartesian grid at, say, (tx, ty). Let's also oversample by a
-    # factor of 2:
-    N, M = 2*N, 2*M
+    if not inverse:
+        # We have samples at (kx, ky).  We want new samples on a
+        # Cartesian grid at, say, (tx, ty). Let's also oversample:
+        N, M = 2*N, 2*M
+
+    # Create the target grid (or source grid for inverse gridding)
     tx, ty = np.meshgrid(
         np.linspace(np.min(kx), np.max(kx), N),
         np.linspace(np.min(ky), np.max(ky), M))
     tx, ty = tx.flatten(), ty.flatten()
 
-    # We only want to do work inside the region of support: estimate
-    # as a circle for now, works well with radial
+    # We only want to do work inside the region of support:
+    # estimate as a circle for now, works well with radial
     outside = np.argwhere(
         np.sqrt(tx**2 + ty**2) > np.max(kx)).squeeze()
     inside = np.argwhere(
         np.sqrt(tx**2 + ty**2) <= np.max(kx)).squeeze()
     tx = np.delete(tx, outside)
     ty = np.delete(ty, outside)
+
+    if inverse:
+        # We want to fill all non-cartesian locations, so the region
+        # of support is the whole thing (all indices)
+        k = np.delete(k, outside, axis=0)
+        inside = np.arange(kx.size, dtype=int)
+
+    # Swap coordinates if doing inverse (cartesian to radial)
+    if inverse:
+        kx, tx = tx, kx
+        ky, ty = ty, ky
+    kxy = np.concatenate((kx[:, None], ky[:, None]), axis=-1)
     txy = np.concatenate((tx[:, None], ty[:, None]), axis=-1)
 
-    # Grid
-    kxy = np.concatenate((kx[:, None], ky[:, None]), axis=-1)
+    # Find all targets within radius of source points
     kdtree = cKDTree(kxy)
     idx = kdtree.query_ball_point(txy, r=radius)
-    res = np.zeros((N*M, nc), dtype=k.dtype)
+
+    # The result will be shaped different if we are doing inverse
+    # gridding:
+    if inverse:
+        res = np.zeros((tx.size, nc), dtype=k.dtype)
+    else:
+        res = np.zeros((N*M, nc), dtype=k.dtype)
 
     t0 = time()
     key_x, key_y = grog_powers(tx, ty, kx, ky, idx, precision)
@@ -191,17 +215,31 @@ def grog(
         tx, ty, kx, ky, k, idx, res, inside.astype(np.uint32),
         Dx, Dy, precision)
 
-    # Remove the oversampling factor and return in kspace
-    N4, M4 = int(N/4), int(M/4)
-    ax = (0, 1)
-    im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        res.reshape((N, M, nc), order='F'),
-        axes=ax), axes=ax), axes=ax)[N4:-N4, M4:-M4, :]
-    if ret_image:
-        retVal = im
+    if inverse:
+        retVal = res
     else:
-        retVal = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
-            im, axes=ax), axes=ax), axes=ax)
+        # Remove the oversampling factor and return in kspace or
+        # imspace
+        ax = (0, 1)
+        im = None
+        if remove_os:
+            N4, M4 = int(N/4), int(M/4)
+            im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+                res.reshape((N, M, nc), order='F'),
+                axes=ax), axes=ax), axes=ax)[N4:-N4, M4:-M4, :]
+            res = np.fft.ifftshift(np.fft.fft2(np.fft.fftshift(
+                im, axes=ax), axes=ax), axes=ax)
+
+        if ret_image:
+            if im is None:
+                retVal = np.fft.fftshift(np.fft.ifft2(
+                    np.fft.ifftshift(res.reshape(
+                        (N, M, nc), order='F'), axes=ax),
+                    axes=ax), axes=ax)
+            else:
+                retVal = im
+        else:
+            retVal = res
 
     # If the user asked for the precomputed dictionaries back, add
     # them to the tuple of returned values
