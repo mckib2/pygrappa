@@ -307,6 +307,12 @@ operators Gx and Gy:
 
 See `examples.basic_radialgrappaop.py` for usage example.
 
+Esoterically, forward and inverse gridding are supported out of the
+box with this implementation of GROG, i.e.,
+non-Cartesian -> Cartesian can be reversed.  It's not perfect and
+I've never heard of anyone doing this via GROG, but check out
+`examples.inverse_grog` for more info.
+
 NL-GRAPPA uses machine learning feature augmentation to reduce model-
 based reconstruction error [15]_.  It can be called like so:
 

@@ -4,8 +4,9 @@ import numpy as np
 from scipy.linalg import expm, logm
 
 def radialgrappaop(
-        kx, ky, k, spoke_axis=-2, coil_axis=-1, spoke_axis_coord=-1,
-        lamda=0.01, ret_lGtheta=False):
+        kx, ky, k, nspokes=None, spoke_axis=-2, coil_axis=-1,
+        spoke_axis_coord=-1, lamda=0.01, ret_lGtheta=False,
+        traj_warn=True):
     '''Non-Cartesian Radial GRAPPA operator.
 
     Parameters
@@ -17,6 +18,9 @@ def radialgrappaop(
     k : array_like
         Complex kspace data corresponding to the measurements at
         locations kx, ky.  k has three dimensions: sx, nr, and coil.
+    nspokes : int, optional
+        Number of spokes.  Used when (kx, ky) and k are given with
+        flattened sample and spoke axes, i.e., (sx*nr, nc).
     spoke_axis : int, optional
         Axis of k that contains the spoke data.  Not for kx, ky: see
         spoke_axis_coord to specify spoke axis for kx and ky.
@@ -29,6 +33,9 @@ def radialgrappaop(
         and log(Gx), log(Gy).
     ret_lGtheta : bool, optional
         Return log(Gtheta) instead of Gx, Gy.
+    traj_warn : bool, optional
+        Warn about potential inconsistencies in trajectory, e.g.,
+        not shaped correctly.
 
     Returns
     -------
@@ -60,14 +67,23 @@ def radialgrappaop(
 
     # Move coils and spoke_axis to the back:
     k = np.moveaxis(k, (spoke_axis, coil_axis), (-2, -1))
-    _sx, nr, nc = k.shape[:]
     kx = np.moveaxis(kx, spoke_axis_coord, -1)
     ky = np.moveaxis(ky, spoke_axis_coord, -1)
 
+    if k.ndim == 2 and nspokes is not None:
+        nc = k.shape[-1]
+        k = np.reshape(k, (-1, nspokes, nc))
+    sx, nr, nc = k.shape[:]
+
+    if kx.ndim == 1 and nspokes is not None:
+        kx = np.reshape(kx, (sx, nr))
+        ky = np.reshape(ky, (sx, nr))
+
     # We can do a sanity check to make sure we do indeed have rays.
     # We should have very little variation in dx, dy along each ray:
-    assert np.all(np.std(np.diff(kx, axis=0), axis=0) < 1e-10)
-    assert np.all(np.std(np.diff(ky, axis=0), axis=0) < 1e-10)
+    if traj_warn:
+        assert np.all(np.std(np.diff(kx, axis=0), axis=0) < 1e-10)
+        assert np.all(np.std(np.diff(ky, axis=0), axis=0) < 1e-10)
 
     # We need sources (last source has no target!) and targets (first
     # target has no associated source!)

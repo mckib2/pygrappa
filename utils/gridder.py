@@ -14,7 +14,7 @@ def gridder(
         1D arrays of (kx, ky) coordinates cooresponding to
         measurements, k.
     k : array_like
-        k-space measurements cooresponding to spatial frequencies
+        k-space measurements corresponding to spatial frequencies
         (kx, ky).
     sx, sy : int
         Size of gridded kspace.
@@ -29,6 +29,13 @@ def gridder(
         Strategy for interpolation used by
         scipy.interpolate.griddata().  See scipy docs for complete
         list of options.
+
+    Returns
+    -------
+    imspace : array_like, optional
+        If ifft=True.
+    kspace : array_like, optional
+        If ifft=False.
     '''
 
     # Move coil data to the back

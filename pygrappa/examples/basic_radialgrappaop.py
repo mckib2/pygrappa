@@ -28,11 +28,6 @@ if __name__ == '__main__':
     # U, S, Vh = np.linalg.svd(k, full_matrices=False)
     # k = U[:, :nc] @ np.diag(S[:nc]) @ Vh[:nc, :nc]
 
-    # Put in correct shape for radialgrappaop
-    k = np.reshape(k, (N, spokes, nc))
-    kx = np.reshape(kx, (N, spokes))
-    ky = np.reshape(ky, (N, spokes))
-
     # Take a look at the sampling pattern:
     plt.scatter(kx, ky, .1)
     plt.title('Radial Sampling Pattern')
@@ -40,7 +35,7 @@ if __name__ == '__main__':
 
     # Get the GRAPPA operators!
     t0 = time()
-    Gx, Gy = radialgrappaop(kx, ky, k)
+    Gx, Gy = radialgrappaop(kx, ky, k, nspokes=spokes)
     print('Gx, Gy computed in %g seconds' % (time() - t0))
 
     # Put in correct order for GROG
@@ -51,9 +46,10 @@ if __name__ == '__main__':
     res, Dx, Dy = grog(kx, ky, k, N, N, Gx, Gy, ret_dicts=True)
     print('Gridded in %g seconds' % (time() - t0))
 
-    t0 = time()
-    res = grog(kx, ky, k, N, N, Gx, Gy, Dx=Dx, Dy=Dy)
-    print('Gridded in %g seconds' % (time() - t0))
+    # We can do it faster again if we pass back in the dictionaries!
+    # t0 = time()
+    # res = grog(kx, ky, k, N, N, Gx, Gy, Dx=Dx, Dy=Dy)
+    # print('Gridded in %g seconds' % (time() - t0))
 
     # Get the Cartesian grid
     tx, ty = np.meshgrid(
