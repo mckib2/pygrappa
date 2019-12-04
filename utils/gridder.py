@@ -14,7 +14,7 @@ def gridder(
         1D arrays of (kx, ky) coordinates cooresponding to
         measurements, k.
     k : array_like
-        k-space measurements cooresponding to spatial frequencies
+        k-space measurements corresponding to spatial frequencies
         (kx, ky).
     sx, sy : int
         Size of gridded kspace.
