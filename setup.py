@@ -59,8 +59,10 @@ setup(
             include_dirs=['src/']),
         Extension(
             "pygrappa.grog_powers",
-            ["src/grog_powers.cpp"],
-            include_dirs=['src/']),
+            ["src/grog_powers.cpp", 'src/_grog_powers_template.cpp'],
+            include_dirs=['src/'],
+            extra_compile_args=["-std=c++14"],
+            extra_link_args=["-std=c++14"]),
         Extension(
             "pygrappa.grog_gridding",
             ["src/grog_gridding.cpp"],
