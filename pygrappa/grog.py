@@ -7,8 +7,8 @@ from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.linalg import fractional_matrix_power as fmp
 from tqdm import tqdm
 
-from pygrappa.grog_powers import grog_powers
-from pygrappa.grog_gridding import grog_gridding
+from pygrappa.grog_powers import grog_powers_double, grog_powers_float # pylint: disable=E0611
+from pygrappa.grog_gridding import grog_gridding # pylint: disable=E0611
 
 def _make_key(key, precision):
     '''Dictionary keys.'''
@@ -24,7 +24,8 @@ def grog(
     ----------
     kx, ky : array_like
         k-space coordinates (kx, ky) of measured data k.  kx, ky
-        should each be a 1D array.
+        should each be a 1D array.  Must both be either float or
+        double.
     k : array_like
         Measured  k-space data at points (kx, ky).
     N, M : int
@@ -60,6 +61,11 @@ def grog(
     Dx, Dy : dict, optional
         Fractional matrix power dictionary for both Gx and Gy.
 
+    Raises
+    ------
+    AssertionError
+        When (kx, ky) have different types.
+
     Notes
     -----
     Implements the GROG algorithm as described in [1]_.
@@ -73,6 +79,10 @@ def grog(
            59.4 (2008): 930-935.
     '''
 
+    # Make sure types are consistent before calling grog_powers
+    assert isinstance(kx, type(ky)), (
+        '(kx, ky) must both be either double or float!')
+
     # Coils to the back
     k = np.moveaxis(k, coil_axis, -1)
     _ns, nc = k.shape[:]
@@ -84,8 +94,8 @@ def grog(
 
     # Create the target grid (or source grid for inverse gridding)
     tx, ty = np.meshgrid(
-        np.linspace(np.min(kx), np.max(kx), N),
-        np.linspace(np.min(ky), np.max(ky), M))
+        np.linspace(np.min(kx), np.max(kx), N, dtype=kx.dtype),
+        np.linspace(np.min(ky), np.max(ky), M, dtype=kx.dtype))
     tx, ty = tx.flatten(), ty.flatten()
 
     # We only want to do work inside the region of support:
@@ -122,7 +132,14 @@ def grog(
         res = np.zeros((N*M, nc), dtype=k.dtype)
 
     t0 = time()
-    key_x, key_y = grog_powers(tx, ty, kx, ky, idx, precision)
+    # Handle both single and double floating point calculations,
+    # have to do it in separate functions because Cython...
+    if isinstance(tx, float):
+        key_x, key_y = grog_powers_float(
+            tx, ty, kx, ky, idx, precision)
+    else:
+        key_x, key_y = grog_powers_double(
+            tx, ty, kx, ky, idx, precision)
     print('Took %g seconds to find required powers' % (time() - t0))
 
     # If we have provided dictionaries, whitle down the work to only
