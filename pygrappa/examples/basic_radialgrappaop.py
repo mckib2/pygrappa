@@ -38,10 +38,7 @@ if __name__ == '__main__':
     Gx, Gy = radialgrappaop(kx, ky, k, nspokes=spokes)
     print('Gx, Gy computed in %g seconds' % (time() - t0))
 
-    # Put in correct order for GROG
-    kx = kx.flatten()
-    ky = ky.flatten()
-    k = np.reshape(k, (-1, nc))
+    # Do GROG
     t0 = time()
     res, Dx, Dy = grog(kx, ky, k, N, N, Gx, Gy, ret_dicts=True)
     print('Gridded in %g seconds' % (time() - t0))
