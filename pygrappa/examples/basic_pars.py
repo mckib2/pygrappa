@@ -39,7 +39,7 @@ if __name__ == '__main__':
         np.linspace(np.min(ky), np.max(ky), sx))
     tx, ty = tx.flatten(), ty.flatten()
     calib = _kspace_ellipse_sens(
-        tx, ty, 0, 0, 1, .95, .95, 0, coeffs).T
+        tx/2 + 1j*ty/2, 0, 0, 1, .95, .95, 0, coeffs).T
     sens = ifft(calib.reshape((sx, sx, nc)))
 
     # BART's phantom function has a better way to simulate coil
