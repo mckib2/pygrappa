@@ -28,6 +28,7 @@ from time import time
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.cluster.vq import whiten
 from phantominator import kspace_shepp_logan, radial
 try:
     from bart import bart # pylint: disable=E0401
@@ -35,6 +36,7 @@ try:
 except ModuleNotFoundError:
     FOUND_BART = False
 
+from pygrappa import radialgrappaop, grog
 from utils import gridder
 
 if __name__ == '__main__':
@@ -86,7 +88,10 @@ if __name__ == '__main__':
     # The phantominator module also supports arbitrary kspace
     # sampling for multiple coils:
     kx, ky = radial(sx, spokes)
+    kx = np.reshape(kx, (sx, spokes), 'F').flatten()
+    ky = np.reshape(ky, (sx, spokes), 'F').flatten()
     k = kspace_shepp_logan(kx, ky, ncoil=nc)
+    k = whiten(k)
 
     # We will prefer a gridding approach to keep things simple.  The
     # helper function gridder wraps scipy.interpolate.griddata():
@@ -98,5 +103,17 @@ if __name__ == '__main__':
     plt.figure()
     plt.imshow(sos(grid_imspace))
     plt.title('scipy.interpolate.griddata')
+    plt.xlabel('Recon: %g sec' % grid_time)
+    plt.show(block=False)
+
+    # We could also use GROG to grid
+    t0 = time()
+    Gx, Gy = radialgrappaop(kx, ky, k, nspokes=spokes)
+    grog_res = grog(kx, ky, k, sx, sx, Gx, Gy)
+    grid_time = time() - t0
+
+    plt.figure()
+    plt.imshow(sos(ifft(grog_res)))
+    plt.title('GROG')
     plt.xlabel('Recon: %g sec' % grid_time)
     plt.show()
