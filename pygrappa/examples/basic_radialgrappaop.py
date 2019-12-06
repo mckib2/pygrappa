@@ -18,9 +18,9 @@ if __name__ == '__main__':
     # Radially sampled Shepp-Logan
     N, spokes, nc = 288, 72, 8
     kx, ky = radial(N, spokes)
-    kx = np.reshape(kx, (N, spokes), 'F').flatten().astype(float)
-    ky = np.reshape(ky, (N, spokes), 'F').flatten().astype(float)
-    k = kspace_shepp_logan(kx, ky, ncoil=nc)
+    kx = np.reshape(kx, (N, spokes), 'F').flatten().astype(np.float32)
+    ky = np.reshape(ky, (N, spokes), 'F').flatten().astype(np.float32)
+    k = kspace_shepp_logan(kx, ky, ncoil=nc).astype(np.complex64)
     k = whiten(k) # whitening seems to help conditioning of Gx, Gy
 
     # # Instead of whitening, maybe you prefer to reduce coils:
