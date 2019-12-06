@@ -18,9 +18,9 @@ if __name__ == '__main__':
     # Radially sampled Shepp-Logan
     N, spokes, nc = 288, 72, 8
     kx, ky = radial(N, spokes)
-    kx = np.reshape(kx, (N, spokes), 'F').flatten()
-    ky = np.reshape(ky, (N, spokes), 'F').flatten()
-    k = kspace_shepp_logan(kx, ky, ncoil=nc)
+    kx = np.reshape(kx, (N, spokes), 'F').flatten().astype(np.float32)
+    ky = np.reshape(ky, (N, spokes), 'F').flatten().astype(np.float32)
+    k = kspace_shepp_logan(kx, ky, ncoil=nc).astype(np.complex64)
     k = whiten(k) # whitening seems to help conditioning of Gx, Gy
 
     # # Instead of whitening, maybe you prefer to reduce coils:
@@ -38,10 +38,7 @@ if __name__ == '__main__':
     Gx, Gy = radialgrappaop(kx, ky, k, nspokes=spokes)
     print('Gx, Gy computed in %g seconds' % (time() - t0))
 
-    # Put in correct order for GROG
-    kx = kx.flatten()
-    ky = ky.flatten()
-    k = np.reshape(k, (-1, nc))
+    # Do GROG
     t0 = time()
     res, Dx, Dy = grog(kx, ky, k, N, N, Gx, Gy, ret_dicts=True)
     print('Gridded in %g seconds' % (time() - t0))

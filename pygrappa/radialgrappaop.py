@@ -82,8 +82,9 @@ def radialgrappaop(
     # We can do a sanity check to make sure we do indeed have rays.
     # We should have very little variation in dx, dy along each ray:
     if traj_warn:
-        assert np.all(np.std(np.diff(kx, axis=0), axis=0) < 1e-10)
-        assert np.all(np.std(np.diff(ky, axis=0), axis=0) < 1e-10)
+        tol = 1e-5 if kx.dtype == np.float32 else 1e-10
+        assert np.all(np.std(np.diff(kx, axis=0), axis=0) < tol)
+        assert np.all(np.std(np.diff(ky, axis=0), axis=0) < tol)
 
     # We need sources (last source has no target!) and targets (first
     # target has no associated source!)

@@ -7,8 +7,9 @@ from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.linalg import fractional_matrix_power as fmp
 from tqdm import tqdm
 
-from pygrappa.grog_powers import grog_powers
-from pygrappa.grog_gridding import grog_gridding
+from pygrappa.grog_powers import grog_powers_double, grog_powers_float # pylint: disable=E0611
+from pygrappa.grog_gridding import (
+    grog_gridding_double, grog_gridding_float) # pylint: disable=E0611
 
 def _make_key(key, precision):
     '''Dictionary keys.'''
@@ -24,7 +25,8 @@ def grog(
     ----------
     kx, ky : array_like
         k-space coordinates (kx, ky) of measured data k.  kx, ky
-        should each be a 1D array.
+        should each be a 1D array.  Must both be either float or
+        double.
     k : array_like
         Measured  k-space data at points (kx, ky).
     N, M : int
@@ -60,6 +62,14 @@ def grog(
     Dx, Dy : dict, optional
         Fractional matrix power dictionary for both Gx and Gy.
 
+    Raises
+    ------
+    AssertionError
+        When (kx, ky) have different types.
+    AssertionError
+        When (kx, ky) and k do not have matching types, i.e.,
+        if (kx, ky) are float32, k must be complex64.
+
     Notes
     -----
     Implements the GROG algorithm as described in [1]_.
@@ -73,6 +83,13 @@ def grog(
            59.4 (2008): 930-935.
     '''
 
+    # Make sure types are consistent before calling grog funcs
+    assert kx.dtype == ky.dtype, (
+        '(kx, ky) must both be either double or float!')
+    assert (k.dtype == np.complex64 if
+            kx.dtype == np.float32 else k.dtype == np.complex128), (
+                '(kx, ky) and k must have matching types!')
+
     # Coils to the back
     k = np.moveaxis(k, coil_axis, -1)
     _ns, nc = k.shape[:]
@@ -84,8 +101,8 @@ def grog(
 
     # Create the target grid (or source grid for inverse gridding)
     tx, ty = np.meshgrid(
-        np.linspace(np.min(kx), np.max(kx), N),
-        np.linspace(np.min(ky), np.max(ky), M))
+        np.linspace(np.min(kx), np.max(kx), N, dtype=kx.dtype),
+        np.linspace(np.min(ky), np.max(ky), M, dtype=kx.dtype))
     tx, ty = tx.flatten(), ty.flatten()
 
     # We only want to do work inside the region of support:
@@ -122,7 +139,14 @@ def grog(
         res = np.zeros((N*M, nc), dtype=k.dtype)
 
     t0 = time()
-    key_x, key_y = grog_powers(tx, ty, kx, ky, idx, precision)
+    # Handle both single and double floating point calculations,
+    # have to do it in separate functions because Cython...
+    if tx.dtype == np.float32:
+        key_x, key_y = grog_powers_float(
+            tx, ty, kx, ky, idx, precision)
+    else:
+        key_x, key_y = grog_powers_double(
+            tx, ty, kx, ky, idx, precision)
     print('Took %g seconds to find required powers' % (time() - t0))
 
     # If we have provided dictionaries, whitle down the work to only
@@ -150,8 +174,10 @@ def grog(
         # First thing we need is the scale factor, note that we will
         # assume the inverse!
         lscale_fac = np.log(scale_fac)
-        frac_mats_x[lscale_fac] = np.linalg.pinv(fmp(Gx, lscale_fac))
-        frac_mats_y[lscale_fac] = np.linalg.pinv(fmp(Gy, lscale_fac))
+        frac_mats_x[lscale_fac] = np.linalg.pinv(
+            fmp(Gx, lscale_fac)).astype(k.dtype)
+        frac_mats_y[lscale_fac] = np.linalg.pinv(
+            fmp(Gy, lscale_fac)).astype(k.dtype)
 
         for keyx0, keyy0 in tqdm(
                 zip(key_x, key_y), total=len(key_x), leave=False,
@@ -186,34 +212,43 @@ def grog(
             nx = list(rx.values()) + [1] # +1 to account for scale_fac
             ny = list(ry.values()) + [1]
             Dx[np.abs(keyx0)] = np.linalg.multi_dot([
-                np.linalg.matrix_power(frac_mats_x[lpx0], n0) for
+                np.linalg.matrix_power(
+                    frac_mats_x[lpx0], n0).astype(k.dtype) for
                 lpx0, n0 in zip(lpx, nx)])
             Dy[np.abs(keyy0)] = np.linalg.multi_dot([
-                np.linalg.matrix_power(frac_mats_y[lpy0], n0) for
+                np.linalg.matrix_power(
+                    frac_mats_y[lpy0], n0).astype(k.dtype) for
                 lpy0, n0 in zip(lpy, ny)])
 
             if np.sign(keyx0) < 0:
-                Dx[keyx0] = np.linalg.pinv(Dx[np.abs(keyx0)])
+                Dx[keyx0] = np.linalg.pinv(
+                    Dx[np.abs(keyx0)]).astype(k.dtype)
             if np.sign(keyy0) < 0:
-                Dy[keyy0] = np.linalg.pinv(Dy[np.abs(keyy0)])
+                Dy[keyy0] = np.linalg.pinv(
+                    Dy[np.abs(keyy0)]).astype(k.dtype)
 
     else:
         for key0 in tqdm(key_x, leave=False, desc='Dx'):
-            Dx[np.abs(key0)] = fmp(Gx, np.abs(key0))
+            Dx[np.abs(key0)] = fmp(Gx, np.abs(key0)).astype(k.dtype)
             if np.sign(key0) < 0:
-                Dx[key0] = np.linalg.pinv(Dx[np.abs(key0)])
+                Dx[key0] = np.linalg.pinv(
+                    Dx[np.abs(key0)]).astype(k.dtype)
         for key0 in tqdm(key_y, leave=False, desc='Dy'):
-            Dy[np.abs(key0)] = fmp(Gy, np.abs(key0))
+            Dy[np.abs(key0)] = fmp(Gy, np.abs(key0)).astype(k.dtype)
             if np.sign(key0) < 0:
-                Dy[key0] = np.linalg.pinv(Dy[np.abs(key0)])
+                Dy[key0] = np.linalg.pinv(
+                    Dy[np.abs(key0)]).astype(k.dtype)
     print(
         'Took %g seconds to precompute fractional matrix powers' % (
             time() - t0))
 
     # res is modified inplace
-    grog_gridding(
-        tx, ty, kx, ky, k, idx, res, inside.astype(np.uint32),
-        Dx, Dy, precision)
+    if res.dtype == np.complex64:
+        grog_gridding_float(
+            tx, ty, kx, ky, k, idx, res, inside, Dx, Dy, precision)
+    else:
+        grog_gridding_double(
+            tx, ty, kx, ky, k, idx, res, inside, Dx, Dy, precision)
 
     if inverse:
         retVal = res

@@ -23,8 +23,10 @@ extensions = [
         include_dirs=['src/', np.get_include()]),
     Extension(
         'pygrappa.grog_powers',
-        ['src/grog_powers.pyx'],
-        include_dirs=['src/', np.get_include()]),
+        ['src/grog_powers.pyx', 'src/_grog_powers_template.cpp'],
+        include_dirs=['src/', np.get_include()],
+        extra_compile_args=["-std=c++14"],
+        extra_link_args=["-std=c++14"]),
     Extension(
         'pygrappa.grog_gridding',
         ['src/grog_gridding.pyx'],
