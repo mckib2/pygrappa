@@ -49,8 +49,8 @@ Installation under a Unix-based platform should then be as easy as:
 
     pip install pygrappa
 
-You will need a C/C++ compiler.  See INSTALLATION.rst for more info
-on installing under Windows.
+You will need a C/C++ compiler that supports the C++14 standard.
+See INSTALLATION.rst for more info on installing under Windows.
 
 Examples
 ========
