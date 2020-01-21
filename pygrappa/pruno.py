@@ -12,6 +12,12 @@ from tqdm import trange
 def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     '''Parallel Reconstruction Using Null Operations (PRUNO).
 
+    Parameters
+    ----------
+
+    Returns
+    -------
+
     References
     ----------
     .. [1] Zhang, Jian, Chunlei Liu, and Michael E. Moseley.
@@ -22,6 +28,7 @@ def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     # Coils to da back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
+    nx, ny, _nc = kspace.shape[:]
 
     # Make a calibration matrix
     kx, ky = kernel_size[:]
@@ -43,7 +50,7 @@ def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     # Calculate composite kernels
     # TODO: not sure if this is doing the right thing...
     n = np.reshape(n, (-1, nc, n.shape[-1]))
-    nconj = np.conj(n)
+    nconj = np.conj(n).T
     eta = np.zeros((nc, nc, n.shape[0]*2 - 1), dtype=kspace.dtype)
     print(n.shape)
     for ii in trange(nc):
