@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.16.1',
+    version='0.17.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -38,14 +38,15 @@ setup(
         'mri grappa parallel-imaging image-reconstruction python '
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
         'igrappa hp-grappa segmented-grappa grappa-operator '
-        'through-time-grappa pars grog nonlinear-grappa g-factor'),
+        'through-time-grappa pars grog nonlinear-grappa g-factor'
+        'sense'),
     install_requires=[
-        "numpy>=1.17.4",
-        "scipy>=1.3.2",
-        "matplotlib>=3.1.1",
-        "phantominator>=0.4.4",
+        "numpy>=1.18.1",
+        "scipy>=1.4.1",
+        "matplotlib>=3.1.2",
+        "phantominator>=0.6.1",
         "scikit-image>=0.16.2",
-        "tqdm>=4.35.0",
+        "tqdm>=4.38.0",
     ],
     cmdclass={'build_ext': build_ext},
     setup_requires=['numpy'],
