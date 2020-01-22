@@ -22,6 +22,7 @@ Included in the `pygrappa` module are the following:
 - GROG [14]_: `grog()`
 - NL-GRAPPA [15]_: `nlgrappa()`
 - g-factor map: `gfactor()`
+- SENSE: `sense1d()`
 
 Installation
 ============
@@ -325,7 +326,7 @@ based reconstruction error [15]_.  It can be called like so:
 You might need to play around with the arguments to get good images.
 
 g-factor maps show geometry factor and a general sense of how well
-parallel imaging techniques like GRAPPA will work.  Coil sensitities
+parallel imaging techniques like GRAPPA will work.  Coil sensitivities
 must be known for to use this function as well as integer
 acceleration factors in x and y:
 
@@ -333,6 +334,23 @@ acceleration factors in x and y:
 
     from pygrappa import gfactor
     g = gfactor(sens, Rx, Ry)
+
+SENSE implements the algorithm described in [16]_ for unwrapping
+aliased images along a single axis.  Coil sensitivity maps must be
+provided.  Coil images may be provided in image domain or k-space
+with the approprite flag:
+
+.. code-block:: python
+
+    from pygrappa import sense1d
+    res = sense1d(im, sens, Rx=2, coil_axis=-1)
+
+    # Or, kspace data for coil images may be provided:
+    res = sense1d(kspace, sens, Rx=2, coil_axis=-1, imspace=False)
+
+Although SENSE is more commonly known as an image domain parallel
+imaging reconstruction technique, it is useful to include in this
+package for comparison to kernel based and hybrid reconstructions.
 
 References
 ==========
@@ -403,3 +421,7 @@ References
 .. [15] Chang, Yuchou, Dong Liang, and Leslie Ying. "Nonlinear
         GRAPPA: A kernel approach to parallel MRI reconstruction."
         Magnetic resonance in medicine 68.3 (2012): 730-740.
+.. [16] Pruessmann, Klaas P., et al. "SENSE: sensitivity encoding
+        for fast MRI." Magnetic Resonance in Medicine: An Official
+        Journal of the International Society for Magnetic
+        Resonance in Medicine 42.5 (1999): 952-962.
