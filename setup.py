@@ -23,7 +23,7 @@ class build_ext(_build_ext):
 
 setup(
     name='pygrappa',
-    version='0.17.0',
+    version='0.18.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
     packages=find_packages(),
@@ -39,7 +39,7 @@ setup(
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
         'igrappa hp-grappa segmented-grappa grappa-operator '
         'through-time-grappa pars grog nonlinear-grappa g-factor'
-        'sense'),
+        'sense', 'cg-sense'),
     install_requires=[
         "numpy>=1.18.1",
         "scipy>=1.4.1",
