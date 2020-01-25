@@ -6,6 +6,11 @@ Unfortunately there aren't a lot of easy to use Python
 implementations of it or its many variants available, so I decided to
 release this simple package.
 
+There are also a couple reference SENSE-like implementations that
+have made their way into the package.  This is to be expected -- a
+lot of later parallel imaging algorithms have hints of both GRAPPA-
+and SENSE-like inspirations.
+
 Included in the `pygrappa` module are the following:
 
 - GRAPPA [1]_: `grappa()`
@@ -22,7 +27,8 @@ Included in the `pygrappa` module are the following:
 - GROG [14]_: `grog()`
 - NL-GRAPPA [15]_: `nlgrappa()`
 - g-factor map: `gfactor()`
-- SENSE: `sense1d()`
+- SENSE [16]_: `sense1d()`
+- CG-SENSE [17]_: `cgsense()`
 
 Installation
 ============
