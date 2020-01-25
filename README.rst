@@ -348,6 +348,15 @@ with the approprite flag:
     # Or, kspace data for coil images may be provided:
     res = sense1d(kspace, sens, Rx=2, coil_axis=-1, imspace=False)
 
+CG-SENSE implements a Cartesian version of the algorithm described
+in [17]_.  It works for arbitrary undersampling of Cartesian datasets.
+Undersampled k-space and coil sensitivity maps are provided:
+
+.. code-block:: python
+
+    from pygrappa import cgsense
+    res = cgsense(kspace, sens, coil_axis=-1)
+
 Although SENSE is more commonly known as an image domain parallel
 imaging reconstruction technique, it is useful to include in this
 package for comparison to kernel based and hybrid reconstructions.
@@ -425,3 +434,8 @@ References
         for fast MRI." Magnetic Resonance in Medicine: An Official
         Journal of the International Society for Magnetic
         Resonance in Medicine 42.5 (1999): 952-962.
+.. [17] Pruessmann, Klaas P., et al. "Advances in sensitivity
+        encoding with arbitrary k‐space trajectories." Magnetic
+        Resonance in Medicine: An Official Journal of the
+        International Society for Magnetic Resonance in Medicine
+        46.4 (2001): 638-651.

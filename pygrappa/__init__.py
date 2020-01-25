@@ -21,3 +21,4 @@ from .grog import grog
 from .nlgrappa import nlgrappa
 from .gfactor import gfactor, gfactor_single_coil_R2
 from .sense1d import sense1d
+from .cgsense import cgsense
