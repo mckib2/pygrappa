@@ -4,15 +4,17 @@
 from time import time
 
 import numpy as np
+import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
-from utils.gen_lstsq import isgd
+# from utils.gen_lstsq import isgd
+from utils.gen_lstsq import reconstructor
 
 if __name__ == '__main__':
 
 
     # Generate fake sensitivity maps: mps
-    N = 128
+    N = 256
     ncoils = 4
     xx = np.linspace(0, 1, N)
     x, y = np.meshgrid(xx, xx)
@@ -31,7 +33,7 @@ if __name__ == '__main__':
         np.fft.ifftshift(imspace, axes=ax), axes=ax), axes=ax)
 
     # crop window from the center of k-space for calibration
-    pd = 10
+    pd = 20
     ctr = int(N/2)
     calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
 
@@ -42,14 +44,17 @@ if __name__ == '__main__':
     kspace[::2, 1::2, :] = 0
     kspace[1::2, ::2, :] = 0
 
-    mask = np.abs(kspace[ctr-2:ctr+2+1, ctr-2:ctr+2+1, 0]) > 0
-    np.random.seed(0)
+    # Reconstruct kspace
+    weight_fun_args = {
+        'thrash': 10,
+        'batch_size': 20,
+    }
     t0 = time()
-    W = isgd(calib, mask, kernel_size=(5, 5), coil_axis=-1)
-    print('Implicit stochastic GD took %g seconds' % (time() - t0))
-
-    S = kspace[ctr-2:ctr+2+1, ctr-2:ctr+2+1, :]
-    S = S[mask].flatten()[None, :]
-    recon = S @ W
-    print(recon.squeeze())
-    print(kspace[ctr, ctr, :])
+    res = reconstructor(
+        kspace, calib, kernel_size, coil_axis=-1, **weight_fun_args)
+    print('Stochastic GD took %g seconds' % (time() - t0))
+    res = np.fft.ifftshift(np.fft.ifft2(
+        np.fft.fftshift(res, axes=ax), axes=ax), axes=ax)
+    sos = np.sqrt(np.sum(np.abs(res)**2, axis=-1))
+    plt.imshow(sos)
+    plt.show()
