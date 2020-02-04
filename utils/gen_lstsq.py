@@ -11,6 +11,7 @@ quick and without crashing our machines.
 from itertools import zip_longest
 
 import numpy as np
+from tqdm import tqdm
 
 def _grouper(iterable, n, fillvalue=None):
     '''Collect data into fixed-length chunks or blocks.'''
@@ -71,7 +72,7 @@ def isgd(
     assert mask.shape == kernel_size
     assert mask.dtype == bool
 
-    adj = [not (k0 % 2) for k0 in kernel_size]
+    # adj = [(k0 % 2) for k0 in kernel_size]
     inner_sh = tuple(
         [n0 - k0 for n0, k0 in zip(acs.shape, kernel_size)])
     totinner = np.prod(inner_sh)
@@ -83,8 +84,8 @@ def isgd(
                 totinner, size=int(thrash*totinner)):
             idx = np.unravel_index(flat_idx, inner_sh)
             sl = tuple([
-                slice(ii, ii+k0+adj0)
-                for k0, adj0, ii in zip(kernel_size, adj, idx)])
+                slice(ii, ii+k0)
+                for k0, ii in zip(kernel_size, idx)])
             yield acs[sl + (slice(None),)]
 
     nc = acs.shape[-1]
@@ -138,7 +139,7 @@ def isgd(
     return W
 
 def reconstructor(
-        kspace, calib, kernel_size, weight_fun, coil_axis=-1,
+        kspace, calib, kernel_size, weight_fun=isgd, coil_axis=-1,
         **kwargs):
     '''Reconstructs kspace using weights from provided function.
 
@@ -148,14 +149,46 @@ def reconstructor(
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
     orig_sh = kspace.shape[:]
-    mask = np.abs(kspace[..., 0]) > 0
+    holes = np.abs(kspace[..., 0]) == 0
 
     # Pad the suckers
-    pads = [(k0//2, k0//2) for k0 in kernel_size]
+    k2 = [k0//2 for k0 in kernel_size]
+    # adj = [k0 % 2 for k0 in kernel_size]
+    pads = tuple([(k0//2, k0//2) for k0 in kernel_size] + [(0, 0)])
     kspace = np.pad(kspace, pads, mode='constant')
     calib = np.pad(calib, pads, mode='constant')
 
     # Find the holes and fill 'em up
+    Ws = dict() # dictionary of mask : weight pairs
+    res = np.empty(kspace.shape, dtype=kspace.dtype)
+    for idx in tqdm(
+            np.argwhere(holes),
+            total=np.sum(holes.flatten()),
+            leave=False):
+        sl = tuple([
+            slice(idx0, idx0+k0)
+            for idx0, k0 in zip(idx, kernel_size)]) + (slice(None),)
+        patch = kspace[sl]
+        mask = np.abs(patch[..., 0]) > 0
+        key = str(mask)
+        if key not in Ws:
+            W = weight_fun(
+                calib,
+                mask,
+                kernel_size=kernel_size,
+                coil_axis=-1,
+                **kwargs)
+            Ws[key] = W
+        else:
+            W = Ws[key]
+
+        ctr = tuple([
+            k20+idx0 for k20, idx0 in zip(k2, idx)]) + (slice(None),)
+        S = patch[mask].flatten()[None, :]
+        res[ctr] = S @ W
+
+    res[np.abs(kspace) > 0] = kspace[np.abs(kspace) > 0]
+    return res
 
 if __name__ == '__main__':
     pass
