@@ -19,6 +19,7 @@ from .radialgrappaop import radialgrappaop
 from .grog import grog
 # from .kspa import kspa
 from .nlgrappa import nlgrappa
+from .nlgrappa_matlab import nlgrappa_matlab
 from .gfactor import gfactor, gfactor_single_coil_R2
 from .sense1d import sense1d
 from .cgsense import cgsense
