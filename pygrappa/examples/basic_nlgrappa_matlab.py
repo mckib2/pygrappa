@@ -16,8 +16,8 @@ if __name__ == '__main__':
         data, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
     sos = np.sqrt(np.sum(np.abs(im)**2, axis=-1))
 
-    plt.imshow(sos)
-    plt.show()
+    # plt.imshow(sos, cmap='gray')
+    # plt.show()
 
     off = 0 # starting sampling location
 
@@ -25,9 +25,9 @@ if __name__ == '__main__':
     R = 5
     nencode = 42
 
-    # The convlution size
+    # The convolution size
     num_block = 2
-    num_column = 15
+    num_column = 15 # make smaller to go quick during development
 
     # Obtain ACS data and undersampled data
     sx, sy, nc = data.shape[:]
@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     # Obtain uniformly undersampled locations
     pe_loc = np.arange(off, sx-off, R)
-    kspace_u = np.zeros((sx, sy, nc), dtype=data.dtype)
-    kspace_u[pe_loc, ...] = data[pe_loc, ...].copy()
+    kspace_u = np.zeros((pe_loc.size, sy, nc), dtype=data.dtype)
+    kspace_u = data[pe_loc, ...].copy()
 
     # Net reduction factor
     acq_idx = np.zeros(sx, dtype=bool)
