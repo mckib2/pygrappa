@@ -12,7 +12,7 @@ if __name__ == '__main__':
     data = loadmat(
         '/home/nicholas/Downloads/NLGRAPPA/rawdata_brain.mat')[
             'raw_data']
-    im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+    im = np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
         data, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
     sos = np.sqrt(np.sum(np.abs(im)**2, axis=-1))
 
@@ -27,19 +27,21 @@ if __name__ == '__main__':
 
     # The convolution size
     num_block = 2
-    num_column = 15 # make smaller to go quick during development
+    num_column = 5#15 # make smaller to go quick during development
 
     # Obtain ACS data and undersampled data
     sx, sy, nc = data.shape[:]
     sx2 = int(sx/2)
     nencode2 = int(nencode/2)
     acs_line_loc = np.arange(sx2 - nencode2, sx2 + nencode2)
-    calib = data[acs_line_loc, ...].copy()
+    calib = np.fft.fftshift(np.fft.fft2(
+        im, axes=(0, 1)), axes=(0, 1))[acs_line_loc, ...].copy()
 
     # Obtain uniformly undersampled locations
     pe_loc = np.arange(off, sx-off, R)
     kspace_u = np.zeros((pe_loc.size, sy, nc), dtype=data.dtype)
-    kspace_u = data[pe_loc, ...].copy()
+    kspace_u = np.fft.fftshift(np.fft.fft2(
+        im, axes=(0, 1)), axes=(0, 1))[pe_loc, ...].copy() # why do this?
 
     # Net reduction factor
     acq_idx = np.zeros(sx, dtype=bool)
@@ -53,5 +55,15 @@ if __name__ == '__main__':
         kspace_u, R, pe_loc, calib, acs_line_loc, num_block,
         num_column, times_comp)
 
-    plt.imshow(np.abs(np.fft.fftshift(ImgRecon1)))
+    cmp = loadmat('/home/nicholas/Downloads/NLGRAPPA/data.mat')
+    plt.imshow(np.abs(ImgRecon1 - cmp['ImgRecon1']))
+    plt.show()
+    #assert np.allclose(ImgRecon1, cmp['ImgRecon1'])
+
+    plt.figure()
+    plt.imshow(np.abs(np.fft.fftshift(cmp['ImgRecon1'])))
+    plt.show(block=False)
+
+    plt.figure()
+    plt.imshow(np.abs(np.fft.fftshift(ImgRecon1, axes=(0, 1))))
     plt.show()

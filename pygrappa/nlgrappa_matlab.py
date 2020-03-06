@@ -74,8 +74,8 @@ def nlgrappa_matlab(
         (pe_loc, acs_line_loc))))
     combined_fourier_data = np.zeros(
         (d1, d2, num_coil), dtype=reduced_fourier_data.dtype)
-    combined_fourier_data[pe_loc, ...] = reduced_fourier_data
-    combined_fourier_data[acs_line_loc, ...] = acs_data
+    combined_fourier_data[pe_loc, ...] = reduced_fourier_data.copy()
+    combined_fourier_data[acs_line_loc, ...] = acs_data.copy()
     ind_first = np.squeeze(
         np.argwhere(all_acquired_line_loc == acs_line_loc[0]))
     ind_last = np.squeeze(
@@ -104,7 +104,6 @@ def nlgrappa_matlab(
                         valid_flag = False
                         break
                 if valid_flag:
-                    # TODO: make sure this does the right thing
                     if line_group[(mode, offset)] is None:
                         line_group[(mode, offset)] = np.atleast_2d(
                             np.unique(np.concatenate((
@@ -137,11 +136,11 @@ def nlgrappa_matlab(
                 for nn in range(line_group[(mode, offset)].shape[0]):
                     temp_data = combined_fourier_data[line_group[(mode, offset)][nn, 1:], ...]
                     temp_data = temp_data.transpose((0, 2, 1))
-                    temp_data = np.reshape(temp_data, (num_block*num_coil, d2))
+                    temp_data = np.reshape(temp_data, (num_block*num_coil, d2), order='F')
                     tmp = num_block*num_coil*int(np.floor(num_column/2))
                     fit_mat[
                         tmp:tmp+num_block*num_coil,
-                        (nn*d2):((nn+1)*d2)] = temp_data
+                        (nn*d2):((nn+1)*d2)] = temp_data.copy()
                     target_vec[:, nn*d2:(nn+1)*d2] = combined_fourier_data[line_group[(mode, offset)][nn, 0], :, jj]
 
                 tmp = num_block*num_coil
@@ -152,48 +151,51 @@ def nlgrappa_matlab(
                     np.arange(np.floor(num_column/2), dtype=int)[::-1],
                     np.arange(np.floor(num_column/2), dtype=int)))
                 for column_idx in range(num_column - 1):
-                    if column_idx < np.floor(num_column/2):
+                    if column_idx+1 <= np.floor(num_column/2):
                         tmp = num_block*num_coil
                         fit_mat[tmp*column_idx:tmp*(column_idx+1), :] = np.concatenate((
-                            transfer_matrix[:, column_label[column_idx]:],
-                            transfer_matrix[:, :column_label[column_idx]]), axis=1)
+                            transfer_matrix[:, column_label[column_idx]+1:],
+                            transfer_matrix[:, :column_label[column_idx]+1]), axis=1)
                     else:
                         tmp = num_block*num_coil
-                        fit_mat[tmp*(column_idx-1):tmp*column_idx, :] = np.concatenate((
-                            transfer_matrix[:, -column_label[column_idx]:],
-                            transfer_matrix[:, :-column_label[column_idx]]), axis=1)
+                        fit_mat[tmp*(column_idx+1):tmp*(column_idx+2), :] = np.concatenate((
+                            transfer_matrix[:, -column_label[column_idx]-1:],
+                            transfer_matrix[:, :-column_label[column_idx]-1]), axis=1)
+
+                # print(fit_mat[-1, :10])
+                # assert False
 
                 fit_mat_dim = np.reshape(fit_mat, (
                     num_block*num_coil,
                     num_column,
-                    d2*line_group[(mode, offset)].shape[0]))
+                    d2*line_group[(mode, offset)].shape[0]), order='F')
                 fit_mat_dim = np.reshape(fit_mat, (
                     num_block,
                     num_coil,
                     num_column,
-                    d2*line_group[(mode, offset)].shape[0]))
+                    d2*line_group[(mode, offset)].shape[0]), order='F')
 
                 # nonlinear transformation
                 new_fit_mat = np.zeros((
                     (times_comp+1)*fit_mat.shape[0],
                     fit_mat.shape[1]), dtype=reduced_fourier_data.dtype)
                 tmp = num_block*num_coil*num_column
-                new_fit_mat[:tmp, :] = fit_mat
+                new_fit_mat[:tmp, :] = fit_mat.copy()
 
                 idx_comp = 0
-                for idx_adj_1 in range(int(np.ceil(num_block/2))-1):
-                    for idx_adj_2 in range(int(np.ceil(num_coil/2))-1):
-                        for idx_adj_3 in range(int(np.ceil(num_column/2))-1):
+                for idx_adj_1 in range(int(np.ceil(num_block/2))):
+                    for idx_adj_2 in range(int(np.ceil(num_coil/2))):
+                        for idx_adj_3 in range(int(np.ceil(num_column/2))):
                             fit_mat_shift = np.roll(
                                 fit_mat_dim,
                                 (idx_adj_1, idx_adj_2, idx_adj_3, 0))
                             fit_mat_shift = np.reshape(fit_mat_shift, (
                                 num_block,
                                 num_coil*num_column,
-                                d2*line_group[(mode, offset)].shape[0]))
+                                d2*line_group[(mode, offset)].shape[0]), order='F')
                             fit_mat_shift = np.reshape(fit_mat_shift, (
                                 num_block*num_coil*num_column,
-                                d2*line_group[(mode, offset)].shape[0]))
+                                d2*line_group[(mode, offset)].shape[0]), order='F')
 
                             tmp = num_block*num_coil*num_column*(idx_comp+1)
                             new_fit_mat[tmp:tmp + num_block*num_coil*num_column, :] = fit_mat*fit_mat_shift
@@ -206,7 +208,8 @@ def nlgrappa_matlab(
                     if idx_comp >= times_comp:
                         break
 
-                fit_coef[jj, offset, mode, :] = (np.linalg.pinv(
+                # Does not work with pinv
+                fit_coef[jj, offset, mode, :] = (np.linalg.inv(
                     new_fit_mat.conj() @ new_fit_mat.T) @ new_fit_mat.conj() @ target_vec.T).squeeze()
 
     del temp_data
@@ -217,7 +220,7 @@ def nlgrappa_matlab(
         candidate_fourier_data[..., mode] = combined_fourier_data
     for ss in trange(d1, desc='Loop 2'):
         if not np.argwhere(pe_loc == ss):
-            offset = np.mod(ss, ORF-1) # NBPM: changed from ORF to ORF-1
+            offset = np.mod(ss, ORF) - 1
             for mode in range(num_block):
                 tentative_line_ind = np.arange(
                     ORF*int(np.floor(ss/ORF)) - mode*ORF,
@@ -229,32 +232,30 @@ def nlgrappa_matlab(
                     temp_data = temp_data.transpose((0, 2, 1))
                     tmp = num_block*num_coil
                     fit_mat = np.zeros((tmp*num_column, d2), dtype=reduced_fourier_data.dtype)
-                    temp_data = np.reshape(temp_data, (tmp, d2))
+                    temp_data = np.reshape(temp_data, (tmp, d2), order='F')
 
                     fit_mat[
                         num_block*num_coil*int(np.floor(num_column/2)):
                         num_block*num_coil*int(np.floor(num_column/2)+1), :] = temp_data
-                    #tmp = num_block*num_coil*int(np.floor(num_column/2))
-                    #fit_mat[tmp, :] = temp_data
                     column_label = np.concatenate((
                         np.arange(np.floor(num_column/2), dtype=int)[::-1],
                         np.arange(np.floor(num_column/2), dtype=int)))
                     for column_idx in range(num_column-1):
-                        if column_idx < np.floor(num_column/2):
+                        if column_idx+1 <= np.floor(num_column/2):
                             tmp = num_block*num_coil
                             fit_mat[tmp*column_idx:tmp*(column_idx+1), :] = np.concatenate((
-                                temp_data[:, column_label[column_idx]:],
-                                temp_data[:, :column_label[column_idx]]), axis=1)
+                                temp_data[:, column_label[column_idx]+1:],
+                                temp_data[:, :column_label[column_idx]+1]), axis=1)
                         else:
                             tmp = num_block*num_coil
-                            fit_mat[tmp*(column_idx-1):tmp*column_idx, :] = np.concatenate((
-                                temp_data[:, -column_label[column_idx]:],
-                                temp_data[:, :-column_label[column_idx]]), axis=1)
+                            fit_mat[tmp*(column_idx+1):tmp*(column_idx+2), :] = np.concatenate((
+                                temp_data[:, -column_label[column_idx]-1:],
+                                temp_data[:, :-column_label[column_idx]-1]), axis=1)
 
                     fit_mat_dim = np.reshape(
-                        fit_mat, (num_block*num_coil, num_column, d2))
+                        fit_mat, (num_block*num_coil, num_column, d2), order='F')
                     fit_mat_dim = np.reshape(
-                        fit_mat, (num_block, num_coil, num_column, d2))
+                        fit_mat, (num_block, num_coil, num_column, d2), order='F')
 
                     # nonlinear transformation
                     new_fit_mat = np.zeros((
@@ -263,18 +264,18 @@ def nlgrappa_matlab(
                     new_fit_mat[:tmp, :] = fit_mat
 
                     idx_comp = 0
-                    for idx_adj_1 in range(int(np.ceil(num_block/2))-1):
-                        for idx_adj_2 in range(int(np.ceil(num_coil/2))-1):
-                            for idx_adj_3 in range(int(np.ceil(num_column/2))-1):
+                    for idx_adj_1 in range(int(np.ceil(num_block/2))):
+                        for idx_adj_2 in range(int(np.ceil(num_coil/2))):
+                            for idx_adj_3 in range(int(np.ceil(num_column/2))):
                                 fit_mat_shift = np.roll(
                                     fit_mat_dim,
                                     (idx_adj_1, idx_adj_2, idx_adj_3, 0))
                                 fit_mat_shift = np.reshape(
                                     fit_mat_shift,
-                                    (num_block, num_coil*num_column, d2))
+                                    (num_block, num_coil*num_column, d2), order='F')
                                 fit_mat_shift = np.reshape(
                                     fit_mat_shift,
-                                    (num_block*num_coil*num_column, d2))
+                                    (num_block*num_coil*num_column, d2), order='F')
 
                                 tmp = num_block*num_coil*num_column*(idx_comp+1)
                                 new_fit_mat[tmp:tmp+num_block*num_coil*num_column, :] = fit_mat*fit_mat_shift
@@ -317,7 +318,7 @@ def nlgrappa_matlab(
                                 candidate_fourier_data[acs_line_loc[ss], :, jj, mode][None, ...]), axis=0)
 
                         if fit_mat is None:
-                            fit_mat = temp_mat
+                            fit_mat = temp_mat.copy()
                         else:
                             fit_mat = np.concatenate((fit_mat, temp_mat), axis=1)
 
@@ -333,8 +334,8 @@ def nlgrappa_matlab(
     # Combine the data from different modes using goodness-of-fit
     full_fourier_data = combined_fourier_data
     for ss in range(d1):
-        if not len(np.argwhere(all_acquired_line_loc == ss)):
-            offset = np.mod(ss, ORF-1) # NBPM: changed from ORF to ORF-1
+        if not np.argwhere(all_acquired_line_loc == ss):
+            offset = np.mod(ss, ORF) - 1
             for jj in range(num_coil):
                 for mode in range(num_block):
                     full_fourier_data[ss, :, jj] += gof_coef[jj, offset, mode]*candidate_fourier_data[ss, :, jj, mode]
@@ -344,8 +345,8 @@ def nlgrappa_matlab(
     # Image reconstruction using IFFT2 and sum-of-squares
     # coil_img = np.fft.fftshift(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(np.fft.ifftshift(
     #     full_fourier_data, 0), 1)), 0), 1)
-    coil_img = np.fft.ifft2(np.fft.ifftshift(
-        full_fourier_data, axes=(0, 1)), axes=(0, 1))
+    coil_img = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+        full_fourier_data, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
     rec_img = np.sqrt(np.sum(np.abs(coil_img)**2, axis=-1))
 
     coef0 = fit_coef
