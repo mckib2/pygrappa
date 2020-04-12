@@ -1,23 +1,20 @@
-'''Show basic usage of NL-GRAPPA.'''
+'''Show basic usage of NL-GRAPPA MATLAB port.'''
 
-from scipy.io import loadmat
 import numpy as np
 import matplotlib.pyplot as plt
+from phantominator import shepp_logan
 
 from pygrappa import nlgrappa_matlab
+from utils import gaussian_csm
 
 if __name__ == '__main__':
 
-    # Load mat file
-    data = loadmat(
-        '/home/nicholas/Downloads/NLGRAPPA/rawdata_brain.mat')[
-            'raw_data']
-    im = np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(
-        data, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
+    # Generate data
+    N, nc = 128, 8
+    sens = gaussian_csm(N, N, nc)
+    im = shepp_logan(N)
+    im = im[..., None]*sens
     sos = np.sqrt(np.sum(np.abs(im)**2, axis=-1))
-
-    # plt.imshow(sos, cmap='gray')
-    # plt.show()
 
     off = 0 # starting sampling location
 
@@ -27,10 +24,10 @@ if __name__ == '__main__':
 
     # The convolution size
     num_block = 2
-    num_column = 5#15 # make smaller to go quick during development
+    num_column = 15 # make smaller to go quick during development
 
     # Obtain ACS data and undersampled data
-    sx, sy, nc = data.shape[:]
+    sx, sy, nc = im.shape[:]
     sx2 = int(sx/2)
     nencode2 = int(nencode/2)
     acs_line_loc = np.arange(sx2 - nencode2, sx2 + nencode2)
@@ -39,7 +36,7 @@ if __name__ == '__main__':
 
     # Obtain uniformly undersampled locations
     pe_loc = np.arange(off, sx-off, R)
-    kspace_u = np.zeros((pe_loc.size, sy, nc), dtype=data.dtype)
+    kspace_u = np.zeros((pe_loc.size, sy, nc), dtype=im.dtype)
     kspace_u = np.fft.fftshift(np.fft.fft2(
         im, axes=(0, 1)), axes=(0, 1))[pe_loc, ...].copy() # why do this?
 
@@ -54,15 +51,6 @@ if __name__ == '__main__':
     full_fourier_data1, ImgRecon1, coef1 = nlgrappa_matlab(
         kspace_u, R, pe_loc, calib, acs_line_loc, num_block,
         num_column, times_comp)
-
-    cmp = loadmat('/home/nicholas/Downloads/NLGRAPPA/data.mat')
-    plt.imshow(np.abs(ImgRecon1 - cmp['ImgRecon1']))
-    plt.show()
-    #assert np.allclose(ImgRecon1, cmp['ImgRecon1'])
-
-    plt.figure()
-    plt.imshow(np.abs(np.fft.fftshift(cmp['ImgRecon1'])))
-    plt.show(block=False)
 
     plt.figure()
     plt.imshow(np.abs(np.fft.fftshift(ImgRecon1, axes=(0, 1))))

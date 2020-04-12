@@ -6,7 +6,7 @@ from tqdm import trange
 def nlgrappa_matlab(
         reduced_fourier_data, ORF, pe_loc, acs_data, acs_line_loc,
         num_block, num_column, times_comp):
-    '''
+    '''Python port of original NL-GRAPPA script.
 
     Parameters
     ----------
@@ -52,7 +52,7 @@ def nlgrappa_matlab(
 
     References
     ----------
-    .. [1] Y. Chang, D. Liang, L. Ying, "Nonlinear GRAPPA: A Kernal
+    .. [1] Y. Chang, D. Liang, L. Ying, "Nonlinear GRAPPA: A Kernel
            Approach to Parallel MRI Reconstruction". Magn. Reson.
            Med. 2012
     '''

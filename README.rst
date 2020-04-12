@@ -25,7 +25,7 @@ Included in the `pygrappa` module are the following:
 - Through-time GRAPPA [11]_: `ttgrappa()`
 - PARS [12]_: `pars()`
 - GROG [14]_: `grog()`
-- NL-GRAPPA [15]_: `nlgrappa()`
+- NL-GRAPPA [15]_: `nlgrappa_matlab()`
 - g-factor map: `gfactor()`
 - SENSE [16]_: `sense1d()`
 - CG-SENSE [17]_: `cgsense()`
@@ -321,15 +321,26 @@ I've never heard of anyone doing this via GROG, but check out
 `examples.inverse_grog` for more info.
 
 NL-GRAPPA uses machine learning feature augmentation to reduce model-
-based reconstruction error [15]_.  It can be called like so:
+based reconstruction error [15]_.  It's implementation is based on
+the original script, so its function signature looks different than
+normal.  Please see example for better understanding of arguments.
+It can be called like so:
 
 .. code-block:: python
 
-    from pygrappa import nlgrappa
-    res = nlgrappa(
-        kspace, calib, ml_kernel_args={'cross_term_neighbors': 2})
+    from pygrappa import nlgrappa_matlab
+    res = nlgrappa_matlab(
+        kspace_u, R, pe_loc, calib, acs_line_loc, num_block,
+        num_column, times_comp)
 
 You might need to play around with the arguments to get good images.
+The implementation is pretty much a straight mapping of the original
+MATLAB script to Python, so performance is not going to be very
+good compared to the other GRAPPA implementations in this package.
+
+There was Python implementation in previous versions of pygrappa,
+but it never worked correctly and raises an exception now if you
+try to call it.
 
 g-factor maps show geometry factor and a general sense of how well
 parallel imaging techniques like GRAPPA will work.  Coil sensitivities
