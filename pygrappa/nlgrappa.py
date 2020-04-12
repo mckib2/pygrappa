@@ -47,6 +47,8 @@ def nlgrappa(
            Magnetic resonance in medicine 68.3 (2012): 730-740.
     '''
 
+    raise NotImplementedError("NL-GRAPPA is not currently working!")
+
     # Coils to the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
