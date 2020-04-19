@@ -1,4 +1,4 @@
-'''3D implementation of GRAPPA.'''
+'''Multidimensional implementation of GRAPPA.'''
 
 from collections import defaultdict
 
@@ -10,12 +10,33 @@ def _find_acs(kspace, mask):
     '''Given kspaces for each coil and a mask, find the ACS region.'''
     raise NotImplementedError()
 
-def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01):
-    '''Multidimensional GRAPPA.'''
+def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01, nnz=None):
+    '''Multidimensional GRAPPA.
+
+    Parameters
+    ----------
+    nnz : int or None, optional
+        Number of nonzero elements in a multidimensional patch
+        required to train/apply a kernel.
+        Default: `sqrt(prod(kernel_size))`.
+
+    Notes
+    -----
+    All axes (except coil axis) are used for GRAPPA reconstruction.
+    If you desire to exlude an axis, say `ignored_axis`, set
+    `kernel_size[ignored_axis] = 1`.
+    '''
 
     # coils to the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     nc = kspace.shape[-1]
+
+    if kernel_size is None:
+        kernel_size = tuple([5]*(kspace.ndim-1))
+
+    # Only consider sampling patterns that have at least nnz samples
+    if nnz is None:
+        nnz = int(np.sqrt(np.prod(kernel_size)))
 
     # User can supply calibration region separately or we can find it
     if calib is not None:
@@ -34,8 +55,9 @@ def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01):
     mask = np.abs(kspace[..., 0]) > 0
     P = defaultdict(list)
     for idx in np.argwhere(~mask[tuple([slice(pd, -pd) for pd in pads])]):
-        p0 = tuple(mask[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten().astype(int))
-        P[p0].append(idx)
+        p0 = mask[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
+        if np.sum(p0) >= nnz: # only counts if it has enough samples
+            P[tuple(p0.astype(int))].append(idx)
 
     # We need all overlapping patches from calibration data
     A = view_as_windows(
@@ -58,6 +80,18 @@ def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01):
         W = np.linalg.solve(
             ShS + lamda0*np.eye(ShS.shape[0]), ShT)
 
+        # Doesn't seem to be a big difference in speed?
+        # Try gathering all sources and doing single matrix multiply
+        #S = np.empty((len(holes), W.shape[0]), dtype=kspace.dtype)
+        #targets = np.empty((kspace.ndim-1, len(holes)), dtype=int)
+        #for jj, idx in enumerate(holes):
+        #    S[jj, :] = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] + [slice(None)])].reshape((-1, nc))[p0, :].flatten()
+        #    targets[:, jj] = [ii + pd for ii, pd in zip(idx, pads)]
+        #recon = np.reshape(recon, (-1, nc))
+        #targets = np.ravel_multi_index(targets, dims=kspace.shape[:-1])
+        #recon[targets, :] = S @ W
+        #recon = np.reshape(recon, kspace.shape)
+
         # Apply kernel to each hole
         for idx in holes:
             S = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] + [slice(None)])].reshape((-1, nc))[p0, :].flatten()
@@ -69,55 +103,53 @@ def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01):
         recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])], -1, coil_axis)
 
 if __name__ == '__main__':
+    from time import time
     import matplotlib.pyplot as plt
     from phantominator import shepp_logan
+    from utils import gaussian_csm
 
     # Generate fake sensitivity maps: mps
-    N = 128
+    L, M, N = 128, 128, 32
     ncoils = 4
-    xx = np.linspace(0, 1, N)
-    x, y = np.meshgrid(xx, xx)
-    mps = np.zeros((N, N, ncoils))
-    mps[..., 0] = x**2
-    mps[..., 1] = 1 - x**2
-    mps[..., 2] = y**2
-    mps[..., 3] = 1 - y**2
+    mps = gaussian_csm(L, M, ncoils)[..., None, :]
 
-    # generate 4 coil phantom
-    ph = shepp_logan(N)
+    # generate phantom
+    ph = shepp_logan((L, M, N), zlims=(-.25, .25))
     imspace = ph[..., None]*mps
-    imspace = imspace.astype('complex')
-    #imspace = imspace[:, :-5, :]
+    #imspace = imspace[:-1, :-1, :]
     print(imspace.shape)
-    ax = (0, 1)
-    kspace = 1/np.sqrt(N**2)*np.fft.fftshift(np.fft.fft2(
+    ax = (0, 1, 2)
+    kspace = 1/np.sqrt(N**2)*np.fft.fftshift(np.fft.fftn(
         np.fft.ifftshift(imspace, axes=ax), axes=ax), axes=ax)
 
     # crop 20x20 window from the center of k-space for calibration
+    # (use all z-axis)
     pd = 10
-    ctr = int(N/2)
-    calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
+    ctrs = [int(s/2) for s in kspace.shape[:2]]
+    calib = kspace[tuple([slice(ctr-pd, ctr+pd) for ctr in ctrs] + [slice(None), slice(None)])].copy()
+    #calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
 
     # calibrate a kernel
-    kernel_size = (7, 8)
+    kernel_size = (4, 5, 4)
 
     # undersample by a factor of 2 in both kx and ky
-    kspace[::2, 1::2, :] = 0
-    kspace[1::2, ::2, :] = 0
+    kspace[::2, 1::2, ...] = 0
+    kspace[1::2, ::2, ...] = 0
 
     # Do the recon
+    t0 = time()
     res = grappa(kspace, calib, kernel_size)
+    print('Took %g sec' % (time() - t0))
 
-
-    # Take a look
-    res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifft2(
+    # Take a look at a single slice
+    res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifftn(
         np.fft.ifftshift(res, axes=ax), axes=ax), axes=ax))
-    M, N = res.shape[:2]
-    res0 = np.zeros((2*M, 2*N))
+    res = res[..., 0, :]
+    res0 = np.zeros((2*L, 2*M))
     kk = 0
     for idx in np.ndindex((2, 2)):
         ii, jj = idx[:]
-        res0[ii*M:(ii+1)*M, jj*N:(jj+1)*N] = res[..., kk]
+        res0[ii*L:(ii+1)*L, jj*M:(jj+1)*M] = res[..., kk]
         kk += 1
     plt.imshow(res0, cmap='gray')
     plt.show()
