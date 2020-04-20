@@ -1,4 +1,4 @@
-'''Multidimensional implementation of GRAPPA.'''
+'''Python implementation of multidimensional GRAPPA.'''
 
 from collections import defaultdict
 
@@ -6,33 +6,94 @@ import numpy as np
 from skimage.util import view_as_windows
 from tqdm import tqdm
 
-def _find_acs(kspace, mask):
-    '''Given kspaces for each coil and a mask, find the ACS region.'''
-    raise NotImplementedError()
-
-def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01, nnz=None):
-    '''Multidimensional GRAPPA.
+def _find_acs(kspace):
+    '''Start at center of kspace and find largest hyper-rectangle.
 
     Parameters
     ----------
+    kspace : N-D array
+        Assume coil_axis is at -1 and currently unpadded.
+    '''
+    from skimage.segmentation import flood_fill
+    import matplotlib.pyplot as plt
+
+    # Flood fill from center
+    mask = np.abs(kspace[..., 0]) > 0
+    ctr = tuple([sh//2 for sh in kspace.shape[:-1]])
+    if mask[ctr] == 0:
+        raise ValueError('There is no sample at the center!')
+    ACS_val = 2
+    region = flood_fill(mask.astype(int), seed_point=ctr, new_value=ACS_val, connectivity=0) == ACS_val
+
+    plt.imshow(region)
+    plt.show()
+
+    # Find hyper-rectangle here
+
+    plt.imshow(region)
+    plt.show()
+
+def mdgrappa(
+        kspace,
+        calib=None,
+        kernel_size=None,
+        coil_axis=-1,
+        lamda=0.01,
+        nnz=None):
+    '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
+
+    Parameters
+    ----------
+    kspace : N-D array
+        Measured undersampled complex k-space data. N-1 dimensions
+        hold spatial frequency axes (kx, ky, kz, etc.).  1 dimension
+        holds coil images (`coil_axis`).  The missing entries should
+        have exactly 0.
+    calib : N-D array or None, optional
+        Fully sampled calibration data.  If `None`, calibration data
+        will be extracted from the largest possible hypercube with
+        origin at the center of k-space.
+    kernel_size : tuple or None, optional
+        The size of the N-1 dimensional GRAPPA kernels: (kx, ky, ...).
+        Default: (5,)*(kspace.ndim-1)
+    coil_axis : int, optional
+        Dimension holding coil images.
+    lamda : float, optional
+        Tikhonov regularization constant for kernel calibration.
     nnz : int or None, optional
         Number of nonzero elements in a multidimensional patch
         required to train/apply a kernel.
         Default: `sqrt(prod(kernel_size))`.
 
+    Returns
+    -------
+    res : array_like
+        k-space data where missing entries have been filled in.
+
     Notes
     -----
+    Based on the GRAPPA algorithm described in [1]_.
+
     All axes (except coil axis) are used for GRAPPA reconstruction.
-    If you desire to exlude an axis, say `ignored_axis`, set
-    `kernel_size[ignored_axis] = 1`.
+
+    References
+    ----------
+    .. [1] Griswold, Mark A., et al. "Generalized autocalibrating
+           partially parallel acquisitions (GRAPPA)." Magnetic
+           Resonance in Medicine: An Official Journal of the
+           International Society for Magnetic Resonance in Medicine
+           47.6 (2002): 1202-1210.
     '''
 
     # coils to the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     nc = kspace.shape[-1]
 
+    # Make sure we have a kernel_size
     if kernel_size is None:
-        kernel_size = tuple([5]*(kspace.ndim-1))
+        kernel_size = (5,)*(kspace.ndim-1)
+    assert len(kernel_size) == kspace.ndim-1, (
+        'kernel_size must have %d entries' % (kspace.ndim-1))
 
     # Only consider sampling patterns that have at least nnz samples
     if nnz is None:
@@ -92,7 +153,7 @@ def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01, nnz=N
         #recon[targets, :] = S @ W
         #recon = np.reshape(recon, kspace.shape)
 
-        # Apply kernel to each hole
+        # Apply kernel to fill each hole
         for idx in holes:
             S = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] + [slice(None)])].reshape((-1, nc))[p0, :].flatten()
             recon[tuple([ii + pd for ii, pd in zip(idx, pads)] + [slice(None)])] = S @ W
@@ -103,53 +164,4 @@ def grappa(kspace, calib=None, kernel_size=None, coil_axis=-1, lamda=0.01, nnz=N
         recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])], -1, coil_axis)
 
 if __name__ == '__main__':
-    from time import time
-    import matplotlib.pyplot as plt
-    from phantominator import shepp_logan
-    from utils import gaussian_csm
-
-    # Generate fake sensitivity maps: mps
-    L, M, N = 128, 128, 32
-    ncoils = 4
-    mps = gaussian_csm(L, M, ncoils)[..., None, :]
-
-    # generate phantom
-    ph = shepp_logan((L, M, N), zlims=(-.25, .25))
-    imspace = ph[..., None]*mps
-    #imspace = imspace[:-1, :-1, :]
-    print(imspace.shape)
-    ax = (0, 1, 2)
-    kspace = 1/np.sqrt(N**2)*np.fft.fftshift(np.fft.fftn(
-        np.fft.ifftshift(imspace, axes=ax), axes=ax), axes=ax)
-
-    # crop 20x20 window from the center of k-space for calibration
-    # (use all z-axis)
-    pd = 10
-    ctrs = [int(s/2) for s in kspace.shape[:2]]
-    calib = kspace[tuple([slice(ctr-pd, ctr+pd) for ctr in ctrs] + [slice(None), slice(None)])].copy()
-    #calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
-
-    # calibrate a kernel
-    kernel_size = (4, 5, 4)
-
-    # undersample by a factor of 2 in both kx and ky
-    kspace[::2, 1::2, ...] = 0
-    kspace[1::2, ::2, ...] = 0
-
-    # Do the recon
-    t0 = time()
-    res = grappa(kspace, calib, kernel_size)
-    print('Took %g sec' % (time() - t0))
-
-    # Take a look at a single slice
-    res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifftn(
-        np.fft.ifftshift(res, axes=ax), axes=ax), axes=ax))
-    res = res[..., 0, :]
-    res0 = np.zeros((2*L, 2*M))
-    kk = 0
-    for idx in np.ndindex((2, 2)):
-        ii, jj = idx[:]
-        res0[ii*L:(ii+1)*L, jj*M:(jj+1)*M] = res[..., kk]
-        kk += 1
-    plt.imshow(res0, cmap='gray')
-    plt.show()
+    pass
