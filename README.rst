@@ -13,7 +13,7 @@ and SENSE-like inspirations.
 
 Included in the `pygrappa` module are the following:
 
-- GRAPPA [1]_: `grappa()`
+- GRAPPA [1]_: `grappa()` and `mdgrappa()`
 - VC-GRAPPA [2]_: `vcgrappa()`
 - iGRAPPA [3]_: `igrappa()`
 - hp-GRAPPA [4]_: `hpgrappa()`
@@ -29,6 +29,27 @@ Included in the `pygrappa` module are the following:
 - g-factor map: `gfactor()`
 - SENSE [16]_: `sense1d()`
 - CG-SENSE [17]_: `cgsense()`
+
+The upcoming `1.0.0` release will make changes to the API and simplify
+the interface considerably.  The plans are to collect all GRAPPA-like
+methods and SENSE-like methods in their own interfaces:
+
+.. code-block:: python
+
+    pygrappa.grappa(
+        kspace, calib=None, kernel_size=None,
+	method='grappa', coil_axis=-1, options=None)
+    pygrappa.sense(kspace, sens, coil_axis=-1, options)
+
+The `method` parameter will allow the `grappa` interface to call the
+existing methods such as `tgrappa`, `mdgrappa`, etc. under the hood.
+The dictionary `options` can be used to pass in method-specific
+parameters. The SENSE interface will behave similarly.
+
+The gridding interface is still an open question.
+
+Progress on the `1.0.0` release can be found
+`here <https://github.com/mckib2/pygrappa/milestone/1>`_
 
 Installation
 ============
@@ -136,6 +157,15 @@ the default GRAPPA implementation in future releases.
 constructs conjugate virtual coils, appends them to the coil
 dimension, and passes everything through to `cgrappa()`.  The
 function signature is identical to `pygrappa.grappa()`.
+
+For reconstructions with more than 2 dimensions, there is a
+generalized multidimensional implementation called `mdgrappa()` that
+can be called as follows:
+
+.. code-block:: python
+
+    from pygrappa import mdgrappa
+    res = mdgrappa(kspace, calib, kernel_size=(5, 5, 5)) # e.g., 3D
 
 `igrappa()` is an Iterative-GRAPPA ([3]_) implementation that can be
 called as follows:
