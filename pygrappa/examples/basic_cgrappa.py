@@ -23,6 +23,7 @@ if __name__ == '__main__':
     ph = shepp_logan(N)
     imspace = ph[..., None]*mps
     imspace = imspace.astype('complex')
+    imspace = imspace[:, :-4, :]
     ax = (0, 1)
     kspace = 1/np.sqrt(N**2)*np.fft.fftshift(np.fft.fft2(
         np.fft.ifftshift(imspace, axes=ax), axes=ax), axes=ax)
@@ -46,11 +47,12 @@ if __name__ == '__main__':
     # Take a look
     res = np.abs(np.sqrt(N**2)*np.fft.fftshift(np.fft.ifft2(
         np.fft.ifftshift(res, axes=ax), axes=ax), axes=ax))
-    res0 = np.zeros((2*N, 2*N))
+    M, N = res.shape[:2]
+    res0 = np.zeros((2*M, 2*N))
     kk = 0
     for idx in np.ndindex((2, 2)):
         ii, jj = idx[:]
-        res0[ii*N:(ii+1)*N, jj*N:(jj+1)*N] = res[..., kk]
+        res0[ii*M:(ii+1)*M, jj*N:(jj+1)*N] = res[..., kk]
         kk += 1
     plt.imshow(res0, cmap='gray')
     plt.show()

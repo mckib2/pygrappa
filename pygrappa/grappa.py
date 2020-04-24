@@ -196,6 +196,7 @@ def grappa(
             # S @ W is more efficient matrix multiplication.
             # Currently computing W @ S when applying weights.
             S = A[:, P[ii, ...]]
+            print(S.shape)
             T = A[:, kx2, ky2, :]
             ShS = S.conj().T @ S
             ShT = S.conj().T @ T
@@ -246,7 +247,6 @@ def grappa(
 
         return np.moveaxis(
             (recon[:] + kspace)[kx2:-kx2, ky2:-ky2, :], -1, coil_axis)
-
 
 if __name__ == '__main__':
     pass

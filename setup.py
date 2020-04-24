@@ -1,39 +1,77 @@
-'''Setup.py
+'''Python GRAPPA image reconstruction.'''
 
-Notes
------
-Developers: to build C++ code:
+import subprocess
+from distutils.spawn import find_executable
+from setuptools import find_packages
+from numpy.distutils.core import setup
 
-.. code-block:: bash
+VERSION = '0.20.1'
 
-    source make_cython.sh
-'''
+def pre_build_hook(build_ext, ext):
+    from scipy._build_utils.compiler_helper import get_cxx_std_flag
+    std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
+    if std_flag is not None:
+        ext.extra_compile_args.append(std_flag)
 
-from setuptools import setup, Extension, find_packages
-from setuptools.command.build_ext import build_ext as _build_ext
+def configuration(parent_package='', top_path=None):
+    from numpy.distutils.misc_util import Configuration
+    config = Configuration('pygrappa', parent_package, top_path)
+    config.version = VERSION
 
-class build_ext(_build_ext):
-    '''Subclass build_ext to bootstrap numpy.'''
-    def finalize_options(self):
-        _build_ext.finalize_options(self)
+    DEFINE_MACROS = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
 
-        # Prevent numpy from thinking it's still in its setup process
-        import numpy as np
-        self.include_dirs.append(np.get_include())
+    # Run Cython on files if we have it
+    if find_executable('cython') is not None:
+        print('Running cython...')
+        subprocess.call(['cython -3 --cplus src/*.pyx'], shell=True)
+
+    # GRAPPA with some C components
+    config.add_extension(
+        'cgrappa',
+        sources=[
+            'src/cgrappa.cpp',
+            'src/get_sampling_patterns.cpp',
+        ],
+        include_dirs=['src/'],
+        language='c++',
+        define_macros=DEFINE_MACROS,
+    )
+
+    # GROG powers
+    ext = config.add_extension(
+        'grog_powers',
+        sources=[
+            'src/grog_powers.cpp',
+            'src/_grog_powers_template.cpp',
+        ],
+        include_dirs=['src/'],
+        language='c++',
+        define_macros=DEFINE_MACROS,
+    )
+    ext._pre_build_hook = pre_build_hook
+
+    # GROG
+    ext = config.add_extension(
+        'grog_gridding',
+        sources=[
+            'src/grog_gridding.cpp',
+        ],
+        include_dirs=['src/'],
+        language='c++',
+        define_macros=DEFINE_MACROS,
+    )
+    ext._pre_build_hook = pre_build_hook
+
+    return config
 
 setup(
-    name='pygrappa',
-    version='0.20.0',
     author='Nicholas McKibben',
     author_email='nicholas.bgp@gmail.com',
-    packages=find_packages(),
-    scripts=[],
     url='https://github.com/mckib2/pygrappa',
     license='GPLv3',
-    description=(
-        'GeneRalized Autocalibrating Partially Parallel '
-        'Acquisitions.'),
+    description='GeneRalized Autocalibrating Partially Parallel Acquisitions.',
     long_description=open('README.rst', encoding='utf-8').read(),
+    packages=find_packages(),
     keywords=(
         'mri grappa parallel-imaging image-reconstruction python '
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
@@ -41,32 +79,14 @@ setup(
         'through-time-grappa pars grog nonlinear-grappa g-factor'
         'sense', 'cg-sense'),
     install_requires=[
-        "numpy>=1.18.1",
-        "scipy>=1.4.1",
-        "matplotlib>=3.1.2",
-        "phantominator>=0.6.1",
-        "scikit-image>=0.16.2",
-        "tqdm>=4.38.0",
+        'numpy>=1.18.1',
+        'scipy>=1.4.1',
+        'matplotlib>=3.1.2',
+        'phantominator>=0.6.1',
+        'scikit-image>=0.16.2',
+        'tqdm>=4.38.0',
     ],
-    cmdclass={'build_ext': build_ext},
     setup_requires=['numpy'],
     python_requires='>=3.5',
-
-    # And now for Cython generated files...
-    ext_modules=[
-        Extension(
-            "pygrappa.cgrappa",
-            ["src/cgrappa.cpp", "src/get_sampling_patterns.cpp"],
-            include_dirs=['src/']),
-        Extension(
-            "pygrappa.grog_powers",
-            ["src/grog_powers.cpp", 'src/_grog_powers_template.cpp'],
-            include_dirs=['src/'],
-            extra_compile_args=["-std=c++14"],
-            extra_link_args=["-std=c++14"]),
-        Extension(
-            "pygrappa.grog_gridding",
-            ["src/grog_gridding.cpp"],
-            include_dirs=['src/']),
-        ]
+    **configuration(top_path='').todict(),
 )
