@@ -5,6 +5,8 @@ from distutils.spawn import find_executable
 from setuptools import find_packages
 from numpy.distutils.core import setup
 
+from setup_helpers import get_build_ext_override
+
 VERSION = '0.20.1'
 
 def pre_build_hook(build_ext, ext):
@@ -88,5 +90,6 @@ setup(
     ],
     setup_requires=['numpy'],
     python_requires='>=3.5',
+    cmdclass={'build_ext': get_build_ext_override()},
     **configuration(top_path='').todict(),
 )
