@@ -9,7 +9,7 @@ rm -rf dist
 mkdir dist
 
 # Make sure we have the latest Cython
-python -m install --upgrade Cython
+python -m pip install --upgrade Cython
 
 # Generate distribution archives
 python -m pip install --upgrade setuptools wheel
