@@ -8,12 +8,13 @@
 rm -rf dist
 mkdir dist
 
-source make_cython.sh
+# Make sure we have the latest Cython
+python -m install --upgrade Cython
 
 # Generate distribution archives
-pip install --upgrade setuptools wheel
+python -m pip install --upgrade setuptools wheel
 python setup.py sdist # bdist_wheel
 
 # Upload
-pip install --upgrade twine
+python -m pip install --upgrade twine
 python -m twine upload dist/*
