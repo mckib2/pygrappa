@@ -54,6 +54,9 @@ def hpgrappa(
     kx2, ky2 = int(kx/2), int(ky/2)
     cx2, cy2 = int(cx/2), int(cy/2)
 
+    # Save the original type
+    tipe = kspace.dtype
+
     # Get filter parameters if None provided
     if w is None or c is None:
         _w, _c = _filter_parameters(nc, np.min([cx, cy]))
@@ -65,8 +68,8 @@ def hpgrappa(
     # We'll need the filter, seeing as this is high-pass GRAPPA
     fov_x, fov_y = fov[:]
     kxx, kyy = np.meshgrid(
-        kx*np.linspace(-1, 1, kx)/(fov_x*2), # I think this gives
-        ky*np.linspace(-1, 1, ky)/(fov_y*2)) # kspace FOV?
+        kx*np.linspace(-1, 1, ky)/(fov_x*2), # I think this gives
+        ky*np.linspace(-1, 1, kx)/(fov_y*2)) # kspace FOV?
     F2 = (1 - 1/(1 + np.exp((np.sqrt(kxx**2 + kyy**2) - c)/w)) +
           1/(1 + np.exp((np.sqrt(kxx**2 + kyy**2) + c)/w)))
 
@@ -88,8 +91,8 @@ def hpgrappa(
 
     # Return the filter if user asked for it
     if ret_filter:
-        return(res, F2)
-    return res
+        return(res.astype(tipe), F2)
+    return res.astype(tipe)
 
 def _filter_parameters(ncoils, num_acs_lines):
     '''Table 1: predefined filter parameters from [1]_.
