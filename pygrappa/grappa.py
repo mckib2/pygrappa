@@ -88,6 +88,10 @@ def grappa(
     kspace = np.moveaxis(kspace, coil_axis, -1)
     calib = np.moveaxis(calib, coil_axis, -1)
 
+    # Quit early if there are no holes
+    if np.sum((np.abs(kspace[..., 0]) == 0).flatten()) == 0:
+        return np.moveaxis(kspace, -1, coil_axis)
+
     # Get shape of kernel
     kx, ky = kernel_size[:]
     kx2, ky2 = int(kx/2), int(ky/2)
@@ -151,10 +155,14 @@ def grappa(
         t0 = time()
 
         # Get all overlapping patches of ACS
-        A = np.memmap(fA, dtype=calib.dtype, mode='w+', shape=(
-            calib.shape[0]-2*kx, calib.shape[1]-2*ky, 1, kx, ky, nc))
-        A = view_as_windows(
-            calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
+        try:
+            A = np.memmap(fA, dtype=calib.dtype, mode='w+', shape=(
+                calib.shape[0]-2*kx, calib.shape[1]-2*ky, 1, kx, ky, nc))
+            A[:] = view_as_windows(
+                calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
+        except ValueError:
+            A = view_as_windows(
+                calib, (kx, ky, nc)).reshape((-1, kx, ky, nc))
 
         # Report on how long it took to construct windows
         if not silent:
@@ -196,7 +204,6 @@ def grappa(
             # S @ W is more efficient matrix multiplication.
             # Currently computing W @ S when applying weights.
             S = A[:, P[ii, ...]]
-            print(S.shape)
             T = A[:, kx2, ky2, :]
             ShS = S.conj().T @ S
             ShT = S.conj().T @ T

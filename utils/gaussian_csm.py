@@ -20,7 +20,7 @@ def gaussian_csm(sx, sy, ncoil, sigma=1):
     '''
 
     X, Y = np.meshgrid(
-        np.linspace(-1, 1, sx), np.linspace(-1, 1, sy))
+        np.linspace(-1, 1, sy), np.linspace(-1, 1, sx))
     pos = np.stack((X[..., None], Y[..., None]), axis=-1)
     csm = np.zeros((sx, sy, ncoil))
     cov = [[sigma, 0], [0, sigma]]
