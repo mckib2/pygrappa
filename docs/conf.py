@@ -30,7 +30,8 @@ author = 'Nicholas McKibben'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
-    'numpydoc',
+    #'numpydoc',
+    'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
 ]
@@ -38,12 +39,6 @@ extensions = [
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
-
-# tmp fix for missing semi-colons;
-# see https://github.com/readthedocs/sphinx_rtd_theme/issues/766#issuecomment-596594666
-html_css_files = [
-    'custom.css',
-]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

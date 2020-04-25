@@ -7,7 +7,7 @@ from numpy.distutils.core import setup
 
 from setup_helpers import get_build_ext_override
 
-VERSION = '0.21.0'
+VERSION = '0.21.1'
 
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
@@ -87,7 +87,6 @@ setup(
         'phantominator>=0.6.1',
         'scikit-image>=0.16.2',
         'tqdm>=4.38.0',
-        'numpydoc>=0.9.2',
     ],
     setup_requires=['numpy'],
     python_requires='>=3.5',
