@@ -14,7 +14,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'pygrappa'
@@ -30,7 +29,6 @@ author = 'Nicholas McKibben'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
-    #'numpydoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',

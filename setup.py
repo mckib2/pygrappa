@@ -80,14 +80,7 @@ setup(
         'igrappa hp-grappa segmented-grappa grappa-operator '
         'through-time-grappa pars grog nonlinear-grappa g-factor'
         'sense', 'cg-sense'),
-    install_requires=[
-        'numpy>=1.18.1',
-        'scipy>=1.4.1',
-        'matplotlib>=3.1.2',
-        'phantominator>=0.6.1',
-        'scikit-image>=0.16.2',
-        'tqdm>=4.38.0',
-    ],
+    install_requires=open('requirements.txt').read().split(),
     setup_requires=['numpy'],
     python_requires='>=3.5',
     cmdclass={'build_ext': get_build_ext_override()},
