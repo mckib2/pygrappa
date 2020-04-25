@@ -4,7 +4,6 @@ from collections import defaultdict
 
 import numpy as np
 from skimage.util import view_as_windows
-from tqdm import tqdm
 
 def mdgrappa(
         kspace,
@@ -100,8 +99,8 @@ def mdgrappa(
 
     # Train and apply kernels
     ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
-    recon = np.empty(kspace.shape, dtype=kspace.dtype)
-    for key, holes in tqdm(P.items(), desc='Train/apply weights', leave=False):
+    recon = np.zeros(kspace.shape, dtype=kspace.dtype)
+    for key, holes in P.items():
 
         # Get sampling pattern from key
         p0 = np.array(p0, dtype=bool)
