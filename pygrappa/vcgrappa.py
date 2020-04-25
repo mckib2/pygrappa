@@ -34,6 +34,10 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     calib = np.moveaxis(calib, coil_axis, -1)
     ax = (0, 1)
 
+    # remember the type we started out with, np.fft will change
+    # to complex128 regardless of what we started with
+    tipe = kspace.dtype
+
     # We will return twice the number of coils we started with
     nc = kspace.shape[-1]
 
@@ -55,7 +59,8 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
 
     # Pass through to GRAPPA
     return grappa(
-        kspace, calib, coil_axis=-1, nc_desired=2*nc, *args, **kwargs)
+        kspace, calib, coil_axis=-1, nc_desired=2*nc,
+        *args, **kwargs).astype(tipe)
 
 if __name__ == '__main__':
     pass
