@@ -60,7 +60,7 @@ def conditional_decorator(dec, condition):
         return dec(func)
     return decorator
 
-def make_base_test_case_2d(grappa_fun):
+def make_base_test_case_2d(grappa_fun, ssim_thresh=.92):
 
     class TestBaseGRAPPA2D(unittest.TestCase):
         '''Tests that every GRAPPA method should handle.'''
@@ -112,7 +112,7 @@ def make_base_test_case_2d(grappa_fun):
                                                     recon, axes=ax), axes=ax, norm='ortho'), axes=ax))**2, axis=-1))
                                             recon /= np.max(recon.flatten())
                                             ssim0 = ssim(imspace, recon)
-                                            self.assertTrue(ssim0 > .92, 'ssim=%g' % ssim0)
+                                            self.assertTrue(ssim0 > ssim_thresh, 'ssim=%g' % ssim0)
 
                                         # Add test function to TestClass
                                         setattr(
