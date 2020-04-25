@@ -82,6 +82,12 @@ def igrappa(
     kx2, ky2 = int(kx/2), int(ky/2)
     cx2, cy2 = int(cx/2), int(cy/2)
 
+    # Save original type and convert to complex double
+    # or else Cython will flip the heck out
+    tipe = kspace.dtype
+    kspace = kspace.astype(np.complex128)
+    calib = calib.astype(np.complex128)
+
     # Initial conditions
     kIm, W = cgrappa(kspace, calib, ret_weights=True, **grappa_args)
     ax = (0, 1)
@@ -94,8 +100,14 @@ def igrappa(
         mse = np.zeros(niter)
         aref = np.abs(ref)
 
+    # Turn off tqdm if running silently
+    if silent:
+        range_fun = range
+    else:
+        range_fun = lambda x: trange(x, leave=False, desc='iGRAPPA')
+
     # Fixed number of iterations
-    for ii in trange(niter, leave=False, desc='iGRAPPA'):
+    for ii in range_fun(niter):
 
         # Update calibration region -- now includes all estimated
         # lines plus unchanged calibration region
@@ -139,5 +151,5 @@ def igrappa(
     # Return the reconstructed kspace and MSE if ref kspace provided,
     # otherwise, just return reconstruction
     if ref is not None:
-        return(kIm, mse)
-    return kIm
+        return(kIm.astype(tipe), mse)
+    return kIm.astype(tipe)
