@@ -6,12 +6,18 @@ import numpy as np
 from scipy.sparse.linalg import LinearOperator, lsmr, cg
 
 def fft2(x0, axes=(0, 1)):
-    '''Utility Forward FFT function.'''
+    '''Utility Forward FFT function.
+
+    :meta private:
+    '''
     return np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
         x0, axes=axes), axes=axes), axes=axes)
 
 def ifft2(x0, axes=(0, 1)):
-    '''Utility Inverse FFT function.'''
+    '''Utility Inverse FFT function.
+
+    :meta private:
+    '''
     return np.fft.ifftshift(np.fft.ifft2(np.fft.fftshift(
         x0, axes=axes), axes=axes), axes=axes)
 
