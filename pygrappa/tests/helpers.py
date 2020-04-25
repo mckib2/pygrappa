@@ -51,8 +51,10 @@ def undersample_y3(kspace):
     kspace_u[:, 1::3, ...] = 0
     return kspace_u
 
-def make_base_test_case_2d(grappa_fun, ssim_thresh=.92, extra_args=None):
+def make_base_test_case_2d(grappa_fun, ssim_thresh=.92, types=None, extra_args=None):
 
+    if types is None:
+        types = [('complex64', np.complex64), ('complex128', np.complex128)]
     if extra_args is None:
         extra_args = dict()
 
@@ -74,7 +76,7 @@ def make_base_test_case_2d(grappa_fun, ssim_thresh=.92, extra_args=None):
                                         undersample_x2, undersample_y2, undersample_x2_y2,
                                         #undersample_x3, undersample_y3, # TODO: get R=3 working
                                 ]:
-                                    for tipe in [('complex64', np.complex64), ('complex128', np.complex128)]:
+                                    for tipe in types:
 
                                         # Only run if the dimensions are both even or odd
                                         @unittest.skipIf(M%2 ^ N%2, 'One odd dimension')
