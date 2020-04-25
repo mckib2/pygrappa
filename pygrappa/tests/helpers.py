@@ -51,16 +51,10 @@ def undersample_y3(kspace):
     kspace_u[:, 1::3, ...] = 0
     return kspace_u
 
-def conditional_decorator(dec, condition):
-    '''Decorator is only run if condition is True.'''
-    def decorator(func):
-        if not condition:
-            # Return the function unchanged, not decorated.
-            return func
-        return dec(func)
-    return decorator
+def make_base_test_case_2d(grappa_fun, ssim_thresh=.92, extra_args=None):
 
-def make_base_test_case_2d(grappa_fun, ssim_thresh=.92):
+    if extra_args is None:
+        extra_args = dict()
 
     class TestBaseGRAPPA2D(unittest.TestCase):
         '''Tests that every GRAPPA method should handle.'''
@@ -83,7 +77,7 @@ def make_base_test_case_2d(grappa_fun, ssim_thresh=.92):
                                     for tipe in [('complex64', np.complex64), ('complex128', np.complex128)]:
 
                                         # Only run if the dimensions are both even or odd
-                                        @conditional_decorator(unittest.skip('One odd dimension'), M%2 ^ N%2)
+                                        @unittest.skipIf(M%2 ^ N%2, 'One odd dimension')
                                         def _test_fun(
                                                 self,
                                                 phantom_fun=phantom_fun,
@@ -99,7 +93,7 @@ def make_base_test_case_2d(grappa_fun, ssim_thresh=.92):
                                             imspace, _coil_ims, kspace = phantom_fun(M=M, N=N, nc=nc, dtype=tipe[1])
                                             calib = calib_fun(kspace, cM, cN)
                                             kspace_u = undersampling_fun(kspace)
-                                            recon = grappa_fun(kspace_u, calib)
+                                            recon = grappa_fun(kspace_u, calib, **extra_args)
 
                                             # Make sure types match
                                             self.assertEqual(recon.dtype, tipe[1])
