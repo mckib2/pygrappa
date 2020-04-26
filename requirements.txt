@@ -2,5 +2,5 @@ numpy>=1.18.1
 scipy>=1.4.1
 matplotlib>=3.0.0
 phantominator>=0.6.1
-scikit-image>=0.16.2
+scikit-image>=0.15.0
 tqdm>=4.38.0
