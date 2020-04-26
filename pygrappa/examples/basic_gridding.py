@@ -33,7 +33,7 @@ from phantominator import kspace_shepp_logan, radial
 try:
     from bart import bart  # pylint: disable=E0401
     FOUND_BART = True
-except ModuleNotFoundError:
+except ImportError:  # ModuleNotFoundError:
     FOUND_BART = False
 
 from pygrappa import radialgrappaop, grog
