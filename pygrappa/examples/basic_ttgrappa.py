@@ -7,6 +7,15 @@ from phantominator import radial, kspace_shepp_logan
 from pygrappa import ttgrappa
 from utils import gridder
 
+
+def _sos(x0):
+    np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+def _gridder0(x0):
+    gridder(kx, ky, x0, sx=sx, sy=sx)
+
+
 if __name__ == '__main__':
 
     # Simulate a radial trajectory
@@ -28,7 +37,7 @@ if __name__ == '__main__':
     cy = ky.copy()
     calib = k.copy()
     # calib = np.tile(calib[:, None, :], (1, 2, 1))
-    calib = calib[:, None, :] # middle axis is the through-time dim
+    calib = calib[:, None, :]  # middle axis is the through-time dim
 
     # Undersample: R=2
     k[::2] = 0
@@ -38,17 +47,15 @@ if __name__ == '__main__':
         kx, ky, k, cx, cy, calib, kernel_size=25, coil_axis=-1)
 
     # Let's take a look
-    sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
-    gridder0 = lambda x0: gridder(kx, ky, x0, sx=sx, sy=sx)
     plt.subplot(1, 3, 1)
-    plt.imshow(sos(gridder0(k)))
+    plt.imshow(_sos(_gridder0(k)))
     plt.title('Undersampled')
 
     plt.subplot(1, 3, 2)
-    plt.imshow(sos(gridder0(kspace.reshape((-1, nc)))))
+    plt.imshow(_sos(_gridder0(kspace.reshape((-1, nc)))))
     plt.title('True')
 
     plt.subplot(1, 3, 3)
-    plt.imshow(sos(gridder0(res)))
+    plt.imshow(_sos(_gridder0(res)))
     plt.title('Through-time GRAPPA')
     plt.show()
