@@ -4,7 +4,10 @@ import unittest
 
 import numpy as np
 from phantominator import shepp_logan
-from skimage.metrics import structural_similarity as ssim
+try:
+    from skimage.metrics import structural_similarity as ssim
+except ImportError:
+    from skimage.measure import compare_ssim as ssim
 from utils import gaussian_csm
 
 

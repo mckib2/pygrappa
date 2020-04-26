@@ -7,7 +7,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.cluster.vq import whiten
 from phantominator import radial, kspace_shepp_logan
-from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
+try:
+    from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
+except ImportError:
+    from skimage.measure import compare_nrmse
 
 from pygrappa import grog, radialgrappaop
 

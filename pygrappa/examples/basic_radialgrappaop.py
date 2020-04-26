@@ -6,8 +6,11 @@ import numpy as np
 from scipy.cluster.vq import whiten
 import matplotlib.pyplot as plt
 from phantominator import radial, kspace_shepp_logan
-from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
-from skimage.metrics import structural_similarity as compare_ssim  # pylint: disable=E0611,E0401
+try:
+    from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
+    from skimage.metrics import structural_similarity as compare_ssim  # pylint: disable=E0611,E0401
+except ImportError:
+    from skimage.measure import compare_nrmse, compare_ssim
 from skimage.morphology import convex_hull_image
 from skimage.filters import threshold_li
 
