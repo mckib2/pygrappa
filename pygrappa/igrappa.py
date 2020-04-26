@@ -124,6 +124,10 @@ def igrappa(
         l1_Im = np.linalg.norm(Im.flatten(), ord=1)
         Tp = np.abs(l1_Tm - l1_Im)/l1_Im
 
+        # if there's no change, end
+        if not Tp:
+            break
+
         # Update weights
         p = Tp/(k*Fp)
         if p < 1:

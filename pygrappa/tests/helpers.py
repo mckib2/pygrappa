@@ -51,8 +51,46 @@ def undersample_y3(kspace):
     kspace_u[:, 1::3, ...] = 0
     return kspace_u
 
-def make_base_test_case_2d(grappa_fun, ssim_thresh=.92, types=None, extra_args=None):
+def make_base_test_case_2d(
+        grappa_fun,
+        ssim_thresh=.92,
+        Ms=(32, 30),
+        Ns=(32, 30),
+        ncoils=(4, 7),
+        cMs=None,
+        cNs=None,
+        types=None,
+        extra_args=None):
+    '''Make a test based on combinations of input parameters.
 
+    Parameters
+    ----------
+    grappa_fun : callable
+        The GRAPPA-like reconstruction function to be tested.
+    ssim_thresh : float, optional
+        SSIM value required to pass the test.
+    Ms, Ns : iterable of ints, optional
+        kspace sizes along `x` and `y` respectively.
+    ncoils : iterable of ints, optional
+        Number of coils to use.
+    cMs, cNs : iterable of floats, optional
+        calib sizes along `x` and `y` respectively given as
+        fractions of Ms and Ns.
+    types : tuple, (str, dtype), optional
+        A tuple describing a type for input kspace data.
+        `types[ii][0]` has a string that the type will be refered
+        to in the test name while `types[ii][1]` has the numpy
+        dtype to use with `.astype(...)`. `complex64` and
+        `complex128` are the default.
+    extra_args : dict, optional
+        Extra arguments to be passed to `grappa_fun`.  No extra
+        arguments are passed by default.
+    '''
+
+    if cMs is None:
+        cMs = [1, 1/2, 1/3, 1/4]
+    if cNs is None:
+        cNs = [1, 1/2, 1/3, 1/4]
     if types is None:
         types = [('complex64', np.complex64), ('complex128', np.complex128)]
     if extra_args is None:
@@ -65,12 +103,12 @@ def make_base_test_case_2d(grappa_fun, ssim_thresh=.92, types=None, extra_args=N
 
     funcname_template = 'test_recon_{phantom_fun}_M{M}_N{N}_nc{nc}_{calib_fun}_cM{cM}_cN{cN}_{undersampling_fun}_{type}'
     for phantom_fun in [shepp_logan2d]:
-        for M in [32, 30]:#, 64, 63]: # try to keep these small for tests to run quickly
-            for N in [32, 30]:#, 64, 63]:
-                for nc in [4, 7]:
+        for M in Ms: # try to keep these small for tests to run quickly
+            for N in Ns:
+                for nc in ncoils:
                     for calib_fun in [calib2d]:
-                        for cM in [M, M//2, M//3, M//4]:
-                            for cN in [N, N//2, N//3, N//4]:
+                        for cM in [int(frac*M) for frac in cMs]:
+                            for cN in [int(frac*N) for frac in cNs]:
                                 for undersampling_fun in [
                                         no_undersampling,
                                         undersample_x2, undersample_y2, undersample_x2_y2,
