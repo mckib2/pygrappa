@@ -109,7 +109,7 @@ if __name__ == '__main__':
     kspace[1::2, ::2, :] = 0
 
     # reconstruct:
-    simple_pruno(
+    res = simple_pruno(
         kspace, calib, kernel_size, coil_axis=-1,
         sens=mps, ph=ph, kspace_ref=kspace_ref)
     assert False

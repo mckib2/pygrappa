@@ -10,6 +10,7 @@ import sys
 import os
 import sysconfig
 
+
 def get_build_ext_override():
     """
     Custom build_ext command to tweak extension building.
@@ -38,7 +39,7 @@ def get_build_ext_override():
                 with open(script_fn, 'w') as f:
                     f.write(text)
                     # line below fixes gh-8680
-                    ext.extra_link_args = [arg for arg in ext.extra_link_args if not "version-script" in arg]
+                    ext.extra_link_args = [arg for arg in ext.extra_link_args if "version-script" not in arg]
                     ext.extra_link_args.append('-Wl,--version-script=' + script_fn)
 
             # Allow late configuration
@@ -70,6 +71,7 @@ def get_build_ext_override():
             return is_gcc and sysconfig.get_config_var('GNULD') == 'yes'
 
     return build_ext
+
 
 def _run_pre_build_hooks(hooks, args):
     """Call a sequence of pre-build hooks, if any"""

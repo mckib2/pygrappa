@@ -1,5 +1,6 @@
 '''Automatically find the ACS given a set of undersampled kspace.'''
 
+import numpy as np
 from skimage.segmentation import flood_fill
 
 from utils import findRectangle2d

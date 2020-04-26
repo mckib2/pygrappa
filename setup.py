@@ -9,11 +9,13 @@ from setup_helpers import get_build_ext_override
 
 VERSION = '0.21.1'
 
+
 def pre_build_hook(build_ext, ext):
     from scipy._build_utils.compiler_helper import get_cxx_std_flag
     std_flag = get_cxx_std_flag(build_ext._cxx_compiler)
     if std_flag is not None:
         ext.extra_compile_args.append(std_flag)
+
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -65,6 +67,7 @@ def configuration(parent_package='', top_path=None):
     ext._pre_build_hook = pre_build_hook
 
     return config
+
 
 setup(
     author='Nicholas McKibben',

@@ -87,5 +87,5 @@ def kspa(
     # plt.show()
 
     d = k.flatten('F')
-    # m = np.linalg.pinv(G.todense()) @ d
+    m = np.linalg.pinv(G.todense()) @ d
     return np.reshape(m, (sx, sy))
