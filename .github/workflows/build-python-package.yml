@@ -34,6 +34,7 @@ jobs:
           }
           Invoke-VSDevEnvironment
           Get-Command rc.exe | Format-Table -AutoSize
+          echo "::add-path::C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x86"
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
