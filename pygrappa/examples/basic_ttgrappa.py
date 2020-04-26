@@ -9,11 +9,11 @@ from utils import gridder
 
 
 def _sos(x0):
-    np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+    return np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
 
 
 def _gridder0(x0):
-    gridder(kx, ky, x0, sx=sx, sy=sx)
+    return gridder(kx, ky, x0, sx=sx, sy=sx)
 
 
 if __name__ == '__main__':

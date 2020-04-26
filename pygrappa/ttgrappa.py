@@ -165,3 +165,7 @@ def ttgrappa(
     # Fill in the known samples and return
     res[sampled, :] = kspace[sampled, :]
     return np.moveaxis(res, -1, coil_axis)
+
+
+if __name__ == '__main__':
+    pass
