@@ -111,7 +111,7 @@ def cgrappa(
         # boolean array, and then repmat to get the right number of
         # coils.
         P = format(dereference(it).first, 'b').zfill(ksx*ksy)
-        P = (np.fromstring(P[::-1], np.int8) - ord('0')).reshape(
+        P = (np.frombuffer(P[::-1].encode(), np.int8) - ord('0')).reshape(
             (ksx, ksy)).astype(bool)
         P = np.tile(P[..., None], (1, 1, nc))
 
