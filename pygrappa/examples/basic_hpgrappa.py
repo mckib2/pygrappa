@@ -1,8 +1,7 @@
 '''Basic hp-GRAPPA usage.'''
 
-
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D # pylint: disable=W0611
+from mpl_toolkits.mplot3d import Axes3D  # pylint: disable=W0611 # NOQA
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
@@ -14,7 +13,7 @@ if __name__ == '__main__':
     # The much abused Shepp-Logan phantom
     N, ncoil = 128, 5
     ph = shepp_logan(N)[..., None]*gaussian_csm(N, N, ncoil)
-    fov = (10e-2, 10e-2) # 10cm x 10cm FOV
+    fov = (10e-2, 10e-2)  # 10cm x 10cm FOV
 
     # k-space-ify it
     ax = (0, 1)

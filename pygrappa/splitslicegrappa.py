@@ -2,6 +2,7 @@
 
 from pygrappa import slicegrappa
 
+
 def splitslicegrappa(*args, **kwargs):
     '''Split-Slice-GRAPPA.
 
@@ -15,6 +16,7 @@ def splitslicegrappa(*args, **kwargs):
     if 'split' not in kwargs or not kwargs['split']:
         kwargs['split'] = True
     return slicegrappa(*args, **kwargs)
+
 
 if __name__ == '__main__':
     pass

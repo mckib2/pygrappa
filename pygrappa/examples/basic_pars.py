@@ -9,12 +9,18 @@ from phantominator.sens_coeffs import _sens_coeffs
 from pygrappa import pars
 from utils import gridder
 
-if __name__ == '__main__':
 
-    # Helper functions
-    ifft = lambda x0: np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+# Helper functions
+def ifft(x0):
+    return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
         x0, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
-    sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+def sos(x0):
+    return np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+if __name__ == '__main__':
 
     # Simulate a radial trajectory
     sx, spokes, nc = 256, 256, 8
@@ -52,7 +58,8 @@ if __name__ == '__main__':
     res = pars(kx, ky, k, sens, kernel_radius=.8)
 
     # Let's take a look
-    gridder0 = lambda x0: gridder(kx, ky, x0, sx=sx, sy=sx)
+    def gridder0(x0):
+        return gridder(kx, ky, x0, sx=sx, sy=sx)
 
     plt.subplot(1, 3, 1)
     plt.imshow(sos(gridder0(kspace.reshape((-1, nc)))))

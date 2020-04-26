@@ -3,6 +3,7 @@
 import numpy as np
 from tqdm import trange
 
+
 def nlgrappa_matlab(
         reduced_fourier_data, ORF, pe_loc, acs_data, acs_line_loc,
         num_block, num_column, times_comp):
@@ -85,7 +86,7 @@ def nlgrappa_matlab(
     valid_flag = False
 
     # Use a dictionary like a cell array:
-    #line_group = cell(num_block, ORF-1)
+    # line_group = cell(num_block, ORF-1)
     line_group = dict()
     for ii in range(num_block):
         for jj in range(ORF-1):
@@ -116,7 +117,6 @@ def nlgrappa_matlab(
                                 np.concatenate((
                                     [all_acquired_line_loc[s]],
                                     tentative_line_ind))[None, :]), axis=0), axis=0)
-
 
     # Solve for the weighting coefficients
     fit_coef = np.zeros(
@@ -225,8 +225,8 @@ def nlgrappa_matlab(
                 tentative_line_ind = np.arange(
                     ORF*int(np.floor(ss/ORF)) - mode*ORF,
                     ORF*int(np.floor(ss/ORF)) + 1 + (num_block-1)*ORF - mode*ORF, ORF, dtype=int)
-                #tmp = ORF*np.floor((ss-1)/ORF) - (mode-1)*ORF
-                #tentative_line_ind = np.arange(tmp, tmp + (num_block-1)*ORF, ORF, dtype=int)
+                # tmp = ORF*np.floor((ss-1)/ORF) - (mode-1)*ORF
+                # tentative_line_ind = np.arange(tmp, tmp + (num_block-1)*ORF, ORF, dtype=int)
                 if np.max(tentative_line_ind) < d1 and np.min(tentative_line_ind) >= 0:
                     temp_data = combined_fourier_data[tentative_line_ind, ...]
                     temp_data = temp_data.transpose((0, 2, 1))
@@ -287,7 +287,7 @@ def nlgrappa_matlab(
                                 break
                         if idx_comp >= times_comp:
                             break
-                    #print(offset, fit_coef.shape)
+                    # print(offset, fit_coef.shape)
                     for jj in range(num_coil):
                         candidate_fourier_data[ss, :, jj, mode] = (
                             np.squeeze(fit_coef[jj, offset, mode, :])).T @ new_fit_mat
@@ -308,9 +308,9 @@ def nlgrappa_matlab(
                             valid_flag = False
                             break
                     if valid_flag:
-                        #temp_mat = []
-                        #print(candidate_fourier_data.shape)
-                        #print(candidate_fourier_data[acs_line_loc[ss], :, jj, 0].shape)
+                        # temp_mat = []
+                        # print(candidate_fourier_data.shape)
+                        # print(candidate_fourier_data[acs_line_loc[ss], :, jj, 0].shape)
                         temp_mat = candidate_fourier_data[acs_line_loc[ss], :, jj, 0][None, ...]
                         for mode in range(1, num_block):
                             temp_mat = np.concatenate((
@@ -352,3 +352,7 @@ def nlgrappa_matlab(
     coef0 = fit_coef
 
     return(full_fourier_data, rec_img, coef0)
+
+
+if __name__ == '__main__':
+    pass

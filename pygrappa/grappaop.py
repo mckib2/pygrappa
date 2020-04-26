@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 def grappaop(calib, coil_axis=-1, lamda=0.01):
     '''GRAPPA operator for Cartesian calibration datasets.
 
@@ -60,3 +61,7 @@ def grappaop(calib, coil_axis=-1, lamda=0.01):
     Gy = np.linalg.solve(
         Syh @ Sy + lamda0*np.eye(Syh.shape[0]), Syh @ Ty)
     return(Gx, Gy)
+
+
+if __name__ == '__main__':
+    pass

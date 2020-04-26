@@ -6,6 +6,7 @@ import numpy as np
 from pygrappa import cgrappa
 from pygrappa.kernels import polynomial_kernel
 
+
 def nlgrappa(
         kspace, calib, kernel_size=(5, 5), ml_kernel='polynomial',
         ml_kernel_args=None, coil_axis=-1):
@@ -83,3 +84,7 @@ def nlgrappa(
             vkspace, vcalib, kernel_size=kernel_size, coil_axis=-1,
             nc_desired=nc, lamda=0),
         -1, coil_axis)
+
+
+if __name__ == '__main__':
+    pass

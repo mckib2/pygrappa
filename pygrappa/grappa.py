@@ -31,6 +31,7 @@ from tempfile import NamedTemporaryFile as NTF
 import numpy as np
 from skimage.util import pad, view_as_windows
 
+
 def grappa(
         kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
         memmap=False, memmap_filename='out.memmap', silent=True):
@@ -110,9 +111,9 @@ def grappa(
     adjy = np.mod(ky, 2)
 
     # Pad kspace data
-    kspace = pad( # pylint: disable=E1102
+    kspace = pad(  # pylint: disable=E1102
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
-    calib = pad( # pylint: disable=E1102
+    calib = pad(  # pylint: disable=E1102
         calib, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
 
     # Notice that all coils have same sampling pattern, so choose
@@ -129,7 +130,7 @@ def grappa(
         P = np.memmap(fP, dtype=mask.dtype, mode='w+', shape=(
             mask.shape[0]-2*kx2, mask.shape[1]-2*ky2, 1, kx, ky))
         P = view_as_windows(mask, (kx, ky))
-        Psh = P.shape[:] # save shape for unflattening indices later
+        Psh = P.shape[:]  # save shape for unflattening indices later
         P = P.reshape((-1, kx, ky))
 
         # Find the unique patches and associate them with indices
@@ -254,6 +255,7 @@ def grappa(
 
         return np.moveaxis(
             (recon[:] + kspace)[kx2:-kx2, ky2:-ky2, :], -1, coil_axis)
+
 
 if __name__ == '__main__':
     pass

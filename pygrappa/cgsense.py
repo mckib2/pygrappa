@@ -5,6 +5,7 @@ from time import time
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, lsmr, cg
 
+
 def fft2(x0, axes=(0, 1)):
     '''Utility Forward FFT function.
 
@@ -13,6 +14,7 @@ def fft2(x0, axes=(0, 1)):
     return np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
         x0, axes=axes), axes=axes), axes=axes)
 
+
 def ifft2(x0, axes=(0, 1)):
     '''Utility Inverse FFT function.
 
@@ -20,6 +22,7 @@ def ifft2(x0, axes=(0, 1)):
     '''
     return np.fft.ifftshift(np.fft.ifft2(np.fft.fftshift(
         x0, axes=axes), axes=axes), axes=axes)
+
 
 def _isense(kspace, sens, show=False):
     '''Iterative SENSE using nonsquare matrix and LSMR solver.'''
@@ -55,6 +58,7 @@ def _isense(kspace, sens, show=False):
 
     return np.reshape(x, (sx, sy))
 
+
 def _isense2(kspace, sens, show=False):
     '''Try LSMR with square matrix.'''
 
@@ -75,7 +79,8 @@ def _isense2(kspace, sens, show=False):
         res = np.reshape(res, (-1,))
         return np.concatenate((res.real, res.imag))
 
-    E = lambda x0: _AH(_A(x0))
+    def E(x0):
+        return _AH(_A(x0))
     AHA = LinearOperator((sx*sy, sx*sy), matvec=E, rmatvec=E)
     b = np.reshape(kspace, (-1,))
     b = np.concatenate((b.real, b.imag))
@@ -84,6 +89,7 @@ def _isense2(kspace, sens, show=False):
     x = x[:sx*sy] + 1j*x[sx*sy:]
 
     return np.reshape(x, (sx, sy))
+
 
 def cgsense(kspace, sens, coil_axis=-1):
     '''Conjugate Gradient SENSE for arbitrary Cartesian acquisitions.
@@ -158,7 +164,8 @@ def cgsense(kspace, sens, coil_axis=-1):
         return np.reshape(res, (-1,))
 
     # Make LinearOperator, A^H b, and use CG to solve
-    E = lambda x0: _AH(_A(x0))
+    def E(x0):
+        return _AH(_A(x0))
     AHA = LinearOperator((sx*sy, sx*sy), matvec=E, rmatvec=E)
     b = _AH(np.reshape(kspace, (-1,)))
 
@@ -167,6 +174,7 @@ def cgsense(kspace, sens, coil_axis=-1):
     print('CG-SENSE took %g sec' % (time() - t0))
 
     return np.reshape(x, (sx, sy))
+
 
 if __name__ == '__main__':
     pass

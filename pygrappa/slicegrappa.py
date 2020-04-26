@@ -4,6 +4,7 @@ import numpy as np
 from skimage.util import view_as_windows, pad
 from tqdm import trange
 
+
 def slicegrappa(
         kspace, calib, kernel_size=(5, 5), prior='sim', coil_axis=-2,
         time_axis=-1, slice_axis=-1, lamda=0.01, split=False):
@@ -94,10 +95,10 @@ def slicegrappa(
     _cx, _cy, nc, cs = calib.shape[:]
 
     # Pad kspace data
-    kspace = pad( # pylint: disable=E1102
+    kspace = pad(  # pylint: disable=E1102
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0), (0, 0)),
         mode='constant')
-    calib = pad( # pylint: disable=E1102
+    calib = pad(  # pylint: disable=E1102
         calib, ((kx2, kx2), (ky2, ky2), (0, 0), (0, 0)),
         mode='constant')
 
@@ -168,3 +169,7 @@ def slicegrappa(
 
     # Return results in fixed order: (nx, ny, nc, nt, cs)
     return res
+
+
+if __name__ == '__main__':
+    pass

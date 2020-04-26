@@ -16,7 +16,7 @@ if __name__ == '__main__':
     im = im[..., None]*sens
     sos = np.sqrt(np.sum(np.abs(im)**2, axis=-1))
 
-    off = 0 # starting sampling location
+    off = 0  # starting sampling location
 
     # The number of ACS lines
     R = 5
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # The convolution size
     num_block = 2
-    num_column = 15 # make smaller to go quick during development
+    num_column = 15  # make smaller to go quick during development
 
     # Obtain ACS data and undersampled data
     sx, sy, nc = im.shape[:]
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     pe_loc = np.arange(off, sx-off, R)
     kspace_u = np.zeros((pe_loc.size, sy, nc), dtype=im.dtype)
     kspace_u = np.fft.fftshift(np.fft.fft2(
-        im, axes=(0, 1)), axes=(0, 1))[pe_loc, ...].copy() # why do this?
+        im, axes=(0, 1)), axes=(0, 1))[pe_loc, ...].copy()  # why do this?
 
     # Net reduction factor
     acq_idx = np.zeros(sx, dtype=bool)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     NetR = sx / np.sum(acq_idx)
 
     # Nonlinear GRAPPA Reconstruction
-    times_comp = 3 # The number of times of the first-order terms
+    times_comp = 3  # The number of times of the first-order terms
     full_fourier_data1, ImgRecon1, coef1 = nlgrappa_matlab(
         kspace_u, R, pe_loc, calib, acs_line_loc, num_block,
         num_column, times_comp)

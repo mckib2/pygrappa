@@ -3,9 +3,10 @@
 from time import time
 
 import numpy as np
-from scipy.spatial import cKDTree # pylint: disable=E0611
+from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.sparse import lil_matrix
 from scipy.interpolate import griddata
+
 
 def kspa(
         kx, ky, k, sens, coil_axis=-1, sens_coil_axis=-1):
@@ -66,9 +67,9 @@ def kspa(
             if jj not in idx:
                 # Choose ws cutoff frequency to be when ksens
                 # decreases to around %0.36 of its peak value
-                l = np.abs(ksens[sx2, sy2:, jj])
-                p = np.max(l)*0.0036
-                ws = np.argmin(np.abs(l - p))
+                ll = np.abs(ksens[sx2, sy2:, jj])
+                p = np.max(ll)*0.0036
+                ws = np.argmin(np.abs(ll - p))
                 idx[jj] = kdtree.query_ball_point(txy, r=ws)
 
             if jj not in Ginterp:

@@ -4,7 +4,8 @@ import numpy as np
 from tqdm import tqdm
 
 # from pygrappa import grappa
-from pygrappa import cgrappa as grappa # need for speed!
+from pygrappa import cgrappa as grappa  # need for speed!
+
 
 def tgrappa(
         kspace, calib_size=(20, 20), kernel_size=(5, 5),
@@ -82,9 +83,9 @@ def tgrappa(
     # Iterate through all time frames, construct ACS regions, and
     # run GRAPPA on each time slice
     res = np.zeros(kspace.shape, dtype=kspace.dtype)
-    tt = 0 # time frame index
-    done = False # True when all time frames have been consumed
-    from_end = False # start at the end and go backwards
+    tt = 0  # time frame index
+    done = False  # True when all time frames have been consumed
+    from_end = False  # start at the end and go backwards
     while not done:
 
         # Find next feasible kernel -- Strategy: consume time frames
@@ -95,7 +96,7 @@ def tgrappa(
         got_kernel = False
         calib = []
         counts = np.zeros((cx, cy), dtype=int)
-        tframes = [] # time frames over which the ACS is valid
+        tframes = []  # time frames over which the ACS is valid
         while not got_kernel:
             if not completed_tframes[tt]:
                 tframes.append(tt)
@@ -108,9 +109,9 @@ def tgrappa(
 
             # Go to next time frame except maybe for the last ACS
             if not from_end:
-                tt += 1 # Consume the next time frame
+                tt += 1  # Consume the next time frame
             else:
-                tt -= 1 # Consume previous time frame
+                tt -= 1  # Consume previous time frame
 
             # If we need more time frames than we have, then we need
             # to start from the end and come forward.  This can only
@@ -147,3 +148,7 @@ def tgrappa(
 
     # Move axes back to where the user had them
     return np.moveaxis(res, (-1, -2), (time_axis, coil_axis))
+
+
+if __name__ == '__main__':
+    pass

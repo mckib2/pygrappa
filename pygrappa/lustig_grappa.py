@@ -4,6 +4,7 @@ import numpy as np
 from skimage.util import pad
 from tqdm import trange
 
+
 def lustig_grappa(
         kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
         disp=False, memmap=False, memmap_filename='out.memmap'):
@@ -111,6 +112,7 @@ def lustig_grappa(
         return None
     return res
 
+
 def ARC(kspace, AtA, kernel_size, c, lamda):
     '''ARC.'''
     sx, sy, ncoils = kspace.shape[:]
@@ -119,7 +121,7 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
     # Zero-pad data
     px = int(kx/2)
     py = int(ky/2)
-    kspace = pad( #pylint: disable=E1102
+    kspace = pad(  # pylint: disable=E1102
         kspace, ((px, px), (py, py), (0, 0)), mode='constant')
 
     dummyK = np.zeros((kx, ky, ncoils))
@@ -127,11 +129,11 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
     idxy = np.where(dummyK)
     res = np.zeros((sx, sy), dtype=kspace.dtype)
 
-    MaxListLen = 100 # max number of kernels we'll store for lookup
+    MaxListLen = 100  # max number of kernels we'll store for lookup
     LIST = np.zeros((kx*ky*ncoils, MaxListLen), dtype=kspace.dtype)
     KEY = np.zeros((kx*ky*ncoils, MaxListLen))
 
-    count = 0 # current index for the next kernel to store in LIST
+    count = 0  # current index for the next kernel to store in LIST
     for xy in np.ndindex((sx, sy)):
         x, y = xy[:]
 
@@ -173,6 +175,7 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
 
     return res
 
+
 def dat2AtA(data, kernel_size):
     '''Computes the calibration matrix from calibration data.
     '''
@@ -181,6 +184,7 @@ def dat2AtA(data, kernel_size):
     tsx, tsy, tsz = tmp.shape[:]
     A = np.reshape(tmp, (tsx, tsy*tsz), order='F')
     return np.dot(A.T.conj(), A)
+
 
 def im2row(im, win_shape):
     '''res = im2row(im, winSize)'''
@@ -192,12 +196,13 @@ def im2row(im, win_shape):
     count = 0
     for y in range(wy):
         for x in range(wx):
-            #res[:, count, :] = np.reshape(
-            #    im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz), order='F')
+            # res[:, count, :] = np.reshape(
+            #     im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz), order='F')
             res[:, count, :] = np.reshape(
                 im[x:sx-wx+x+1, y:sy-wy+y+1, :], (sh, sz))
             count += 1
     return res
+
 
 def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     '''Calibrate.
@@ -237,6 +242,7 @@ def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     kernel = np.reshape(kernel, sampling.shape, order='F')
 
     return(kernel, rawkernel)
+
 
 if __name__ == '__main__':
     pass

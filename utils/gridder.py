@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.interpolate import griddata
 
+
 def gridder(
         kx, ky, k, sx, sy, coil_axis=-1, ifft=True, os=2,
         method='linear'):
@@ -53,3 +54,7 @@ def gridder(
             np.fft.ifftshift(np.nan_to_num(grid_kspace), axes=(0, 1)),
             axes=(0, 1)), axes=(0, 1))[padx:-padx, pady:-pady, :]
     return grid_kspace
+
+
+if __name__ == '__main__':
+    pass

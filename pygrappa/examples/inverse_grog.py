@@ -10,12 +10,18 @@ from phantominator import radial, kspace_shepp_logan
 from pygrappa import radialgrappaop, grog
 from utils import gridder
 
-if __name__ == '__main__':
 
-    # Helpers
-    ifft = lambda x0: np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+# Helpers
+def ifft(x0):
+    return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
         x0, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
-    sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+def sos(x0):
+    return np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+if __name__ == '__main__':
 
     # Radially sampled Shepp-Logan
     N, spokes, nc = 288, 72, 8
@@ -23,7 +29,7 @@ if __name__ == '__main__':
     kx = np.reshape(kx, (N, spokes), 'F').flatten()
     ky = np.reshape(ky, (N, spokes), 'F').flatten()
     k = kspace_shepp_logan(kx, ky, ncoil=nc)
-    k = whiten(k) # whitening seems to help conditioning of Gx, Gy
+    k = whiten(k)  # whitening seems to help conditioning of Gx, Gy
 
     # Get the GRAPPA operators
     t0 = time()

@@ -28,7 +28,7 @@ if __name__ == '__main__':
     pd = 10
     ctrs = [int(s/2) for s in kspace.shape[:2]]
     calib = kspace[tuple([slice(ctr-pd, ctr+pd) for ctr in ctrs] + [slice(None), slice(None)])].copy()
-    #calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
+    # calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
 
     # calibrate a kernel
     kernel_size = (4, 5, 5)

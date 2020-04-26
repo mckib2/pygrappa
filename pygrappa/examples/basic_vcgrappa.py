@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
-from skimage.metrics import normalized_root_mse as compare_nrmse # pylint: disable=E0611,E0401
+from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
 
 from pygrappa import vcgrappa, grappa
 from utils import gaussian_csm
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # Simple phantom
     N = 128
     ncoil = 8
-    _, phi = np.meshgrid( # background phase variation
+    _, phi = np.meshgrid(  # background phase variation
         np.linspace(-np.pi, np.pi, N),
         np.linspace(-np.pi, np.pi, N))
     phi = np.exp(1j*phi)

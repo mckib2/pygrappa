@@ -1,7 +1,8 @@
 '''Python implementation of Non-Cartesian GRAPPA.'''
 
 import numpy as np
-from scipy.spatial import cKDTree # pylint: disable=E0611
+from scipy.spatial import cKDTree  # pylint: disable=E0611
+
 
 def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis=-1):
     '''Non-Cartesian GRAPPA.
@@ -98,8 +99,6 @@ def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis=-1):
     #
     #     # Move everything to be relative to the target
     #     P0 = S - T
-
-
 
     #     # Try to find the existing constellation
     #     key = P0.tostring()

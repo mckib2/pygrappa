@@ -6,6 +6,7 @@ import numpy as np
 from pygrappa import igrappa
 from .helpers import make_base_test_case_2d
 
+
 # This runs really slow, so reduce number of tests
 class TestiGRAPPA(make_base_test_case_2d(
         igrappa,
@@ -19,6 +20,7 @@ class TestiGRAPPA(make_base_test_case_2d(
 )):
     # TODO: threshold could probably be higher
     pass
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,6 +3,7 @@
 import numpy as np
 # from sklearn.preprocessing import PolynomialFeatures
 
+
 def polynomial_kernel(X, cross_term_neighbors=2):
     '''Computes polynomial kernel.
 

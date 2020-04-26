@@ -8,12 +8,13 @@ from matplotlib.animation import FuncAnimation
 from pygrappa import tgrappa
 from utils import gaussian_csm
 
+
 if __name__ == '__main__':
 
     # Simulation parameters
-    N = 128 # in-plane resolution: (N, N)
-    nt = 40 # number of time frames
-    ncoil = 4 # number of coils
+    N = 128  # in-plane resolution: (N, N)
+    nt = 40  # number of time frames
+    ncoil = 4  # number of coils
 
     # Make a simple phantom
     ph = dynamic(N, nt)

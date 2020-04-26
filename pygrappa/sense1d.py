@@ -4,6 +4,7 @@ from time import time
 
 import numpy as np
 
+
 def sense1d(im, sens, Rx=1, Ry=1, coil_axis=-1, imspace=True):
     '''Sensitivity Encoding for Fast MRI (SENSE) along one dimension.
 
@@ -100,6 +101,7 @@ def sense1d(im, sens, Rx=1, Ry=1, coil_axis=-1, imspace=True):
     if flip_xy:
         res = np.moveaxis(res, 1, 0)
     return np.moveaxis(res, -1, coil_axis)
+
 
 if __name__ == '__main__':
     pass

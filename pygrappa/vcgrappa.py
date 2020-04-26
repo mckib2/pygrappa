@@ -4,6 +4,7 @@ import numpy as np
 
 from pygrappa import cgrappa as grappa
 
+
 def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     '''Virtual Coil GRAPPA.
 
@@ -61,6 +62,7 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
     return grappa(
         kspace, calib, coil_axis=-1, nc_desired=2*nc,
         *args, **kwargs).astype(tipe)
+
 
 if __name__ == '__main__':
     pass

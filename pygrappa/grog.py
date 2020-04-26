@@ -7,13 +7,15 @@ from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.linalg import fractional_matrix_power as fmp
 from tqdm import tqdm
 
-from pygrappa.grog_powers import grog_powers_double, grog_powers_float # pylint: disable=E0611
+from pygrappa.grog_powers import grog_powers_double, grog_powers_float  # pylint: disable=E0611
 from pygrappa.grog_gridding import (
-    grog_gridding_double, grog_gridding_float) # pylint: disable=E0611
+    grog_gridding_double, grog_gridding_float)  # pylint: disable=E0611
+
 
 def _make_key(key, precision):
     '''Dictionary keys.'''
     return np.around(key, decimals=int(precision))
+
 
 def grog(
         kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75, Dx=None,
@@ -164,7 +166,7 @@ def grog(
     # Precompute deficient matrix powers
     if use_primefac:
         # Precompute matrix powers using prime factorization
-        from primefac import factorint # pylint: disable=E0401
+        from primefac import factorint  # pylint: disable=E0401
         scale_fac = 10**precision
 
         # Start a dictionary of fractional matrix powers
@@ -209,7 +211,7 @@ def grog(
                     frac_mats_y[lpyu] = fmp(Gy, lpyu)
 
             # Now compose all the matrices together for this point
-            nx = list(rx.values()) + [1] # +1 to account for scale_fac
+            nx = list(rx.values()) + [1]  # +1 to account for scale_fac
             ny = list(ry.values()) + [1]
             Dx[np.abs(keyx0)] = np.linalg.multi_dot([
                 np.linalg.matrix_power(

@@ -4,10 +4,15 @@ from time import time
 
 import numpy as np
 import matplotlib.pyplot as plt
-from bart import bart # pylint: disable=E0401
+from bart import bart  # pylint: disable=E0401
 
 from pygrappa import pars
 from utils import gridder
+
+
+def sos(x0):
+    return np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
 
 if __name__ == '__main__':
 
@@ -26,7 +31,6 @@ if __name__ == '__main__':
     ku[::2] = 0
 
     # Take a looksie
-    sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
     plt.subplot(1, 3, 1)
     plt.imshow(sos(gridder(kx, ky, k, sx, sx)))
     plt.title('Truth')

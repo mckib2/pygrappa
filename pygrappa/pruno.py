@@ -9,6 +9,7 @@ from scipy.signal import convolve2d
 from scipy.signal import lfilter
 from tqdm import trange
 
+
 def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     '''Parallel Reconstruction Using Null Operations (PRUNO).
 
@@ -36,15 +37,15 @@ def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     nc = calib.shape[-1]
 
     # Pad and pull out calibration matrix
-    kspace = pad( # pylint: disable=E1102
+    kspace = pad(  # pylint: disable=E1102
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
-    calib = pad( # pylint: disable=E1102
+    calib = pad(  # pylint: disable=E1102
         calib, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
     C = view_as_windows(
         calib, (kx, ky, nc)).reshape((-1, kx*ky*nc))
 
     # Get the nulling kernels
-    n = null_space(C, rcond=1e-3) # TODO: automate selection of rcond
+    n = null_space(C, rcond=1e-3)  # TODO: automate selection of rcond
     print(n.shape)
 
     # Calculate composite kernels
@@ -83,7 +84,6 @@ def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     # # plt.imshow(np.abs(im))
     # plt.show()
 
-
     # Initial guess is zeros
     # TODO: include ACS
     x0 = np.zeros(kspace.size, dtype=kspace.dtype)
@@ -93,6 +93,7 @@ def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     # Need to do some stuff to create A since nulling operation
     # is filtering
     nx, ny = kspace.shape[:2]
+
     def _mv(v):
         v = np.reshape(v, (-1, nc))
         res = np.zeros((v.shape[0], nc), dtype=v.dtype)

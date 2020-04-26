@@ -5,8 +5,10 @@ import unittest
 from pygrappa import mdgrappa
 from .helpers import make_base_test_case_2d
 
+
 class TestMDGRAPPA(make_base_test_case_2d(mdgrappa, ssim_thresh=0.92)):
     pass
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 from scipy.cluster.vq import whiten
 from phantominator import kspace_shepp_logan, radial
 try:
-    from bart import bart # pylint: disable=E0401
+    from bart import bart  # pylint: disable=E0401
     FOUND_BART = True
 except ModuleNotFoundError:
     FOUND_BART = False
@@ -39,17 +39,31 @@ except ModuleNotFoundError:
 from pygrappa import radialgrappaop, grog
 from utils import gridder
 
+
+# Helper functions for sum-of-squares coil combine and ifft2
+def sos(x0):
+    return np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+def ifft(x0):
+    return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+        np.nan_to_num(x0), axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
+
+
+# Make a wrapper function for BART's nufft function,
+# assumes 2D
+def bart_nufft(x0):
+    return bart(
+        1, 'nufft -i -t -d %d:%d:1' % (sx, sx),
+        traj, x0.reshape((1, sx, spokes, nc))).squeeze()
+
+
 if __name__ == '__main__':
 
     # Demo params
     sx, spokes, nc = 128, 128, 8
-    os = 2 # oversampling factor for gridding
-    method = 'linear' # interpolation strategy for gridding
-
-    # Helper functions for sum-of-squares coil combine and ifft2
-    sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
-    ifft = lambda x0: np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        np.nan_to_num(x0), axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
+    os = 2  # oversampling factor for gridding
+    method = 'linear'  # interpolation strategy for gridding
 
     # If you have BART installed, you could replicate this demo with
     # the following:
@@ -57,12 +71,6 @@ if __name__ == '__main__':
         # Make a radial trajectory, we'll have to mess with it later
         # to get it to look like pygrappa usually assumes it is
         traj = bart(1, 'traj -r -x %d -y %d' % (sx, spokes))
-
-        # Make a wrapper function for BART's nufft function,
-        # assumes 2D
-        bart_nufft = lambda x0: bart(
-            1, 'nufft -i -t -d %d:%d:1' % (sx, sx),
-            traj, x0.reshape((1, sx, spokes, nc))).squeeze()
 
         # Multicoil Shepp-Logan phantom kspace measurements
         kspace = bart(1, 'phantom -k -s %d -t' % nc, traj)
@@ -83,7 +91,6 @@ if __name__ == '__main__':
         plt.title('BART NUFFT')
         plt.xlabel('Recon: %g sec' % bart_time)
         plt.show(block=False)
-
 
     # The phantominator module also supports arbitrary kspace
     # sampling for multiple coils:

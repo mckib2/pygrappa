@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 def findRectangle2d(region, mask, ctr):
     # Push out on each face, backtracking where necessary
     acs = np.zeros(region.shape, dtype=bool)

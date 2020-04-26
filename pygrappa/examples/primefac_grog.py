@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.cluster.vq import whiten
 from phantominator import radial, kspace_shepp_logan
-from skimage.metrics import normalized_root_mse as compare_nrmse # pylint: disable=E0611,E0401
+from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
 
 from pygrappa import grog, radialgrappaop
 
@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     # Make sure we have the primefac-fork
     try:
-        import primefac # pylint: disable=W0611
+        import primefac  # pylint: disable=W0611 # NOQA
     except ImportError:
         raise ImportError('Need to install fork of primefac: '
                           'https://github.com/elliptic-shiho/'
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     kx = np.reshape(kx, (N, spokes), 'F').flatten()
     ky = np.reshape(ky, (N, spokes), 'F').flatten()
     k = kspace_shepp_logan(kx, ky, ncoil=nc)
-    k = whiten(k) # whitening seems to help conditioning of Gx, Gy
+    k = whiten(k)  # whitening seems to help conditioning of Gx, Gy
 
     # Put in correct shape for radialgrappaop
     k = np.reshape(k, (N, spokes, nc))
@@ -53,7 +53,6 @@ if __name__ == '__main__':
     t0 = time()
     res_prime = grog(kx, ky, k, N, N, Gx, Gy, use_primefac=True)
     print('Gridded in %g seconds (primefac)' % (time() - t0))
-
 
     res = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
         res, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))

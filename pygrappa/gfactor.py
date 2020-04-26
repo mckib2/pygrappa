@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
     '''Compute g-factor map for coil sensitities and accelerations.
 
@@ -65,6 +66,7 @@ def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
 
     return g
 
+
 def gfactor_single_coil_R2(coil, Rx=2, Ry=1):
     '''Specific example of a single homogeneous coil, R=2.
 
@@ -111,6 +113,7 @@ def gfactor_single_coil_R2(coil, Rx=2, Ry=1):
         shifted = np.fft.fftshift(np.angle(coil), axes=1)
 
     return mask/np.sin(np.abs(np.angle(coil) - shifted))
+
 
 if __name__ == '__main__':
     pass

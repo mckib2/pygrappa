@@ -1,11 +1,11 @@
 '''Demo of Non-Cartesian GRAPPA.'''
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
-from bart import bart # pylint: disable=E0401
+from bart import bart  # pylint: disable=E0401
 
-from pygrappa import ncgrappa
+# from pygrappa import ncgrappa
 
 if __name__ == '__main__':
 

@@ -4,6 +4,7 @@ import numpy as np
 
 from pygrappa import cgrappa
 
+
 def hpgrappa(
         kspace, calib, fov, kernel_size=(5, 5), w=None, c=None,
         ret_filter=False, coil_axis=-1, lamda=0.01, silent=True):
@@ -68,8 +69,8 @@ def hpgrappa(
     # We'll need the filter, seeing as this is high-pass GRAPPA
     fov_x, fov_y = fov[:]
     kxx, kyy = np.meshgrid(
-        kx*np.linspace(-1, 1, ky)/(fov_x*2), # I think this gives
-        ky*np.linspace(-1, 1, kx)/(fov_y*2)) # kspace FOV?
+        kx*np.linspace(-1, 1, ky)/(fov_x*2),  # I think this gives
+        ky*np.linspace(-1, 1, kx)/(fov_y*2))  # kspace FOV?
     F2 = (1 - 1/(1 + np.exp((np.sqrt(kxx**2 + kyy**2) - c)/w)) +
           1/(1 + np.exp((np.sqrt(kxx**2 + kyy**2) + c)/w)))
 
@@ -93,6 +94,7 @@ def hpgrappa(
     if ret_filter:
         return(res.astype(tipe), F2)
     return res.astype(tipe)
+
 
 def _filter_parameters(ncoils, num_acs_lines):
     '''Table 1: predefined filter parameters from [1]_.
@@ -133,6 +135,7 @@ def _filter_parameters(ncoils, num_acs_lines):
     num_acs_lines = valid[idx]
 
     return lookup[num_acs_lines, ncoils <= 8]
+
 
 if __name__ == '__main__':
     pass

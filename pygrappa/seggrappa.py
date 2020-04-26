@@ -4,6 +4,7 @@ import numpy as np
 
 from pygrappa import cgrappa
 
+
 def seggrappa(kspace, calibs, *args, **kwargs):
     '''Segmented GRAPPA.
 
@@ -35,3 +36,7 @@ def seggrappa(kspace, calibs, *args, **kwargs):
 
     # Average all the reconstructions
     return np.mean(recons, axis=0)
+
+
+if __name__ == '__main__':
+    pass

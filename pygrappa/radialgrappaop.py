@@ -3,6 +3,7 @@
 import numpy as np
 from scipy.linalg import expm, logm
 
+
 def radialgrappaop(
         kx, ky, k, nspokes=None, spoke_axis=-2, coil_axis=-1,
         spoke_axis_coord=-1, lamda=0.01, ret_lGtheta=False,
@@ -134,3 +135,7 @@ def radialgrappaop(
     # Take matrix exponential to get from (lGx, lGy) -> (Gx, Gy)
     # and we're done!
     return(expm(lGx), expm(lGy))
+
+
+if __name__ == '__main__':
+    pass

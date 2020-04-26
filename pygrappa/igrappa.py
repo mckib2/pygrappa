@@ -2,9 +2,10 @@
 
 import numpy as np
 from tqdm import trange
-from skimage.metrics import mean_squared_error as compare_mse # pylint: disable=E0611,E0401
+from skimage.metrics import mean_squared_error as compare_mse  # pylint: disable=E0611,E0401
 
 from pygrappa import cgrappa
+
 
 def igrappa(
         kspace, calib, kernel_size=(5, 5), k=0.3, coil_axis=-1,
@@ -93,7 +94,7 @@ def igrappa(
     ax = (0, 1)
     Im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
         kIm, axes=ax), axes=ax), axes=ax)
-    Fp = 1e6 # some large number to begin with
+    Fp = 1e6  # some large number to begin with
 
     # If user has provided reference, let's track the MSE
     if ref is not None:
@@ -104,7 +105,8 @@ def igrappa(
     if silent:
         range_fun = range
     else:
-        range_fun = lambda x: trange(x, leave=False, desc='iGRAPPA')
+        def range_fun(x):
+            return trange(x, leave=False, desc='iGRAPPA')
 
     # Fixed number of iterations
     for ii in range_fun(niter):

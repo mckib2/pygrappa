@@ -5,6 +5,7 @@ from skimage.segmentation import flood_fill
 
 from utils import findRectangle2d
 
+
 def find_acs(kspace):
     '''Start at center of kspace and find largest hyper-rectangle.
 
@@ -14,7 +15,7 @@ def find_acs(kspace):
         Assume coil_axis is at -1 and currently unpadded.
     '''
 
-    #import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
     # Flood fill from center
     mask = np.abs(kspace[..., 0]) > 0
@@ -24,16 +25,16 @@ def find_acs(kspace):
     ACS_val = 2
     region = flood_fill(mask.astype(int), seed_point=ctr, new_value=ACS_val, connectivity=0) == ACS_val
 
-    #plt.imshow(region)
-    #plt.show()
+    # plt.imshow(region)
+    # plt.show()
 
     if region.ndim == 2:
 
         # Find a centered rectangle
         acs, top, bottom = findRectangle2d(region, mask, ctr)
 
-        #plt.imshow(acs)
-        #plt.show()
+        # plt.imshow(acs)
+        # plt.show()
 
         nc = kspace.shape[-1]
         acs = np.tile(acs[..., None], (1, 1, nc))
@@ -50,3 +51,7 @@ def find_acs(kspace):
         raise NotImplementedError()
 
     return calib
+
+
+if __name__ == '__main__':
+    pass

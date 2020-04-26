@@ -7,6 +7,7 @@ from phantominator import shepp_logan
 from skimage.metrics import structural_similarity as ssim
 from utils import gaussian_csm
 
+
 def shepp_logan2d(M=64, N=64, nc=4, dtype=np.complex128):
     '''Make 2d phantom.'''
     ax = (0, 1)
@@ -16,8 +17,10 @@ def shepp_logan2d(M=64, N=64, nc=4, dtype=np.complex128):
     kspace = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
         coil_ims, axes=ax), axes=ax, norm='ortho'), axes=ax)
     kspace = kspace.astype(dtype)
-    imspace /= np.max(imspace.flatten()) # normalize
+    imspace = np.abs(imspace)
+    imspace /= np.max(imspace.flatten())  # normalize
     return(imspace, coil_ims, kspace)
+
 
 def calib2d(kspace, M=10, N=10):
     '''Extract a rectangle from the center of 2d kspace.'''
@@ -25,31 +28,43 @@ def calib2d(kspace, M=10, N=10):
     M2, N2 = M//2, N//2
     return kspace[ctr0-M2:ctr0+M2, ctr1-N2:ctr1+N2, :].copy()
 
+
 def no_undersampling(kspace):
     return kspace
+
+
 def undersample_x2(kspace):
     kspace_u = kspace.copy()
     kspace_u[::2, ...] = 0
     return kspace_u
+
+
 def undersample_y2(kspace):
     kspace_u = kspace.copy()
     kspace_u[:, ::2, ...] = 0
     return kspace_u
+
+
 def undersample_x2_y2(kspace):
     kspace_u = kspace.copy()
     kspace_u[::2, 1::2, :] = 0
     kspace_u[1::2, ::2, :] = 0
     return kspace_u
+
+
 def undersample_x3(kspace):
     kspace_u = kspace.copy()
     kspace_u[0::3, ...] = 0
     kspace_u[1::3, ...] = 0
     return kspace_u
+
+
 def undersample_y3(kspace):
     kspace_u = kspace.copy()
     kspace_u[:, 0::3, ...] = 0
     kspace_u[:, 1::3, ...] = 0
     return kspace_u
+
 
 def make_base_test_case_2d(
         grappa_fun,
@@ -60,7 +75,9 @@ def make_base_test_case_2d(
         cMs=None,
         cNs=None,
         types=None,
-        extra_args=None):
+        extra_args=None,
+        phantom_fun_args=None,
+):
     '''Make a test based on combinations of input parameters.
 
     Parameters
@@ -85,6 +102,9 @@ def make_base_test_case_2d(
     extra_args : dict, optional
         Extra arguments to be passed to `grappa_fun`.  No extra
         arguments are passed by default.
+    phantom_fun_args : dict, optional
+        Extra arguments to be passed to `phantom_fun`.  No extra
+        arguments are passed by default.
     '''
 
     if cMs is None:
@@ -95,6 +115,8 @@ def make_base_test_case_2d(
         types = [('complex64', np.complex64), ('complex128', np.complex128)]
     if extra_args is None:
         extra_args = dict()
+    if phantom_fun_args is None:
+        phantom_fun_args = dict()
 
     class TestBaseGRAPPA2D(unittest.TestCase):
         '''Tests that every GRAPPA method should handle.'''
@@ -103,7 +125,7 @@ def make_base_test_case_2d(
 
     funcname_template = 'test_recon_{phantom_fun}_M{M}_N{N}_nc{nc}_{calib_fun}_cM{cM}_cN{cN}_{undersampling_fun}_{type}'
     for phantom_fun in [shepp_logan2d]:
-        for M in Ms: # try to keep these small for tests to run quickly
+        for M in Ms:  # try to keep these small for tests to run quickly
             for N in Ns:
                 for nc in ncoils:
                     for calib_fun in [calib2d]:
@@ -112,12 +134,12 @@ def make_base_test_case_2d(
                                 for undersampling_fun in [
                                         no_undersampling,
                                         undersample_x2, undersample_y2, undersample_x2_y2,
-                                        #undersample_x3, undersample_y3, # TODO: get R=3 working
+                                        # undersample_x3, undersample_y3, # TODO: get R=3 working
                                 ]:
                                     for tipe in types:
 
                                         # Only run if the dimensions are both even or odd
-                                        @unittest.skipIf(M%2 ^ N%2, 'One odd dimension')
+                                        @unittest.skipIf((M % 2) ^ (N % 2), 'One odd dimension')
                                         def _test_fun(
                                                 self,
                                                 phantom_fun=phantom_fun,
@@ -130,7 +152,9 @@ def make_base_test_case_2d(
                                                 undersampling_fun=undersampling_fun,
                                                 tipe=tipe,
                                         ):
-                                            imspace, _coil_ims, kspace = phantom_fun(M=M, N=N, nc=nc, dtype=tipe[1])
+                                            imspace, _coil_ims, kspace = phantom_fun(
+                                                M=M, N=N, nc=nc, dtype=tipe[1],
+                                                **phantom_fun_args)
                                             calib = calib_fun(kspace, cM, cN)
                                             kspace_u = undersampling_fun(kspace)
                                             recon = grappa_fun(kspace_u, calib, **extra_args)
@@ -146,6 +170,7 @@ def make_base_test_case_2d(
                                                     recon, axes=ax), axes=ax, norm='ortho'), axes=ax))**2, axis=-1))
                                             recon /= np.max(recon.flatten())
                                             ssim0 = ssim(imspace, recon)
+                                            print(ssim0)
                                             self.assertTrue(ssim0 > ssim_thresh, 'ssim=%g' % ssim0)
 
                                         # Add test function to TestClass

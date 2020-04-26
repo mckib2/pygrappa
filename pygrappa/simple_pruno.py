@@ -8,6 +8,7 @@ from scipy.signal import convolve2d
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
+
 def simple_pruno(
         kspace, calib, kernel_size=(5, 5), coil_axis=-1,
         sens=None, ph=None, kspace_ref=None):
@@ -20,7 +21,7 @@ def simple_pruno(
 
     # Make a calibration matrix
     kx, ky = kernel_size[:]
-    kx2, ky2 = int(kx/2), int(ky/2)
+    # kx2, ky2 = int(kx/2), int(ky/2)
     nc = calib.shape[-1]
 
     # Pull out calibration matrix
@@ -33,7 +34,7 @@ def simple_pruno(
 
     # Test to see if nulling kernels do indeed null
     if sens is not None:
-        ws = 8 # full width of sensitivity map spectra
+        ws = 8  # full width of sensitivity map spectra
         wd = kx
         wm = wd + ws - 1
 

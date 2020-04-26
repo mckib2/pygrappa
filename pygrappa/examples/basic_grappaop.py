@@ -3,10 +3,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
-from skimage.metrics import normalized_root_mse as compare_nrmse # pylint: disable=E0611,E0401
+from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
 
 from pygrappa import cgrappa, grappaop
 from utils import gaussian_csm
+
+
+def fft(x0):
+    return np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+        x0, axes=ax), axes=ax), axes=ax)
+
+
+def sos(x0):
+    return np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
+
+
+def normalize(x0):
+    return x0/np.max(x0.flatten())
+
 
 if __name__ == '__main__':
 
@@ -55,11 +69,6 @@ if __name__ == '__main__':
 
     # Bring everything back into image space, coil combine, and
     # normalize for comparison
-    fft = lambda x0: np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-        x0, axes=ax), axes=ax), axes=ax)
-    sos = lambda x0: np.sqrt(np.sum(np.abs(x0)**2, axis=-1))
-    normalize = lambda x0: x0/np.max(x0.flatten())
-
     ph = normalize(shepp_logan(N))
     aliased4x1 = normalize(sos(fft(kspace4x1)))
     aliased2x2 = normalize(sos(fft(kspace2x2)))

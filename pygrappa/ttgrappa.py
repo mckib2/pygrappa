@@ -3,8 +3,9 @@
 from time import time
 
 import numpy as np
-from scipy.spatial import cKDTree # pylint: disable=E0611
+from scipy.spatial import cKDTree  # pylint: disable=E0611
 from tqdm import tqdm
+
 
 def ttgrappa(
         kx, ky, kspace, cx, cy, calib, kernel_size=25,
@@ -90,7 +91,7 @@ def ttgrappa(
     # use kernel_size nearest neighbors if kernel_radius is None
     if kernel_radius is None:
         _, idx = kdtree.query(kxy[holes, :], k=kernel_size+1)
-        idx = idx[..., 1:].squeeze() # first will always be target
+        idx = idx[..., 1:].squeeze()  # first will always be target
         print('Took %g seconds to find neighbors' % (time() - t0))
 
         # Get targets, sources, and weights.  Make sure to collapse
@@ -111,7 +112,7 @@ def ttgrappa(
         res = np.zeros(kspace.shape, dtype=kspace.dtype)
         res[holes, :] = S @ W
 
-        print('Took %g seconds to apply weights' % (time()- t0))
+        print('Took %g seconds to apply weights' % (time() - t0))
 
     # use kernel_radius
     else:
@@ -152,14 +153,14 @@ def ttgrappa(
             SSh = S @ S.conj().T
             lamda0 = lamda*np.linalg.norm(SSh)/SSh.shape[0]
             W = TSh @ np.linalg.pinv(
-                SSh + lamda0*np.eye(SSh.shape[0])) # inv won't work
+                SSh + lamda0*np.eye(SSh.shape[0]))  # inv won't work
 
             # Solve for current target
             S = kspace[idx00, :].reshape((len(idx00), -1))
             res[holes[ii], :] = (W @ S).squeeze()
 
         print('Took %g seconds to train and apply weights' % (
-            time()- t0))
+            time() - t0))
 
     # Fill in the known samples and return
     res[sampled, :] = kspace[sampled, :]

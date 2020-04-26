@@ -2,7 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.metrics import normalized_root_mse as compare_nrmse # pylint: disable=E0611,E0401
+from skimage.metrics import normalized_root_mse as compare_nrmse  # pylint: disable=E0611,E0401
 from phantominator import shepp_logan
 
 from pygrappa import nlgrappa, cgrappa

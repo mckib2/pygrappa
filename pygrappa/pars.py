@@ -3,9 +3,10 @@
 from time import time
 
 import numpy as np
-from scipy.spatial import cKDTree # pylint: disable=E0611
+from scipy.spatial import cKDTree  # pylint: disable=E0611
 from scipy.ndimage import zoom
 from tqdm import tqdm
+
 
 def pars(
         kx, ky, k, sens, tx=None, ty=None, kernel_size=25,
@@ -120,3 +121,7 @@ def pars(
     return np.moveaxis(np.fft.fftshift(np.fft.ifft2(
         np.fft.ifftshift(np.reshape(res, (sx, sy, nc), 'F'), axes=ax),
         axes=ax), axes=ax)[sx4:-sx4, sx4:-sx4, :], -1, coil_axis)
+
+
+if __name__ == '__main__':
+    pass
