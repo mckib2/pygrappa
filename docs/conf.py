@@ -23,6 +23,12 @@ author = 'Nicholas McKibben'
 
 # -- General configuration ---------------------------------------------------
 
+autodoc_mock_imports = [
+    'pygrappa.cgrappa',
+    'pygrappa.grog_powers',
+    'pygrappa.grog_gridding',
+]
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
