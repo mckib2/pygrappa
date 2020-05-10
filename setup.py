@@ -7,7 +7,7 @@ from numpy.distutils.core import setup
 
 from setup_helpers import get_build_ext_override
 
-VERSION = '0.21.2'
+VERSION = '0.21.3'
 
 
 def pre_build_hook(build_ext, ext):
