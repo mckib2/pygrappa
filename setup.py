@@ -7,7 +7,7 @@ from numpy.distutils.core import setup
 
 from setup_helpers import get_build_ext_override
 
-VERSION = '0.21.2'
+VERSION = '0.21.5'
 
 
 def pre_build_hook(build_ext, ext):
@@ -84,7 +84,7 @@ setup(
         'through-time-grappa pars grog nonlinear-grappa g-factor'
         'sense', 'cg-sense'),
     install_requires=open('requirements.txt').read().split(),
-    setup_requires=['numpy'],
+    setup_requires=['numpy', 'scipy'],
     python_requires='>=3.5',
     cmdclass={'build_ext': get_build_ext_override()},
     **configuration(top_path='').todict(),

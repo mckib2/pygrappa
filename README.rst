@@ -1,6 +1,8 @@
 About
 =====
 
+Online documentation `here <https://pygrappa.readthedocs.io/en/latest/>`_
+
 GRAPPA is a popular parallel imaging reconstruction algorithm.
 Unfortunately there aren't a lot of easy to use Python
 implementations of it or its many variants available, so I decided to
