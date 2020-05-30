@@ -31,6 +31,7 @@ API Reference
    :maxdepth: 1
 
    grappa
+   cgrappa
    mdgrappa
    igrappa
    hpgrappa
