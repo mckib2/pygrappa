@@ -147,7 +147,6 @@ def igrappa(
             W = Wn
         else:
             # Modify weights to get new reconstruction
-            print('MODIFY WEIGHTS')
             p = 1/p
             W = {key:(1 - p)*Wn0 + p*W0 for (key, Wn0), (_, W0) in zip(Wn.items(), W.items())}
 
