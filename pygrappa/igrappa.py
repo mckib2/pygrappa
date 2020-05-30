@@ -7,12 +7,12 @@ try:
 except ImportError:
     from skimage.measure import compare_mse
 
-from pygrappa import cgrappa
+from pygrappa import mdgrappa
 
 
 def igrappa(
         kspace, calib, kernel_size=(5, 5), k=0.3, coil_axis=-1,
-        lamda=0.01, ref=None, niter=10, silent=True):
+        lamda=0.01, ref=None, niter=10, silent=True, backend=mdgrappa):
     '''Iterative GRAPPA.
 
     Parameters
@@ -41,6 +41,9 @@ def igrappa(
         Number of iterations.
     silent : bool, optional
         Suppress messages to user.
+    backend : callable
+        GRAPPA function to use during each iteration. Default is
+        ``pygrappa.mdgrappa``.
 
     Returns
     -------
@@ -70,12 +73,12 @@ def igrappa(
     # Make sure k has a reasonable value
     assert 0 < k < 1, 'Parameter k should be in (0, 1)!'
 
-    # Collect arguments to pass to cgrappa:
+    # Collect arguments to pass to the backend grappa function:
     grappa_args = {
         'kernel_size': kernel_size,
         'coil_axis': -1,
         'lamda': lamda,
-        'silent': silent
+        #'silent': silent
     }
 
     # Put the coil dimension at the end
@@ -95,7 +98,7 @@ def igrappa(
     calib = calib.astype(np.complex128)
 
     # Initial conditions
-    kIm, W = cgrappa(kspace, calib, ret_weights=True, **grappa_args)
+    kIm, W = backend(kspace, calib, ret_weights=True, **grappa_args)
     ax = (0, 1)
     Im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
         kIm, axes=ax), axes=ax), axes=ax)
@@ -121,7 +124,7 @@ def igrappa(
         calib0 = kIm.copy()
         calib0[kx2-cx2:kx2+cx2+adjcx, ky2-cy2:ky2+cy2+adjcy, :] = calib.copy()
 
-        kTm, Wn = cgrappa(
+        kTm, Wn = backend(
             kspace, calib0, ret_weights=True, **grappa_args)
         Tm = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
             kTm, axes=ax), axes=ax), axes=ax)
@@ -144,11 +147,12 @@ def igrappa(
             W = Wn
         else:
             # Modify weights to get new reconstruction
+            print('MODIFY WEIGHTS')
             p = 1/p
-            W = [(1 - p)*Wn0 + p*W0 for Wn0, W0 in zip(Wn, W)]
+            W = {key:(1 - p)*Wn0 + p*W0 for (key, Wn0), (_, W0) in zip(Wn.items(), W.items())}
 
             # Need to be able to supply grappa with weights to use!
-            kIm = cgrappa(kspace, calib0, Wsupp=W, **grappa_args)
+            kIm = backend(kspace, calib0, weights=W, **grappa_args)
             Im = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
                 kIm, axes=ax), axes=ax), axes=ax)
 
