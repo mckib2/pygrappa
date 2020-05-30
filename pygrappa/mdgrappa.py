@@ -104,7 +104,7 @@ def mdgrappa(
     for key, holes in P.items():
 
         # Get sampling pattern from key
-        p0 = np.array(p0, dtype=bool)
+        p0 = np.array(key, dtype=bool)
 
         # Train kernels
         S = A[:, p0, :].reshape(A.shape[0], -1)
