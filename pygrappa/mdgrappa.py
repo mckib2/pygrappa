@@ -12,7 +12,9 @@ def mdgrappa(
         kernel_size=None,
         coil_axis=-1,
         lamda=0.01,
-        nnz=None):
+        nnz=None,
+        weights=None,
+        ret_weights=False):
     '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
@@ -37,11 +39,18 @@ def mdgrappa(
         Number of nonzero elements in a multidimensional patch
         required to train/apply a kernel.
         Default: `sqrt(prod(kernel_size))`.
+    weights : dict, optional
+        Maps sampling patterns to trained kernels.
+    ret_weights : bool, optional
+        Return the trained weights as a dictionary mapping sampling
+        patterns to kernels. Default is ``False``.
 
     Returns
     -------
     res : array_like
         k-space data where missing entries have been filled in.
+    weights : dict, optional
+        Returned if ``ret_weights=True``.
 
     Notes
     -----
@@ -99,21 +108,31 @@ def mdgrappa(
         calib, tuple(kernel_size) + (nc,)).reshape((-1, np.prod(kernel_size), nc,))
 
     # Train and apply kernels
+    if ret_weights:
+        weights2return = defaultdict(list)
     ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
     recon = np.zeros(kspace.shape, dtype=kspace.dtype)
     for key, holes in P.items():
 
-        # Get sampling pattern from key
-        p0 = np.array(key, dtype=bool)
+        # Used provided weights if we can, else compute them
+        if weights is not None:
+            W = weights[key]
+            p0 = np.array(key, dtype=bool)
+        else:
+            # Get sampling pattern from key
+            p0 = np.array(key, dtype=bool)
 
-        # Train kernels
-        S = A[:, p0, :].reshape(A.shape[0], -1)
-        T = A[:, ctr, :]
-        ShS = S.conj().T @ S
-        ShT = S.conj().T @ T
-        lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
-        W = np.linalg.solve(
-            ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+            # Train kernels
+            S = A[:, p0, :].reshape(A.shape[0], -1)
+            T = A[:, ctr, :]
+            ShS = S.conj().T @ S
+            ShT = S.conj().T @ T
+            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
+            W = np.linalg.solve(
+                ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+
+        if ret_weights:
+            weights2return[key] = W
 
         # Doesn't seem to be a big difference in speed?
         # Try gathering all sources and doing single matrix multiply
@@ -136,8 +155,12 @@ def mdgrappa(
 
     # Add back in the measured voxels, put axis back where it goes
     recon[mask] += kspace[mask]
-    return np.moveaxis(
+    recon = np.moveaxis(
         recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])], -1, coil_axis)
+
+    if ret_weights:
+        return(recon, weights2return)
+    return recon
 
 
 if __name__ == '__main__':
