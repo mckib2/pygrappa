@@ -85,6 +85,8 @@ def igrappa(
     cx, cy, _nc = calib.shape[:]
     kx2, ky2 = int(kx/2), int(ky/2)
     cx2, cy2 = int(cx/2), int(cy/2)
+    adjcx = np.mod(cx, 2)
+    adjcy = np.mod(cy, 2)
 
     # Save original type and convert to complex double
     # or else Cython will flip the heck out
@@ -117,7 +119,7 @@ def igrappa(
         # Update calibration region -- now includes all estimated
         # lines plus unchanged calibration region
         calib0 = kIm.copy()
-        calib0[kx2-cx2:kx2+cx2, ky2-cy2:ky2+cy2, :] = calib.copy()
+        calib0[kx2-cx2:kx2+cx2+adjcx, ky2-cy2:ky2+cy2+adjcy, :] = calib.copy()
 
         kTm, Wn = cgrappa(
             kspace, calib0, ret_weights=True, **grappa_args)
