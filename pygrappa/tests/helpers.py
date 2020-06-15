@@ -15,14 +15,15 @@ def shepp_logan2d(M=64, N=64, nc=4, dtype=np.complex128):
     '''Make 2d phantom.'''
     ax = (0, 1)
     imspace = shepp_logan((M, N))
-    coil_ims = imspace[..., None]*gaussian_csm(M, N, nc)
+    mps = gaussian_csm(M, N, nc)
+    coil_ims = imspace[..., None]*mps
     coil_ims = coil_ims.astype(dtype)
     kspace = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
         coil_ims, axes=ax), axes=ax, norm='ortho'), axes=ax)
     kspace = kspace.astype(dtype)
     imspace = np.abs(imspace)
     imspace /= np.max(imspace.flatten())  # normalize
-    return(imspace, coil_ims, kspace)
+    return(imspace, coil_ims, kspace, mps)
 
 
 def calib2d(kspace, M=10, N=10):
@@ -69,6 +70,10 @@ def undersample_y3(kspace):
     return kspace_u
 
 
+def undersample_x3_y3(kspace):
+    return undersample_x3(undersample_y3(kspace.copy()))
+
+
 def make_base_test_case_2d(
         grappa_fun,
         ssim_thresh=.92,
@@ -80,6 +85,9 @@ def make_base_test_case_2d(
         types=None,
         extra_args=None,
         phantom_fun_args=None,
+        use_R3=False,
+        is_sense=False,
+        output_kspace=True,
 ):
     '''Make a test based on combinations of input parameters.
 
@@ -108,6 +116,13 @@ def make_base_test_case_2d(
     phantom_fun_args : dict, optional
         Extra arguments to be passed to `phantom_fun`.  No extra
         arguments are passed by default.
+    use_R3 : bool, optional
+        Use R=3 reduction factors.
+    is_sense : bool, optional
+        Whether ``grappa_fun`` is for a GRAPPA-like function or
+        a SENSE-like function.
+    output_kspace : bool, optional
+        Whether ``grappa_fun`` returns kspace or imspace.
     '''
 
     if cMs is None:
@@ -121,12 +136,32 @@ def make_base_test_case_2d(
     if phantom_fun_args is None:
         phantom_fun_args = dict()
 
+    # Undersampling factors
+    undersampling_funs = [
+        no_undersampling,
+        undersample_x2,
+        undersample_y2,
+        undersample_x2_y2,
+    ]
+    if use_R3:
+        undersampling_funs += [
+            undersample_x3,
+            undersample_y3,
+            #undersample_x3_y3,
+        ]
+
     class TestBaseGRAPPA2D(unittest.TestCase):
         '''Tests that every GRAPPA method should handle.'''
         def setUp(self):
             pass
 
-    funcname_template = 'test_recon_{phantom_fun}_M{M}_N{N}_nc{nc}_{calib_fun}_cM{cM}_cN{cN}_{undersampling_fun}_{type}'
+    if not is_sense:
+        funcname_template = 'test_recon_{phantom_fun}_M{M}_N{N}_nc{nc}_{calib_fun}_cM{cM}_cN{cN}_{undersampling_fun}_{type}'
+    else:
+        funcname_template = 'test_recon_{phantom_fun}_M{M}_N{N}_nc{nc}_{undersampling_fun}_{type}'
+        calib_fun = [None]
+        cM, cN = [None], [None]
+
     for phantom_fun in [shepp_logan2d]:
         for M in Ms:  # try to keep these small for tests to run quickly
             for N in Ns:
@@ -134,11 +169,7 @@ def make_base_test_case_2d(
                     for calib_fun in [calib2d]:
                         for cM in [int(frac*M) for frac in cMs]:
                             for cN in [int(frac*N) for frac in cNs]:
-                                for undersampling_fun in [
-                                        no_undersampling,
-                                        undersample_x2, undersample_y2, undersample_x2_y2,
-                                        # undersample_x3, undersample_y3, # TODO: get R=3 working
-                                ]:
+                                for undersampling_fun in undersampling_funs:
                                     for tipe in types:
 
                                         # Only run if the dimensions are both even or odd
@@ -155,23 +186,37 @@ def make_base_test_case_2d(
                                                 undersampling_fun=undersampling_fun,
                                                 tipe=tipe,
                                         ):
-                                            imspace, _coil_ims, kspace = phantom_fun(
+                                            imspace, _coil_ims, kspace, mps = phantom_fun(
                                                 M=M, N=N, nc=nc, dtype=tipe[1],
                                                 **phantom_fun_args)
-                                            calib = calib_fun(kspace, cM, cN)
+
+                                            # Don't need calibration region if not GRAPPA
+                                            if not is_sense:
+                                                calib = calib_fun(kspace, cM, cN)
+
+                                            # Undersample
                                             kspace_u = undersampling_fun(kspace)
-                                            recon = grappa_fun(kspace_u, calib, **extra_args)
+
+                                            # Run with either grappa API or sense API
+                                            if not is_sense:
+                                                recon = grappa_fun(kspace_u, calib, **extra_args)
+                                            else:
+                                                recon = grappa_fun(kspace_u, mps, **extra_args)
 
                                             # Make sure types match
                                             self.assertEqual(recon.dtype, tipe[1])
 
                                             # Do SOS recon to compare reconstruction quality
                                             # via SSIM measure
-                                            ax = (0, 1)
-                                            recon = np.sqrt(np.sum(np.abs(
-                                                np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
-                                                    recon, axes=ax), axes=ax, norm='ortho'), axes=ax))**2, axis=-1))
+                                            if output_kspace:
+                                                ax = (0, 1)
+                                                recon = np.sqrt(np.sum(np.abs(
+                                                    np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
+                                                        recon, axes=ax), axes=ax, norm='ortho'), axes=ax))**2, axis=-1))
+                                            else:
+                                                recon = np.abs(recon).astype(imspace.dtype)
                                             recon /= np.max(recon.flatten())
+
                                             ssim0 = ssim(imspace, recon)
                                             print(ssim0)
                                             self.assertTrue(ssim0 > ssim_thresh, 'ssim=%g' % ssim0)
