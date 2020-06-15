@@ -1,6 +1,7 @@
 '''Python implementation of iterative and CG-SENSE.'''
 
 from time import time
+import logging
 
 import numpy as np
 from scipy.sparse.linalg import LinearOperator, cg
@@ -65,6 +66,7 @@ def cgsense(kspace, sens, coil_axis=-1):
     # Make sure coils are in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     sens = np.moveaxis(sens, coil_axis, -1)
+    tipe = kspace.dtype
 
     # Get the sampling mask:
     dims = kspace.shape[:-1]
@@ -106,10 +108,10 @@ def cgsense(kspace, sens, coil_axis=-1):
     b = _AH(np.reshape(kspace, (-1,)))
 
     t0 = time()
-    x, _info = cg(AHA, b)
-    print('CG-SENSE took %g sec' % (time() - t0))
+    x, _info = cg(AHA, b, atol=0)
+    logging.info('CG-SENSE took %g sec' % (time() - t0))
 
-    return np.reshape(x, dims)
+    return np.reshape(x, dims).astype(tipe)
 
 
 if __name__ == '__main__':
