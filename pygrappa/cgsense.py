@@ -3,7 +3,7 @@
 from time import time
 
 import numpy as np
-from scipy.sparse.linalg import LinearOperator, lsmr, cg
+from scipy.sparse.linalg import LinearOperator, cg
 
 
 def _fft(x0, axes=None):
@@ -46,7 +46,9 @@ def cgsense(kspace, sens, coil_axis=-1):
     -----
     Implements a Cartesian version of the iterative algorithm
     described in [1]_.  It can handle arbitrary undersampling of
-    Cartesian acquisitions.
+    Cartesian acquisitions and arbitrarily-dimensional
+    datasets.  All dimensions except ``coil_axis`` will be used
+    for reconstruction.
 
     This implementation uses the scipy.sparse.linalg.cg() conjugate
     gradient algorithm to solve A^H A x = A^H b.
