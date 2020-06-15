@@ -78,7 +78,7 @@ def igrappa(
         'kernel_size': kernel_size,
         'coil_axis': -1,
         'lamda': lamda,
-        #'silent': silent
+        # 'silent': silent
     }
 
     # Put the coil dimension at the end
@@ -148,7 +148,8 @@ def igrappa(
         else:
             # Modify weights to get new reconstruction
             p = 1/p
-            W = {key:(1 - p)*Wn0 + p*W0 for (key, Wn0), (_, W0) in zip(Wn.items(), W.items())}
+            for key in Wn:
+                W[key] = (1 - p)*Wn[key] + p*W[key]
 
             # Need to be able to supply grappa with weights to use!
             kIm = backend(kspace, calib0, weights=W, **grappa_args)

@@ -1,94 +1,28 @@
 '''Python implementation of iterative and CG-SENSE.'''
 
 from time import time
+import logging
 
 import numpy as np
-from scipy.sparse.linalg import LinearOperator, lsmr, cg
+from scipy.sparse.linalg import LinearOperator, cg
 
 
-def fft2(x0, axes=(0, 1)):
+def _fft(x0, axes=None):
     '''Utility Forward FFT function.
-
-    :meta private:
     '''
-    return np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
+    if axes is None:
+        axes = np.arange(x0.ndim-1)
+    return np.fft.fftshift(np.fft.fftn(np.fft.ifftshift(
         x0, axes=axes), axes=axes), axes=axes)
 
 
-def ifft2(x0, axes=(0, 1)):
+def _ifft(x0, axes=None):
     '''Utility Inverse FFT function.
-
-    :meta private:
     '''
-    return np.fft.ifftshift(np.fft.ifft2(np.fft.fftshift(
+    if axes is None:
+        axes = np.arange(x0.ndim-1)
+    return np.fft.ifftshift(np.fft.ifftn(np.fft.fftshift(
         x0, axes=axes), axes=axes), axes=axes)
-
-
-def _isense(kspace, sens, show=False):
-    '''Iterative SENSE using nonsquare matrix and LSMR solver.'''
-
-    sx, sy, nc = kspace.shape[:]
-    mask = np.abs(kspace[..., 0]) > 0
-
-    # We need to implement an E and E.H operator
-    def _EH(x0):
-        x0 = x0[:sx*sy*nc] + 1j*x0[sx*sy*nc:]
-        x0 = np.reshape(x0, (sx, sy, nc))
-        res = np.sum(sens.conj()*ifft2(x0), axis=-1)
-        res = np.reshape(res, (-1,))
-        return np.concatenate((res.real, res.imag))
-
-    def _E(x0):
-        res = x0[:sx*sy] + 1j*x0[sx*sy:]
-        res = np.reshape(res, (sx, sy))
-        res = fft2(res[..., None]*sens)*mask[..., None]
-        res = np.reshape(res, (-1,))
-        return np.concatenate((res.real, res.imag))
-
-    # Ax = b
-    # A : (2*sx*sy*nc, 2*sx*sy)
-    # x : (2*sx*sy)
-    # b : (2*sx*sy*nc)
-    # Twice the size since complex, do simple real/imag stacking
-    A = LinearOperator((2*sx*sy*nc, 2*sx*sy), matvec=_E, rmatvec=_EH)
-    b = np.reshape(kspace, (-1,))
-    b = np.concatenate((b.real, b.imag))
-    x = lsmr(A, b, show=show)[0]
-    x = x[:sx*sy] + 1j*x[sx*sy:]
-
-    return np.reshape(x, (sx, sy))
-
-
-def _isense2(kspace, sens, show=False):
-    '''Try LSMR with square matrix.'''
-
-    sx, sy, nc = kspace.shape[:]
-    mask = np.abs(kspace[..., 0]) > 0
-
-    def _AH(x0):
-        x0 = x0[:sx*sy*nc] + 1j*x0[sx*sy*nc:]
-        x0 = np.reshape(x0, (sx, sy, nc))
-        res = np.sum(sens.conj()*ifft2(x0), axis=-1)
-        res = np.reshape(res, (-1,))
-        return np.concatenate((res.real, res.imag))
-
-    def _A(x0):
-        res = x0[:sx*sy] + 1j*x0[sx*sy:]
-        res = np.reshape(res, (sx, sy))
-        res = fft2(res[..., None]*sens)*mask[..., None]
-        res = np.reshape(res, (-1,))
-        return np.concatenate((res.real, res.imag))
-
-    def E(x0):
-        return _AH(_A(x0))
-    AHA = LinearOperator((sx*sy, sx*sy), matvec=E, rmatvec=E)
-    b = np.reshape(kspace, (-1,))
-    b = np.concatenate((b.real, b.imag))
-    b = _AH(b)
-    x = lsmr(AHA, b, show=show)[0]
-    x = x[:sx*sy] + 1j*x[sx*sy:]
-
-    return np.reshape(x, (sx, sy))
 
 
 def cgsense(kspace, sens, coil_axis=-1):
@@ -107,13 +41,15 @@ def cgsense(kspace, sens, coil_axis=-1):
     Returns
     -------
     res : array_like
-        Single coil unaliased estimate.
+        Single coil unaliased estimate (imspace).
 
     Notes
     -----
     Implements a Cartesian version of the iterative algorithm
     described in [1]_.  It can handle arbitrary undersampling of
-    Cartesian acquisitions.
+    Cartesian acquisitions and arbitrarily-dimensional
+    datasets.  All dimensions except ``coil_axis`` will be used
+    for reconstruction.
 
     This implementation uses the scipy.sparse.linalg.cg() conjugate
     gradient algorithm to solve A^H A x = A^H b.
@@ -130,9 +66,10 @@ def cgsense(kspace, sens, coil_axis=-1):
     # Make sure coils are in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
     sens = np.moveaxis(sens, coil_axis, -1)
+    tipe = kspace.dtype
 
     # Get the sampling mask:
-    sx, sy, nc = kspace.shape[:]
+    dims = kspace.shape[:-1]
     mask = np.abs(kspace[..., 0]) > 0
 
     # We are solving Ax = b where A takes the unaliased single coil
@@ -153,27 +90,27 @@ def cgsense(kspace, sens, coil_axis=-1):
 
     def _AH(x0):
         '''kspace -> imspace'''
-        x0 = np.reshape(x0, (sx, sy, nc))
-        res = np.sum(sens.conj()*ifft2(x0), axis=-1)
+        x0 = np.reshape(x0, kspace.shape)
+        res = np.sum(sens.conj()*_ifft(x0), axis=-1)
         return np.reshape(res, (-1,))
 
     def _A(x0):
         '''imspace -> kspace'''
-        res = np.reshape(x0, (sx, sy))
-        res = fft2(res[..., None]*sens)*mask[..., None]
+        res = np.reshape(x0, dims)
+        res = _fft(res[..., None]*sens)*mask[..., None]
         return np.reshape(res, (-1,))
 
     # Make LinearOperator, A^H b, and use CG to solve
     def E(x0):
         return _AH(_A(x0))
-    AHA = LinearOperator((sx*sy, sx*sy), matvec=E, rmatvec=E)
+    AHA = LinearOperator((np.prod(dims), np.prod(dims)), matvec=E, rmatvec=E)
     b = _AH(np.reshape(kspace, (-1,)))
 
     t0 = time()
-    x, _info = cg(AHA, b)
-    print('CG-SENSE took %g sec' % (time() - t0))
+    x, _info = cg(AHA, b, atol=0)
+    logging.info('CG-SENSE took %g sec' % (time() - t0))
 
-    return np.reshape(x, (sx, sy))
+    return np.reshape(x, dims).astype(tipe)
 
 
 if __name__ == '__main__':
