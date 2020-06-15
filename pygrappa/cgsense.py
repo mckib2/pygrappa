@@ -70,7 +70,6 @@ def cgsense(kspace, sens, coil_axis=-1):
 
     # Get the sampling mask:
     dims = kspace.shape[:-1]
-    nc = kspace.shape[-1]
     mask = np.abs(kspace[..., 0]) > 0
 
     # We are solving Ax = b where A takes the unaliased single coil

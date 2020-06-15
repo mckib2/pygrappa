@@ -147,7 +147,7 @@ def make_base_test_case_2d(
         undersampling_funs += [
             undersample_x3,
             undersample_y3,
-            #undersample_x3_y3,
+            # undersample_x3_y3,
         ]
 
     class TestBaseGRAPPA2D(unittest.TestCase):
