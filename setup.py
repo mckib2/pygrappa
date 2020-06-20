@@ -4,6 +4,7 @@ import subprocess
 from distutils.spawn import find_executable
 from setuptools import find_packages
 from numpy.distutils.core import setup
+import numpy as np
 
 from setup_helpers import get_build_ext_override
 
@@ -29,42 +30,55 @@ def configuration(parent_package='', top_path=None):
         print('Running cython...')
         subprocess.call(['cython -3 --cplus src/*.pyx'], shell=True)
 
-    # GRAPPA with some C components
-    config.add_extension(
-        'cgrappa',
-        sources=[
-            'src/cgrappa.cpp',
-            'src/get_sampling_patterns.cpp',
-        ],
-        include_dirs=['src/'],
-        language='c++',
-        define_macros=DEFINE_MACROS,
-    )
+    ## GRAPPA with some C components
+    #config.add_extension(
+    #    'cgrappa',
+    #    sources=[
+    #        'src/cgrappa.cpp',
+    #        'src/get_sampling_patterns.cpp',
+    #    ],
+    #    include_dirs=['src/'],
+    #    language='c++',
+    #    define_macros=DEFINE_MACROS,
+    #)
 
-    # GROG powers
+    # C++ implementation of GRAPPA
     ext = config.add_extension(
-        'grog_powers',
+        '_cgrappa_interface',
         sources=[
-            'src/grog_powers.cpp',
-            'src/_grog_powers_template.cpp',
+            'src/_cgrappa_interface.cpp',
+            'src/_cgrappa.cpp',
         ],
-        include_dirs=['src/'],
+        include_dirs=['src/', np.get_include()],
         language='c++',
         define_macros=DEFINE_MACROS,
     )
     ext._pre_build_hook = pre_build_hook
 
-    # GROG
-    ext = config.add_extension(
-        'grog_gridding',
-        sources=[
-            'src/grog_gridding.cpp',
-        ],
-        include_dirs=['src/'],
-        language='c++',
-        define_macros=DEFINE_MACROS,
-    )
-    ext._pre_build_hook = pre_build_hook
+    ## GROG powers
+    #ext = config.add_extension(
+    #    'grog_powers',
+    #    sources=[
+    #        'src/grog_powers.cpp',
+    #        'src/_grog_powers_template.cpp',
+    #    ],
+    #    include_dirs=['src/'],
+    #    language='c++',
+    #    define_macros=DEFINE_MACROS,
+    #)
+    #ext._pre_build_hook = pre_build_hook
+
+    ## GROG
+    #ext = config.add_extension(
+    #    'grog_gridding',
+    #    sources=[
+    #        'src/grog_gridding.cpp',
+    #    ],
+    #    include_dirs=['src/'],
+    #    language='c++',
+    #    define_macros=DEFINE_MACROS,
+    #)
+    #ext._pre_build_hook = pre_build_hook
 
     return config
 
