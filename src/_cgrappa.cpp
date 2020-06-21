@@ -1,5 +1,5 @@
 
-#define DEBUG
+//#define DEBUG
 
 #include <algorithm> // for std::transform
 #include <numeric> // for std::accumulate
@@ -8,8 +8,13 @@
 #include <memory> // for std::unique_ptr, std::make_unique
 #include <unordered_map> // for std::unordered_map
 #include <vector> // for std::vector
+#include <cblas.h>
 
 #include "_cgrappa.hpp"
+
+extern "C" {
+// LAPACK functions here
+}
 
 #ifdef DEBUG
 
@@ -54,29 +59,33 @@ void _print_array2d(const std::size_t* dims, const T* arr) {
   std::cout << std::endl;
 }
 #else
+
 #define _print_unordered_map(m)
 #define _print_vector(vec)
 #define _print_array1d(dim, arr)
 #define _print_array2d(dims, arr)
+
 #endif
 
 template<class T>
 void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
 		      const std::size_t coil_idx, // desired coil
 		      const std::size_t* dims, // dimensions of src (assumes 2+1d -- coil dim at end)
+		      const std::size_t sizeN_1, // number of samples in one coil of src
 		      const std::size_t* patch_shape, // dimensions of patch
 		      const std::size_t* patch_shape2, // patch_shape/2 -- integer division
 		      const std::size_t patch_size, // number of samples in patch
+		      const std::size_t* adjs, // kernel_shape % 2
 		      const T* src,
 		      T* out) {
   // We are extracting hypercubes centered at idx from src;
   // convert flat index to (x, y)
   std::size_t x = idx % dims[0];
   std::size_t y = idx/dims[0]; // integer division
-  std::size_t coil_offset = dims[0]*dims[1]*coil_idx;
+  std::size_t coil_offset = sizeN_1*coil_idx;
 
 #ifdef DEBUG
-  std::cout << "(x, y): (" << x << ", " << y << ")" << std::endl;
+  std::cout << "(x, y, coil): (" << x << ", " << y << ", " << coil_idx << ")" << std::endl;
 #endif
 
   std::size_t x_start = 0;
@@ -98,7 +107,7 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
 
   // Any idx that needs right padding will satisfy:
   //     x + patch_shape2[0] >= dims[0]
-  margin = x + patch_shape2[0];
+  margin = x + patch_shape2[0] + adjs[0];
   if (margin >= (int)dims[0]) {
     x_end -= margin - dims[0];
     for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
@@ -122,7 +131,7 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
 
   // Any idx that needs bottom padding will satisfy:
   //     y + patch_shape2[1] >= dims[1]
-  margin = y + patch_shape2[1];
+  margin = y + patch_shape2[1] + adjs[1];
   if (margin >= (int)dims[1]) {
     y_end -= margin - dims[1];
     for (std::size_t yy = y_end; yy < patch_shape[1]; ++yy) {
@@ -152,13 +161,25 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
 		       const T* kspace, // row-major
 		       const T* calib, // row-major
 		       const std::size_t* kernel_shape,
-		       T* recon) {
+		       T* recon) { // row-major
 
   // Get some useful calculations out of the way
   std::size_t ncoils = kspace_dims[ndim-1];
   std::size_t kspace_size = std::accumulate(
     kspace_dims,
     kspace_dims + ndim,
+    1, std::multiplies<std::size_t>());
+  std::size_t kspace_sizeN_1 = std::accumulate(
+    kspace_dims,
+    kspace_dims + ndim - 1,
+    1, std::multiplies<std::size_t>());
+  std::size_t calib_size = std::accumulate(
+    calib_dims,
+    calib_dims + ndim,
+    1, std::multiplies<std::size_t>());
+  std::size_t calib_sizeN_1 = std::accumulate(
+    calib_dims,
+    calib_dims + ndim - 1,
     1, std::multiplies<std::size_t>());
   std::size_t kernel_size = std::accumulate(
     kernel_shape,
@@ -177,12 +198,15 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     adjs.get(),
     [](std::size_t x0) { return x0 % 2; });
 
+  // Choose the patch extraction/apply function: 2D or 3D
   void (*extract_patch)(const std::size_t,
 			const std::size_t,
 			const std::size_t*,
+			const std::size_t,
 			const std::size_t*,
 			const std::size_t*,
 			const std::size_t,
+			const std::size_t*,
 			const T*, T*);
   if (ndim-1 == 2) {
     extract_patch = &extract_patch_2d;
@@ -205,9 +229,11 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
       idx,
       coil_idx,
       kspace_dims,
+      kspace_sizeN_1,
       kernel_shape,
       kernel_shape2.get(),
       kernel_size,
+      adjs.get(),
       kspace,
       patch.get());
     _print_array2d(kernel_shape, patch.get()); // DEBUG macro
@@ -234,16 +260,99 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
 
   // TODO(mckib2): use same nnz criteria for P as in mdgrappa
 
-  // TODO(mckib2): Get all overlapping patches from calibration data
-  auto A = std::make_unique<T[]>(kernel_size*ncoils); // could be quite large
+  // TODO(mckib2): Get all overlapping patches from calibration data;
+  // could be quite large;
+  // shape: (num_patches_per_coil, kernel_size, ncoils)
+  auto A = std::make_unique<T[]>(calib_size*kernel_size);
+  std::size_t num_patches_per_coil = calib_size/ncoils;
+  for (std::size_t idx = 0; idx < num_patches_per_coil; ++idx) {
+    for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
+      extract_patch(
+	idx,
+	coil_idx,
+	calib_dims,
+	calib_sizeN_1,
+	kernel_shape,
+	kernel_shape2.get(),
+	kernel_size,
+	adjs.get(),
+	calib,
+	patch.get());
+      for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
+	A[idx + ncoils*(coil_idx + kernel_size*patch_idx)] = patch[patch_idx];
+      }
+    }
+  }
 
   // TODO(mckib2): Train and apply weights for each pattern;
   //     it->first : sampling pattern
   //     it->second : indices of holes in kspace
+  // Preallocate sources, targets, and weights;
+  //     potentially more space than we need for sources,
+  //     but beats dynamically allocating each iteration
+  auto S = std::make_unique<T[]>(calib_size*kernel_size); // sources
+  auto Tgt = std::make_unique<T[]>(calib_size); // targets
+  auto W = std::make_unique<T[]>(ncoils*ncoils); // weights
   for (auto it = P.cbegin(); it != P.cend(); ++it) {
 
-    // TODO(mckib2): use LAPACK functions from numpy (hopefully)
+    // Populate masked sources and targets
+    //     Split into inner and outer loop to populate Tgt alongside S
+    // TODO(mckib2): might be a more efficient way to update by comparing
+    // which patch elements changed iteration to iteration and only
+    // updating the ones that change
+    std::size_t local_idx;
+    for (std::size_t ii = 0; ii < calib_size; ++ii) {
+      for (std::size_t jj = 0; jj < kernel_size; ++jj) {
+	local_idx = ii + jj*calib_size;
+	S[local_idx] = A[local_idx]*(T)(std::abs(it->first[local_idx % kernel_size]) > 0);
+      }
+      Tgt[ii + ctr*calib_size] = A[ii + ctr*calib_size];
+    }
 
+    // TODO(mckib2): solve for weights using LAPACK
+
+    // Apply kernel to fill each hole
+    for (const auto & idx : it->second) {
+
+      // Fill up source
+      for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
+	extract_patch(
+	  idx,
+	  coil_idx,
+	  kspace_dims,
+	  kspace_sizeN_1,
+	  kernel_shape,
+	  kernel_shape2.get(),
+	  kernel_size,
+	  adjs.get(),
+	  kspace,
+	  patch.get());
+	for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
+	  S[patch_idx + coil_idx*kernel_size] = patch[patch_idx];
+	}
+      }
+
+      // S @ W := Tgt
+//      float one = 1;
+//      float zero = 0;
+//      cblas_cgemm(
+//	CblasRowMajor,
+//	CblasNoTrans,
+//	CblasNoTrans,
+//	kernel_size,
+//	ncoils,
+//	ncoils,
+//	&one,
+//	S.get(),
+//	1,
+//	W.get(),
+//	1,
+//	&zero,
+//	Tgt.get());
+      for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
+	recon[idx + kspace_sizeN_1*coil_idx] = Tgt[coil_idx];
+      }
+    }
   }
 
   return GRAPPA_STATUS::SUCCESS;

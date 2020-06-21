@@ -23,7 +23,7 @@ def cgrappa_complex64(
     cdef size_t ndim = kspace.ndim
     cdef size_t[::1] kspace_dims = np.array(kspace.shape).astype(np.uintp)
     cdef size_t[::1] calib_dims = np.array(calib.shape).astype(np.uintp)
-    cdef float complex[::1] recon_memview = np.empty(kspace.size, dtype=np.complex64)
+    cdef float complex[::1] recon_memview = kspace.copy().flatten().astype(np.complex64)
     cdef float complex[::1] kspace_memview = kspace.flatten().astype(np.complex64)
     cdef float complex[::1] calib_memview = calib.flatten().astype(np.complex64)
     cdef size_t[::1] kernel_size_memview = np.array(kernel_size).astype(np.uintp)
@@ -37,4 +37,4 @@ def cgrappa_complex64(
         &kernel_size_memview[0],
         &recon_memview[0])
 
-    return np.array(recon_memview)
+    return np.array(recon_memview).reshape(kspace.shape)
