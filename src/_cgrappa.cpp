@@ -1,5 +1,5 @@
 
-//#define DEBUG
+#define DEBUG
 
 #include <algorithm> // for std::transform
 #include <numeric> // for std::accumulate
@@ -12,8 +12,29 @@
 
 #include "_cgrappa.hpp"
 
-extern "C" {
-// LAPACK functions here
+
+/// Convert 2+1d index to flattened index
+const std::size_t ind2to1(const std::size_t& x,
+			  const std::size_t& y,
+			  const std::size_t& dim1,
+			  const std::size_t& dim2) {
+  return dim2*(y + x*dim1);
+}
+
+/// Convert 1d index to flattened index
+const std::size_t ind2to1(const std::size_t& x,
+			  const std::size_t& y,
+			  const std::size_t& dim1) {
+  return y + x*dim1;
+}
+
+/// Convert 3d index to flattened index
+const std::size_t ind3to1(const std::size_t& x,
+			  const std::size_t& y,
+			  const std::size_t& z,
+			  const std::size_t& dim0,
+			  const std::size_t& dim1) {
+  return x + dim0*(y + z*dim1);
 }
 
 #ifdef DEBUG
@@ -52,12 +73,24 @@ template<class T>
 void _print_array2d(const std::size_t* dims, const T* arr) {
   for (std::size_t ii = 0; ii < dims[0]; ++ii) {
     for (std::size_t jj = 0; jj < dims[1]; ++jj) {
-      std::cout << arr[ii + jj*dims[0]] << " ";
+      std::cout << arr[ind2to1(ii, jj, dims[1])] << " ";
     }
     std::cout << std::endl;
   }
   std::cout << std::endl;
 }
+
+template<class T>
+void _print_coil2d(const std::size_t* dims, const T* arr) {
+  for (std::size_t ii = 0; ii < dims[0]; ++ii) {
+    for (std::size_t jj = 0; jj < dims[1]; ++jj) {
+      std::cout << arr[ind2to1(ii, jj, dims[1], dims[2])] << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+}
+
 #else
 
 #define _print_unordered_map(m)
@@ -71,7 +104,6 @@ template<class T>
 void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
 		      const std::size_t coil_idx, // desired coil
 		      const std::size_t* dims, // dimensions of src (assumes 2+1d -- coil dim at end)
-		      const std::size_t sizeN_1, // number of samples in one coil of src
 		      const std::size_t* patch_shape, // dimensions of patch
 		      const std::size_t* patch_shape2, // patch_shape/2 -- integer division
 		      const std::size_t patch_size, // number of samples in patch
@@ -82,7 +114,6 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
   // convert flat index to (x, y)
   std::size_t x = idx % dims[0];
   std::size_t y = idx/dims[0]; // integer division
-  std::size_t coil_offset = sizeN_1*coil_idx;
 
 #ifdef DEBUG
   std::cout << "(x, y, coil): (" << x << ", " << y << ", " << coil_idx << ")" << std::endl;
@@ -93,61 +124,61 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
   std::size_t y_start = 0;
   std::size_t y_end = patch_shape[1];
 
-  // Any idx that needs left padding will satisfy:
+  // Any idx that needs top padding will satisfy:
   //     x - patch_shape2[0] < 0
   int margin = x - patch_shape2[0];
   if (margin < 0) {
     x_start = -1*margin;
-    for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
-      for (std::size_t xx = 0; xx < x_start; ++xx) {
-	out[xx + yy*patch_shape[0]] = 0;
-      }
-    }
-  }
-
-  // Any idx that needs right padding will satisfy:
-  //     x + patch_shape2[0] >= dims[0]
-  margin = x + patch_shape2[0] + adjs[0];
-  if (margin >= (int)dims[0]) {
-    x_end -= margin - dims[0];
-    for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
-      for (std::size_t xx = x_end; xx < patch_shape[0]; ++xx) {
-	out[xx + yy*patch_shape[0]] = 0;
-      }
-    }
-  }
-
-  // Any idx that needs top padding will satisfy:
-  //     y - patch_shape2[1] < 0
-  margin = y - patch_shape2[1];
-  if (margin < 0) {
-    y_start = -1*margin;
-    for (std::size_t yy = 0; yy < y_start; ++yy) {
-      for (std::size_t xx = x_start; xx < x_end; ++xx) {
-	out[xx + yy*patch_shape[0]] = 0;
+    for (std::size_t xx = 0; xx < x_start; ++xx) {
+      for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
+	out[ind2to1(xx, yy, patch_shape[1])] = 0;
       }
     }
   }
 
   // Any idx that needs bottom padding will satisfy:
+  //     x + patch_shape2[0] >= dims[0]
+  margin = x + patch_shape2[0] + adjs[0];
+  if (margin >= (int)dims[0]) {
+    x_end -= margin - dims[0];
+    for (std::size_t xx = x_end; xx < patch_shape[0]; ++xx) {
+      for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
+	out[ind2to1(xx, yy, patch_shape[1])] = 0;
+      }
+    }
+  }
+
+  // Any idx that needs left padding will satisfy:
+  //     y - patch_shape2[1] < 0
+  margin = y - patch_shape2[1];
+  if (margin < 0) {
+    y_start = -1*margin;
+    for (std::size_t xx = x_start; xx < x_end; ++xx) {
+      for (std::size_t yy = 0; yy < y_start; ++yy) {
+	out[ind2to1(xx, yy, patch_shape[1])] = 0;
+      }
+    }
+  }
+
+  // Any idx that needs right padding will satisfy:
   //     y + patch_shape2[1] >= dims[1]
   margin = y + patch_shape2[1] + adjs[1];
   if (margin >= (int)dims[1]) {
     y_end -= margin - dims[1];
-    for (std::size_t yy = y_end; yy < patch_shape[1]; ++yy) {
-      for (std::size_t xx = x_start; xx < x_start; ++xx) {
-	out[xx + yy*patch_shape[0]] = 0;
+    for (std::size_t xx = x_start; xx < x_end; ++xx) {
+      for (std::size_t yy = y_end; yy < patch_shape[1]; ++yy) {
+	out[ind2to1(xx, yy, patch_shape[1])] = 0;
       }
     }
   }
 
   // Get contents of patch
   std::size_t access;
-  for (std::size_t yy = y_start; yy < y_end; ++yy) {
-    for (std::size_t xx = x_start; xx < x_end; ++xx) {
-      access = x - patch_shape2[0] + xx + (y - patch_shape2[1] + yy)*dims[0] + coil_offset;
+  for (std::size_t xx = x_start; xx < x_end; ++xx) {
+    for (std::size_t yy = y_start; yy < y_end; ++yy) {
+      access = ind2to1(x - patch_shape2[0] + xx, y - patch_shape2[1] + yy, dims[1], dims[2]);
       // std::cout << "access: " << access << std::endl;
-      out[xx + yy*patch_shape[0]] = src[access];
+      out[ind2to1(xx, yy, patch_shape[1])] = src[access];
     }
   }
 
@@ -202,7 +233,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   void (*extract_patch)(const std::size_t,
 			const std::size_t,
 			const std::size_t*,
-			const std::size_t,
 			const std::size_t*,
 			const std::size_t*,
 			const std::size_t,
@@ -229,7 +259,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
       idx,
       coil_idx,
       kspace_dims,
-      kspace_sizeN_1,
       kernel_shape,
       kernel_shape2.get(),
       kernel_size,
@@ -257,13 +286,15 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   auto zeros = std::vector<bool>(pattern.size(), 0);
   P.erase(zeros);
   _print_unordered_map(P); // DEBUG macro
+  zeros.clear(); // done with zeros
 
   // TODO(mckib2): use same nnz criteria for P as in mdgrappa
 
-  // TODO(mckib2): Get all overlapping patches from calibration data;
-  // could be quite large;
+  // Get all overlapping patches from calibration data; could be quite large;
   // shape: (num_patches_per_coil, kernel_size, ncoils)
   auto A = std::make_unique<T[]>(calib_size*kernel_size);
+  return GRAPPA_STATUS::FAIL;
+/*
   std::size_t num_patches_per_coil = calib_size/ncoils;
   for (std::size_t idx = 0; idx < num_patches_per_coil; ++idx) {
     for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
@@ -271,7 +302,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
 	idx,
 	coil_idx,
 	calib_dims,
-	calib_sizeN_1,
 	kernel_shape,
 	kernel_shape2.get(),
 	kernel_size,
@@ -279,7 +309,8 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
 	calib,
 	patch.get());
       for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
-	A[idx + ncoils*(coil_idx + kernel_size*patch_idx)] = patch[patch_idx];
+	// A[idx + ncoils*(coil_idx + kernel_size*patch_idx)] = patch[patch_idx];
+	A[ind3to1(idx, patch_idx, coil_idx, kernel_size, ncoils)] = patch[patch_idx];
       }
     }
   }
@@ -313,14 +344,12 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
 
     // Apply kernel to fill each hole
     for (const auto & idx : it->second) {
-
       // Fill up source
       for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
 	extract_patch(
 	  idx,
 	  coil_idx,
 	  kspace_dims,
-	  kspace_sizeN_1,
 	  kernel_shape,
 	  kernel_shape2.get(),
 	  kernel_size,
@@ -356,6 +385,7 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   }
 
   return GRAPPA_STATUS::SUCCESS;
+  */
 }
 
 // Resolve the templates to make available for Cython:
