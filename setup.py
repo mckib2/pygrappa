@@ -50,6 +50,7 @@ def configuration(parent_package='', top_path=None):
             'src/_cgrappa.cpp',
         ],
         include_dirs=['src/', np.get_include()],
+        extra_link_args=['-lblas'], # TODO(mckib2): make portable
         language='c++',
         define_macros=DEFINE_MACROS,
     )

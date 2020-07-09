@@ -1,11 +1,12 @@
 
 #define DEBUG
 
+#include <type_traits> // for std::is_same
 #include <algorithm> // for std::transform
 #include <numeric> // for std::accumulate
 #include <functional> // for std::multiplies
 #include <iostream> // for std::cout
-#include <memory> // for std::unique_ptr, std::make_unique
+#include <memory> // for std::unique_ptr -- don't use make_unique as it value initializes!
 #include <unordered_map> // for std::unordered_map
 #include <vector> // for std::vector
 #include <cblas.h>
@@ -15,26 +16,26 @@
 
 /// Convert 2+1d index to flattened index
 const std::size_t ind2to1(const std::size_t& x,
-			  const std::size_t& y,
-			  const std::size_t& dim1,
-			  const std::size_t& dim2) {
+                          const std::size_t& y,
+                          const std::size_t& dim1,
+                          const std::size_t& dim2) {
   return dim2*(y + x*dim1);
 }
 
 /// Convert 1d index to flattened index
 const std::size_t ind2to1(const std::size_t& x,
-			  const std::size_t& y,
-			  const std::size_t& dim1) {
+                          const std::size_t& y,
+                          const std::size_t& dim1) {
   return y + x*dim1;
 }
 
 /// Convert 3d index to flattened index
 const std::size_t ind3to1(const std::size_t& x,
-			  const std::size_t& y,
-			  const std::size_t& z,
-			  const std::size_t& dim0,
-			  const std::size_t& dim1) {
-  return x + dim0*(y + z*dim1);
+                          const std::size_t& y,
+                          const std::size_t& z,
+                          const std::size_t& dim1,
+                          const std::size_t& dim2) {
+  return z + dim2*(y + x*dim1);
 }
 
 #ifdef DEBUG
@@ -102,14 +103,14 @@ void _print_coil2d(const std::size_t* dims, const T* arr) {
 
 template<class T>
 void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
-		      const std::size_t coil_idx, // desired coil
-		      const std::size_t* dims, // dimensions of src (assumes 2+1d -- coil dim at end)
-		      const std::size_t* patch_shape, // dimensions of patch
-		      const std::size_t* patch_shape2, // patch_shape/2 -- integer division
-		      const std::size_t patch_size, // number of samples in patch
-		      const std::size_t* adjs, // kernel_shape % 2
-		      const T* src,
-		      T* out) {
+                      const std::size_t coil_idx, // desired coil
+                      const std::size_t* dims, // dimensions of src (assumes 2+1d -- coil dim at end)
+                      const std::size_t* patch_shape, // dimensions of patch
+                      const std::size_t* patch_shape2, // patch_shape/2 -- integer division
+                      const std::size_t patch_size, // number of samples in patch
+                      const std::size_t* adjs, // kernel_shape % 2
+                      const T* src,
+                      T* out) {
   // We are extracting hypercubes centered at idx from src;
   // convert flat index to (x, y)
   std::size_t x = idx % dims[0];
@@ -131,7 +132,7 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
     x_start = -1*margin;
     for (std::size_t xx = 0; xx < x_start; ++xx) {
       for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
-	out[ind2to1(xx, yy, patch_shape[1])] = 0;
+        out[ind2to1(xx, yy, patch_shape[1])] = 0;
       }
     }
   }
@@ -143,7 +144,7 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
     x_end -= margin - dims[0];
     for (std::size_t xx = x_end; xx < patch_shape[0]; ++xx) {
       for (std::size_t yy = 0; yy < patch_shape[1]; ++yy) {
-	out[ind2to1(xx, yy, patch_shape[1])] = 0;
+        out[ind2to1(xx, yy, patch_shape[1])] = 0;
       }
     }
   }
@@ -155,7 +156,7 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
     y_start = -1*margin;
     for (std::size_t xx = x_start; xx < x_end; ++xx) {
       for (std::size_t yy = 0; yy < y_start; ++yy) {
-	out[ind2to1(xx, yy, patch_shape[1])] = 0;
+        out[ind2to1(xx, yy, patch_shape[1])] = 0;
       }
     }
   }
@@ -167,7 +168,7 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
     y_end -= margin - dims[1];
     for (std::size_t xx = x_start; xx < x_end; ++xx) {
       for (std::size_t yy = y_end; yy < patch_shape[1]; ++yy) {
-	out[ind2to1(xx, yy, patch_shape[1])] = 0;
+        out[ind2to1(xx, yy, patch_shape[1])] = 0;
       }
     }
   }
@@ -187,12 +188,18 @@ void extract_patch_2d(const std::size_t idx, // center index of patch w.r.t. src
 
 template<class T>
 GRAPPA_STATUS _cgrappa(const std::size_t ndim,
-		       const std::size_t* kspace_dims, // coil axis is last
-		       const std::size_t* calib_dims, // coil axis is last
-		       const T* kspace, // row-major
-		       const T* calib, // row-major
-		       const std::size_t* kernel_shape,
-		       T* recon) { // row-major
+                       const std::size_t* kspace_dims, // coil axis is last
+                       const std::size_t* calib_dims, // coil axis is last
+                       const T* kspace, // row-major
+                       const T* calib, // row-major
+                       const std::size_t* kernel_shape,
+                       T* recon) { // row-major
+
+  // Make sure we only take complex types
+  static_assert(
+    std::is_same<T, complex64>::value
+    || std::is_same<T, complex128>::value,
+    "T must be std::complex<[float|double]>");
 
   // Get some useful calculations out of the way
   std::size_t ncoils = kspace_dims[ndim-1];
@@ -216,13 +223,13 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     kernel_shape,
     kernel_shape + ndim - 1,
     1, std::multiplies<std::size_t>());
-  auto kernel_shape2 = std::make_unique<std::size_t[]>(ndim-1);
+  std::unique_ptr<std::size_t[]> kernel_shape2(new std::size_t[ndim-1]);
   std::transform(
     kernel_shape,
     kernel_shape + ndim - 1,
     kernel_shape2.get(),
     [](std::size_t x0) { return x0/2; });
-  auto adjs = std::make_unique<std::size_t[]>(ndim-1);
+  std::unique_ptr<std::size_t[]> adjs(new std::size_t[ndim-1]);
   std::transform(
     kernel_shape,
     kernel_shape + ndim - 1,
@@ -231,13 +238,13 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
 
   // Choose the patch extraction/apply function: 2D or 3D
   void (*extract_patch)(const std::size_t,
-			const std::size_t,
-			const std::size_t*,
-			const std::size_t*,
-			const std::size_t*,
-			const std::size_t,
-			const std::size_t*,
-			const T*, T*);
+                        const std::size_t,
+                        const std::size_t*,
+                        const std::size_t*,
+                        const std::size_t*,
+                        const std::size_t,
+                        const std::size_t*,
+                        const T*, T*);
   if (ndim-1 == 2) {
     extract_patch = &extract_patch_2d;
   }
@@ -250,7 +257,7 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   // (Note: using std::vector<bool> as a dynamic bitset)
   auto P = std::unordered_map<std::vector<bool>, std::vector<std::size_t> >();
   auto pattern = std::vector<bool>(kernel_size);
-  auto patch = std::make_unique<T[]>(kernel_size);
+  std::unique_ptr<T[]> patch(new T[kernel_size]);
   std::size_t coil_idx = 0; // any coil will do for determining sampling patterns
   std::size_t ctr = kernel_shape2[0] + kernel_shape2[1]*kernel_shape[0];
   for (std::size_t idx = 0; idx < kspace_size/ncoils; ++idx) {
@@ -291,39 +298,52 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   // TODO(mckib2): use same nnz criteria for P as in mdgrappa
 
   // Get all overlapping patches from calibration data; could be quite large;
+  // TODO(mckib2): block-wise regression for large datasets
   // shape: (num_patches_per_coil, kernel_size, ncoils)
-  auto A = std::make_unique<T[]>(calib_size*kernel_size);
-  return GRAPPA_STATUS::FAIL;
-/*
+  std::unique_ptr<T[]> A(new T[calib_size*kernel_size]);
   std::size_t num_patches_per_coil = calib_size/ncoils;
   for (std::size_t idx = 0; idx < num_patches_per_coil; ++idx) {
     for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
       extract_patch(
-	idx,
-	coil_idx,
-	calib_dims,
-	kernel_shape,
-	kernel_shape2.get(),
-	kernel_size,
-	adjs.get(),
-	calib,
-	patch.get());
+        idx,
+        coil_idx,
+        calib_dims,
+        kernel_shape,
+        kernel_shape2.get(),
+        kernel_size,
+        adjs.get(),
+        calib,
+        patch.get());
       for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
-	// A[idx + ncoils*(coil_idx + kernel_size*patch_idx)] = patch[patch_idx];
-	A[ind3to1(idx, patch_idx, coil_idx, kernel_size, ncoils)] = patch[patch_idx];
+        A[ind3to1(idx, patch_idx, coil_idx, kernel_size, ncoils)] = patch[patch_idx];
       }
     }
   }
 
+  // Decide how to do matmul/linsolve based on type
+  void (*matmul)();
+  void (*linsolve)();
+  // TODO(mckib2): replace cblas_cgemm and LAPACK funs
+  if (std::is_same<T, complex64>::value) {
+    // use float version
+    // TODO(mckib2): use cblas_cgemm and cgels_
+  }
+  else {
+    // use double version
+    // TODO(mckib2): use cblas_zgemm and zgels_
+  }
+
+
   // TODO(mckib2): Train and apply weights for each pattern;
   //     it->first : sampling pattern
   //     it->second : indices of holes in kspace
-  // Preallocate sources, targets, and weights;
+  // Initialize sources, targets, and weights;
   //     potentially more space than we need for sources,
   //     but beats dynamically allocating each iteration
-  auto S = std::make_unique<T[]>(calib_size*kernel_size); // sources
-  auto Tgt = std::make_unique<T[]>(calib_size); // targets
-  auto W = std::make_unique<T[]>(ncoils*ncoils); // weights
+  std::unique_ptr<T[]> S(new T[calib_size*kernel_size]); // sources
+  std::unique_ptr<T[]> Tgt(new T[calib_size]); // targets
+  std::unique_ptr<T[]> W(new T[ncoils*ncoils]); // weights
+  // std::unique_ptr<T[]> WORK(new T[]);
   for (auto it = P.cbegin(); it != P.cend(); ++it) {
 
     // Populate masked sources and targets
@@ -334,69 +354,86 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     std::size_t local_idx;
     for (std::size_t ii = 0; ii < calib_size; ++ii) {
       for (std::size_t jj = 0; jj < kernel_size; ++jj) {
-	local_idx = ii + jj*calib_size;
-	S[local_idx] = A[local_idx]*(T)(std::abs(it->first[local_idx % kernel_size]) > 0);
+        local_idx = ii + jj*calib_size;
+        S[local_idx] = A[local_idx]*(T)(std::abs(it->first[local_idx % kernel_size]) > 0);
       }
-      Tgt[ii + ctr*calib_size] = A[ii + ctr*calib_size];
+      Tgt[ii + ctr*calib_size] = A[ii + ctr*calib_size]; // TODO(mckib2): take ctr*calib_size out of the loops?
     }
 
     // TODO(mckib2): solve for weights using LAPACK
+    // S @ W = Tgt, solve for W
+    //cgels_(
+    //  'N',
+    //  &M,
+    //  &N,
+    //  &NRHS,
+    //  reinterpret_cast<float*>(S.get()),
+    //  &LDA,
+    //  reinterpret_cast<float*>(Tgt.get()),
+    //  &LDB,
+    //  reinterpret_cast<float*>(WORK.get()), int *LWORK, int *INFO)
+
 
     // Apply kernel to fill each hole
     for (const auto & idx : it->second) {
       // Fill up source
       for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
-	extract_patch(
-	  idx,
-	  coil_idx,
-	  kspace_dims,
-	  kernel_shape,
-	  kernel_shape2.get(),
-	  kernel_size,
-	  adjs.get(),
-	  kspace,
-	  patch.get());
-	for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
-	  S[patch_idx + coil_idx*kernel_size] = patch[patch_idx];
-	}
+        extract_patch(
+          idx,
+          coil_idx,
+          kspace_dims,
+          kernel_shape,
+          kernel_shape2.get(),
+          kernel_size,
+          adjs.get(),
+          kspace,
+          patch.get());
+        for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
+          S[patch_idx + coil_idx*kernel_size] = patch[patch_idx]; // TODO(mckib2): move coil_idx*kernel_size outside of loops;
+                                                                  // could avoid multiply by adding kernel_size each iteration
+        }
       }
 
-      // S @ W := Tgt
-//      float one = 1;
-//      float zero = 0;
-//      cblas_cgemm(
-//	CblasRowMajor,
-//	CblasNoTrans,
-//	CblasNoTrans,
-//	kernel_size,
-//	ncoils,
-//	ncoils,
-//	&one,
-//	S.get(),
-//	1,
-//	W.get(),
-//	1,
-//	&zero,
-//	Tgt.get());
+      // Tgt := S @ W
+      float one = 1;
+      float zero = 0;
+      cblas_cgemm(
+        CblasRowMajor,
+        CblasNoTrans,
+        CblasNoTrans,
+        kernel_size,
+        ncoils,
+        ncoils,
+        &one,
+        reinterpret_cast<float*>(S.get()), // std::complex uses correct layout
+        1,
+        reinterpret_cast<float*>(W.get()),
+        1,
+        &zero,
+        reinterpret_cast<float*>(Tgt.get()),
+        kernel_size);
+
+      // Fill the result
       for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
-	recon[idx + kspace_sizeN_1*coil_idx] = Tgt[coil_idx];
+        recon[idx + kspace_sizeN_1*coil_idx] = Tgt[coil_idx];
       }
     }
   }
 
+  _print_coil2d(kspace_dims, recon); // take a gander at what happened
   return GRAPPA_STATUS::SUCCESS;
-  */
+
 }
 
 // Resolve the templates to make available for Cython:
 extern "C" {
   GRAPPA_STATUS _cgrappa_complex64(const std::size_t ndim,
-				   const std::size_t* kspace_dims,
-				   const std::size_t* calib_dims,
-				   const complex64* kspace,
-				   const complex64* calib,
-				   const std::size_t* kernel_size,
-				   complex64* recon) {
+                                   const std::size_t* kspace_dims,
+                                   const std::size_t* calib_dims,
+                                   const complex64* kspace,
+                                   const complex64* calib,
+                                   const std::size_t* kernel_size,
+                                   complex64* recon) {
     return _cgrappa(ndim, kspace_dims, calib_dims, kspace, calib, kernel_size, recon);
   }
 }
