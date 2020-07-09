@@ -344,6 +344,8 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   std::unique_ptr<T[]> Tgt(new T[calib_size]); // targets
   std::unique_ptr<T[]> W(new T[ncoils*ncoils]); // weights
   // std::unique_ptr<T[]> WORK(new T[]);
+  static const float one = 1; // TODO(mckib2): needs to be double as well
+  static const float zero = 0; // TODO(mckib2): needs to be double as well
   for (auto it = P.cbegin(); it != P.cend(); ++it) {
 
     // Populate masked sources and targets
@@ -395,8 +397,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
       }
 
       // Tgt := S @ W
-      float one = 1;
-      float zero = 0;
       cblas_cgemm(
         CblasRowMajor,
         CblasNoTrans,
