@@ -189,13 +189,10 @@ template <>
 void gemm(const int M, const int N, const int K, std::complex<float> *A,
           std::complex<float> *B, std::complex<float> *C) {
 
-  static const float one = 1;
-  static const float zero = 0;
-
   // reinterpret_cast: std::complex uses correct layout to make this work
-  cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &one,
+  cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &fone,
               reinterpret_cast<float *>(A), 1, reinterpret_cast<float *>(B), 1,
-              &zero, reinterpret_cast<float *>(C), M);
+              &fzero, reinterpret_cast<float *>(C), M);
 }
 
 /// Multiply two matrices with type std::complex<double>
@@ -203,36 +200,42 @@ template <>
 void gemm(const int M, const int N, const int K, std::complex<double> *A,
           std::complex<double> *B, std::complex<double> *C) {
 
-  static const double one = 1;
-  static const double zero = 0;
-
   // reinterpret_cast: std::complex uses correct layout to make this work
-  cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &one,
+  cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &done,
               reinterpret_cast<double *>(A), 1, reinterpret_cast<double *>(B),
-              1, &zero, reinterpret_cast<double *>(C), M);
+              1, &dzero, reinterpret_cast<double *>(C), M);
 }
 
+/// Declare template function for solving linear systems
 template <class T>
-void gels(int &M, int &N, int &NRHS, int &LWORK, T *A, T *B, T *WORK,
-          int *INFO) {}
+int gels(int &M, int &N, int &NRHS, int &LDB, int &LWORK, T *A, T *B, T *WORK) {
+  return -1;
+}
 
 /// Solve linear system with type std::complex<float>
 template <>
-void gels(int &M, int &N, int &NRHS, int &LWORK, std::complex<float> *A,
-          std::complex<float> *B, std::complex<float> *WORK, int *INFO) {
+int gels(int &M, int &N, int &NRHS, int &LDB, int &LWORK,
+         std::complex<float> *A, std::complex<float> *B,
+         std::complex<float> *WORK) {
 
   static char notrans = 'N';
-  int LDB = std::max(M, N);
+  int INFO;
   cgels_(&notrans, &M, &N, &NRHS, reinterpret_cast<float *>(A), &M,
          reinterpret_cast<float *>(B), &LDB, reinterpret_cast<float *>(WORK),
-         &LWORK, INFO);
+         &LWORK, &INFO);
+  std::cout << "INFO: " << INFO << std::endl;
+  return INFO;
 }
 
 /// Solve linear system with type std::complex<double>
 template <>
-void gels(int &M, int &N, int &NRHS, int &LWORK, std::complex<double> *A,
-          std::complex<double> *B, std::complex<double> *WORK, int *INFO) {}
+int gels(int &M, int &N, int &NRHS, int &LDB, int &LWORK,
+         std::complex<double> *A, std::complex<double> *B,
+         std::complex<double> *WORK) {
+  return -1;
+}
 
+/// C++ GRAPPA Implementation
 template <class T>
 GRAPPA_STATUS _cgrappa(const std::size_t ndim,
                        const std::size_t *kspace_dims, // coil axis is last
@@ -243,6 +246,7 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
                        T *recon) { // row-major
 
   // Make sure we only take complex types
+  // NOTE: LAPACK does not support std::complex<long double>, so neither do we
   static_assert(std::is_same<T, complex64>::value ||
                     std::is_same<T, complex128>::value,
                 "T must be std::complex<[float|double]>");
@@ -332,16 +336,32 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     }
   }
 
-  // TODO(mckib2): Train and apply weights for each pattern;
-  //     it->first : sampling pattern
-  //     it->second : indices of holes in kspace
   // Initialize sources, targets, and weights;
   //     potentially more space than we need for sources,
   //     but beats dynamically allocating each iteration
   std::unique_ptr<T[]> S(new T[calib_size * kernel_size]); // sources
   std::unique_ptr<T[]> Tgt(new T[calib_size]);             // targets
   std::unique_ptr<T[]> W(new T[ncoils * ncoils]);          // weights
-  // std::unique_ptr<T[]> WORK(new T[]);
+
+  // Query the optimal size for WORK (for LAPACK linear solver)
+  int M = kernel_size;
+  int N = calib_size;
+  int LDB = std::max(M, N);
+  T WORK_TEST[1];
+  int neg_one = -1;
+  if (gels(M, N, N, LDB, neg_one, S.get(), Tgt.get(), WORK_TEST) != 0) {
+    return GRAPPA_STATUS::FAIL;
+  }
+  int LWORK =
+      static_cast<int>(WORK_TEST[0].real()); // optimal value reported here
+  std::unique_ptr<T[]> WORK(new T[LWORK]);
+#ifdef DEBUG
+  std::cout << "Optimal LWORK: " << LWORK << std::endl;
+#endif
+
+  // Train and apply weights for each pattern;
+  //     it->first : sampling pattern
+  //     it->second : indices of holes in kspace
   for (auto it = P.cbegin(); it != P.cend(); ++it) {
 
     // Populate masked sources and targets
@@ -362,18 +382,16 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
                                     // the loops?
     }
 
-    // TODO(mckib2): solve for weights using LAPACK
+    // Solve for weights using LAPACK
     // S @ W = Tgt, solve for W
-    // cgels_(
-    //  'N',
-    //  &M,
-    //  &N,
-    //  &NRHS,
-    //  reinterpret_cast<float*>(S.get()),
-    //  &LDA,
-    //  reinterpret_cast<float*>(Tgt.get()),
-    //  &LDB,
-    //  reinterpret_cast<float*>(WORK.get()), int *LWORK, int *INFO)
+    if (gels(M, N, N, LDB, LWORK, S.get(), Tgt.get(), WORK.get()) != 0) {
+      std::cerr << "Weights for pattern [";
+      for (std::size_t ii = 0; ii < it->first.size(); ++ii) {
+        std::cerr << it->first[ii];
+      }
+      std::cerr << "] could not be found! (LAPACK error)" << std::endl;
+      continue;
+    }
 
     // Apply kernel to fill each hole
     for (const auto &idx : it->second) {
@@ -411,6 +429,15 @@ _cgrappa_complex64(const std::size_t ndim, const std::size_t *kspace_dims,
                    const std::size_t *calib_dims, const complex64 *kspace,
                    const complex64 *calib, const std::size_t *kernel_size,
                    complex64 *recon) {
+  return _cgrappa(ndim, kspace_dims, calib_dims, kspace, calib, kernel_size,
+                  recon);
+}
+
+GRAPPA_STATUS
+_cgrappa_complex128(const std::size_t ndim, const std::size_t *kspace_dims,
+                    const std::size_t *calib_dims, const complex128 *kspace,
+                    const complex128 *calib, const std::size_t *kernel_size,
+                    complex128 *recon) {
   return _cgrappa(ndim, kspace_dims, calib_dims, kspace, calib, kernel_size,
                   recon);
 }
