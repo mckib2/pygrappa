@@ -373,9 +373,8 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     for (std::size_t ii = 0; ii < calib_size; ++ii) {
       for (std::size_t jj = 0; jj < kernel_size; ++jj) {
         local_idx = ii + jj * calib_size;
-        S[local_idx] =
-            A[local_idx] *
-            static_cast<T>(std::abs(it->first[local_idx % kernel_size]) > 0);
+        S[local_idx] = A[local_idx] *
+                       (T)(std::abs(it->first[local_idx % kernel_size]) > 0);
       }
       Tgt[ii + ctr * calib_size] =
           A[ii + ctr * calib_size]; // TODO(mckib2): take ctr*calib_size out of
