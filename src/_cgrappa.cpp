@@ -180,6 +180,38 @@ void extract_patch_2d(
   return;
 }
 
+/// Define templated function
+template <typename T>
+void gemm(const int M, const int N, const int K, T *A, T *B, T *C) {}
+
+/// Multiply two matrices with type std::complex<float>
+template <>
+void gemm(const int M, const int N, const int K, std::complex<float> *A,
+          std::complex<float> *B, std::complex<float> *C) {
+
+  static const float one = 1;
+  static const float zero = 0;
+
+  // reinterpret_cast: std::complex uses correct layout to make this work
+  cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &one,
+              reinterpret_cast<float *>(A), 1, reinterpret_cast<float *>(B), 1,
+              &zero, reinterpret_cast<float *>(C), M);
+}
+
+/// Multiply two matrices with type std::complex<double>
+template <>
+void gemm(const int M, const int N, const int K, std::complex<double> *A,
+          std::complex<double> *B, std::complex<double> *C) {
+
+  static const double one = 1;
+  static const double zero = 0;
+
+  // reinterpret_cast: std::complex uses correct layout to make this work
+  cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &one,
+              reinterpret_cast<double *>(A), 1, reinterpret_cast<double *>(B),
+              1, &zero, reinterpret_cast<double *>(C), M);
+}
+
 template <class T>
 GRAPPA_STATUS _cgrappa(const std::size_t ndim,
                        const std::size_t *kspace_dims, // coil axis is last
@@ -279,18 +311,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     }
   }
 
-  // Decide how to do matmul/linsolve based on type
-  void (*matmul)();
-  void (*linsolve)();
-  // TODO(mckib2): replace cblas_cgemm and LAPACK funs
-  if (std::is_same<T, complex64>::value) {
-    // use float version
-    // TODO(mckib2): use cblas_cgemm and cgels_
-  } else {
-    // use double version
-    // TODO(mckib2): use cblas_zgemm and zgels_
-  }
-
   // TODO(mckib2): Train and apply weights for each pattern;
   //     it->first : sampling pattern
   //     it->second : indices of holes in kspace
@@ -301,8 +321,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
   std::unique_ptr<T[]> Tgt(new T[calib_size]);             // targets
   std::unique_ptr<T[]> W(new T[ncoils * ncoils]);          // weights
   // std::unique_ptr<T[]> WORK(new T[]);
-  static const float one = 1;  // TODO(mckib2): needs to be double as well
-  static const float zero = 0; // TODO(mckib2): needs to be double as well
   for (auto it = P.cbegin(); it != P.cend(); ++it) {
 
     // Populate masked sources and targets
@@ -351,12 +369,7 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
       }
 
       // Tgt := S @ W
-      cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, kernel_size,
-                  ncoils, ncoils, &one,
-                  reinterpret_cast<float *>(
-                      S.get()), // std::complex uses correct layout
-                  1, reinterpret_cast<float *>(W.get()), 1, &zero,
-                  reinterpret_cast<float *>(Tgt.get()), kernel_size);
+      gemm(kernel_size, ncoils, ncoils, S.get(), W.get(), Tgt.get());
 
       // Fill the result
       for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
