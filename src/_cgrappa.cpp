@@ -181,7 +181,7 @@ void extract_patch_2d(
 }
 
 /// Define templated function
-template <typename T>
+template <class T>
 void gemm(const int M, const int N, const int K, T *A, T *B, T *C) {}
 
 /// Multiply two matrices with type std::complex<float>
@@ -211,6 +211,27 @@ void gemm(const int M, const int N, const int K, std::complex<double> *A,
               reinterpret_cast<double *>(A), 1, reinterpret_cast<double *>(B),
               1, &zero, reinterpret_cast<double *>(C), M);
 }
+
+template <class T>
+void gels(int &M, int &N, int &NRHS, int &LWORK, T *A, T *B, T *WORK,
+          int *INFO) {}
+
+/// Solve linear system with type std::complex<float>
+template <>
+void gels(int &M, int &N, int &NRHS, int &LWORK, std::complex<float> *A,
+          std::complex<float> *B, std::complex<float> *WORK, int *INFO) {
+
+  static char notrans = 'N';
+  int LDB = std::max(M, N);
+  cgels_(&notrans, &M, &N, &NRHS, reinterpret_cast<float *>(A), &M,
+         reinterpret_cast<float *>(B), &LDB, reinterpret_cast<float *>(WORK),
+         &LWORK, INFO);
+}
+
+/// Solve linear system with type std::complex<double>
+template <>
+void gels(int &M, int &N, int &NRHS, int &LWORK, std::complex<double> *A,
+          std::complex<double> *B, std::complex<double> *WORK, int *INFO) {}
 
 template <class T>
 GRAPPA_STATUS _cgrappa(const std::size_t ndim,
@@ -332,8 +353,9 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     for (std::size_t ii = 0; ii < calib_size; ++ii) {
       for (std::size_t jj = 0; jj < kernel_size; ++jj) {
         local_idx = ii + jj * calib_size;
-        S[local_idx] = A[local_idx] *
-                       (T)(std::abs(it->first[local_idx % kernel_size]) > 0);
+        S[local_idx] =
+            A[local_idx] *
+            static_cast<T>(std::abs(it->first[local_idx % kernel_size]) > 0);
       }
       Tgt[ii + ctr * calib_size] =
           A[ii + ctr * calib_size]; // TODO(mckib2): take ctr*calib_size out of
