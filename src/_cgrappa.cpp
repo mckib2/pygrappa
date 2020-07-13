@@ -76,7 +76,7 @@ template <class T> void _print_array2d(const std::size_t *dims, const T *arr) {
 template <class T> void _print_coil2d(const std::size_t *dims, const T *arr) {
   for (std::size_t ii = 0; ii < dims[0]; ++ii) {
     for (std::size_t jj = 0; jj < dims[1]; ++jj) {
-      std::cout << arr[ind2to1(ii, jj, dims[1], dims[2])] << " ";
+      std::cout << std::abs(arr[ind2to1(ii, jj, dims[1], dims[2])]) << " ";
     }
     std::cout << std::endl;
   }
@@ -173,7 +173,8 @@ void extract_patch_2d(
       access = ind2to1(x - patch_shape2[0] + xx, y - patch_shape2[1] + yy,
                        dims[1], dims[2]);
       // std::cout << "access: " << access << std::endl;
-      out[ind2to1(xx, yy, patch_shape[1])] = src[access];
+      out[ind2to1(yy, xx, patch_shape[1])] =
+          src[access]; // TODO(mckib2): transpose as a quick fix
     }
   }
 
@@ -188,6 +189,12 @@ void gemm(const int M, const int N, const int K, T *A, T *B, T *C) {}
 template <>
 void gemm(const int M, const int N, const int K, std::complex<float> *A,
           std::complex<float> *B, std::complex<float> *C) {
+
+#ifdef DEBUG
+  // Trying to debug param 8 warning
+  std::size_t Adims[] = {M, N};
+  _print_array2d(Adims, A);
+#endif
 
   // reinterpret_cast: std::complex uses correct layout to make this work
   cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, N, K, &fone,
@@ -306,7 +313,6 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     for (std::size_t ii = 0; ii < kernel_size; ++ii) {
       pattern[ii] = std::abs(patch[ii]) > 0;
     }
-    // _print_vector(pattern); // DEBUG macro
 
     // store the sampling pattern
     P[pattern].emplace_back(idx);
@@ -336,15 +342,23 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     }
   }
 
+#ifdef DEBUG
+  // Check the output of the 0th coil of A
+  std::size_t Adims[] = {num_patches_per_coil, kernel_size, ncoils};
+  _print_coil2d(Adims, A.get());
+#endif
+
   // Initialize sources, targets, and weights;
   //     potentially more space than we need for sources,
-  //     but beats dynamically allocating each iteration
+  //     but beats dynamically allocating each iteration.
+  //     We will only fill the beginning of S with the
+  //     nonzero samples of the masked patch of A
   std::unique_ptr<T[]> S(new T[calib_size * kernel_size]); // sources
   std::unique_ptr<T[]> Tgt(new T[calib_size]);             // targets
   std::unique_ptr<T[]> W(new T[ncoils * ncoils]);          // weights
 
   // Query the optimal size for WORK (for LAPACK linear solver)
-  int M = kernel_size;
+  int M = kernel_size; // the biggest S could be
   int N = calib_size;
   int LDB = std::max(M, N);
   T WORK_TEST[1];
@@ -370,19 +384,24 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
     // which patch elements changed iteration to iteration and only
     // updating the ones that change
     std::size_t local_idx;
+    std::size_t Sidx = 0; // TODO(mckib2): review Sidx -- coil offset is wrong
+    std::size_t ctr_offset = ctr * calib_size;
     for (std::size_t ii = 0; ii < calib_size; ++ii) {
       for (std::size_t jj = 0; jj < kernel_size; ++jj) {
         local_idx = ii + jj * calib_size;
-        S[local_idx] = A[local_idx] *
-                       (T)(std::abs(it->first[local_idx % kernel_size]) > 0);
+        if (it->first[jj]) {
+          // Only fill up the beginning of S with nonzero samples
+          S[Sidx] = A[local_idx];
+          ++Sidx;
+        }
       }
-      Tgt[ii + ctr * calib_size] =
-          A[ii + ctr * calib_size]; // TODO(mckib2): take ctr*calib_size out of
-                                    // the loops?
+      Tgt[ctr_offset] = A[ctr_offset];
+      ++ctr_offset;
     }
 
     // Solve for weights using LAPACK
     // S @ W = Tgt, solve for W
+    M = Sidx / calib_size; // integer division; adjust size of S
     if (gels(M, N, N, LDB, LWORK, S.get(), Tgt.get(), WORK.get()) != 0) {
       std::cerr << "Weights for pattern [";
       for (std::size_t ii = 0; ii < it->first.size(); ++ii) {
@@ -399,16 +418,18 @@ GRAPPA_STATUS _cgrappa(const std::size_t ndim,
         extract_patch(idx, coil_idx, kspace_dims, kernel_shape,
                       kernel_shape2.get(), kernel_size, adjs.get(), kspace,
                       patch.get());
+        Sidx = 0;
         for (std::size_t patch_idx = 0; patch_idx < kernel_size; ++patch_idx) {
-          S[patch_idx + coil_idx * kernel_size] =
-              patch[patch_idx]; // TODO(mckib2): move coil_idx*kernel_size
-                                // outside of loops; could avoid multiply by
-                                // adding kernel_size each iteration
+          if (it->first[patch_idx]) {
+            // Only add to S if nonzero sample
+            S[Sidx + coil_idx * M] = patch[patch_idx];
+            ++Sidx;
+          }
         }
       }
 
       // Tgt := S @ W
-      gemm(kernel_size, ncoils, ncoils, S.get(), W.get(), Tgt.get());
+      gemm(M, ncoils, ncoils, S.get(), W.get(), Tgt.get());
 
       // Fill the result
       for (std::size_t coil_idx = 0; coil_idx < ncoils; ++coil_idx) {
