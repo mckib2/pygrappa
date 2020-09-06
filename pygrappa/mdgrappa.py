@@ -1,7 +1,7 @@
 '''Python implementation of multidimensional GRAPPA.'''
 
 from collections import defaultdict
-from time import time
+# from time import time
 
 import numpy as np
 from skimage.util import view_as_windows
