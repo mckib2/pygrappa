@@ -163,6 +163,9 @@ def igrappa(
         if ref is not None:
             mse[ii] = compare_mse(aref, np.abs(kIm))
 
+    # Put the coil dim back where we found it
+    kIm = np.moveaxis(kIm, -1, coil_axis)
+
     # Return the reconstructed kspace and MSE if ref kspace provided,
     # otherwise, just return reconstruction
     if ref is not None:

@@ -86,14 +86,17 @@ def mdgrappa(
         calib = np.moveaxis(calib, coil_axis, -1)
     else:
         # Find the calibration region and split it out from kspace
-        raise NotImplementedError("Auto ACS extraction not implemented!")
+        raise NotImplementedError(
+            "Auto ACS extraction not implemented!")
         # calib = find_acs(kspace)
 
     # Pad the arrays
     pads = [int(k/2) for k in kernel_size]
     adjs = [np.mod(k, 2) for k in kernel_size]
-    kspace = np.pad(kspace, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
-    calib = np.pad(calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
+    kspace = np.pad(
+        kspace, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
+    calib = np.pad(
+        calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
 
     # Find all the unique sampling patterns
     mask = np.abs(kspace[..., 0]) > 0
@@ -130,6 +133,8 @@ def mdgrappa(
             lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
             W = np.linalg.solve(
                 ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+            eff_undersample_rate = p0.size/np.count_nonzero(p0)
+            W *= eff_undersample_rate
 
         if ret_weights:
             weights2return[key] = W
@@ -156,7 +161,8 @@ def mdgrappa(
     # Add back in the measured voxels, put axis back where it goes
     recon[mask] += kspace[mask]
     recon = np.moveaxis(
-        recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])], -1, coil_axis)
+        recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])],
+        -1, coil_axis)
 
     if ret_weights:
         return(recon, weights2return)
