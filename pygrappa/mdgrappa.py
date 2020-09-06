@@ -1,6 +1,7 @@
 '''Python implementation of multidimensional GRAPPA.'''
 
 from collections import defaultdict
+from time import time
 
 import numpy as np
 from skimage.util import view_as_windows
@@ -98,23 +99,28 @@ def mdgrappa(
     calib = np.pad(
         calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
 
+    # We need all overlapping patches from calibration data
+    # t0 = time()
+    A = view_as_windows(
+        calib, tuple(kernel_size) + (nc,)).reshape((-1, np.prod(kernel_size), nc,))
+    # print(f'Took {time() - t0} seconds to create patches')
+
     # Find all the unique sampling patterns
+    # t0 = time()
     mask = np.abs(kspace[..., 0]) > 0
     P = defaultdict(list)
     for idx in np.argwhere(~mask[tuple([slice(pd, -pd) for pd in pads])]):
         p0 = mask[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
         if np.sum(p0) >= nnz:  # only counts if it has enough samples
             P[tuple(p0.astype(int))].append(idx)
-
-    # We need all overlapping patches from calibration data
-    A = view_as_windows(
-        calib, tuple(kernel_size) + (nc,)).reshape((-1, np.prod(kernel_size), nc,))
+    # print(f'Took {time() - t0} seconds to find sampling patterns')
 
     # Train and apply kernels
     if ret_weights:
         weights2return = defaultdict(list)
     ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
     recon = np.zeros(kspace.shape, dtype=kspace.dtype)
+    # t0 = time()
     for key, holes in P.items():
 
         # Used provided weights if we can, else compute them
@@ -139,24 +145,14 @@ def mdgrappa(
         if ret_weights:
             weights2return[key] = W
 
-        # Doesn't seem to be a big difference in speed?
-        # Try gathering all sources and doing single matrix multiply
-        # S = np.empty((len(holes), W.shape[0]), dtype=kspace.dtype)
-        # targets = np.empty((kspace.ndim-1, len(holes)), dtype=int)
-        # for jj, idx in enumerate(holes):
-        #    S[jj, :] = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] +
-        #               [slice(None)])].reshape((-1, nc))[p0, :].flatten()
-        #     targets[:, jj] = [ii + pd for ii, pd in zip(idx, pads)]
-        # recon = np.reshape(recon, (-1, nc))
-        # targets = np.ravel_multi_index(targets, dims=kspace.shape[:-1])
-        # recon[targets, :] = S @ W
-        # recon = np.reshape(recon, kspace.shape)
-
         # Apply kernel to fill each hole
+        # t00 = time()
         for idx in holes:
             S = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] +
                              [slice(None)])].reshape((-1, nc))[p0, :].flatten()
             recon[tuple([ii + pd for ii, pd in zip(idx, pads)] + [slice(None)])] = S @ W
+        # print(f'Took {time() - t00} seconds to apply weights')
+    # print(f'Took {time() - t0} seconds to train and apply weights')
 
     # Add back in the measured voxels, put axis back where it goes
     recon[mask] += kspace[mask]
