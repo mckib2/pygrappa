@@ -49,7 +49,8 @@ if __name__ == '__main__':
     # Coil combine (sum-of-squares)
     cc_seg = np.sqrt(
         np.sum(np.abs(imspace_seg)**2, axis=-1))
-    cc_grappa = np.sqrt(np.sum(np.abs(imspace_grappa)**2, axis=-1))
+    cc_grappa = np.sqrt(
+        np.sum(np.abs(imspace_grappa)**2, axis=-1))
     ph = shepp_logan(N)
 
     # Normalize
@@ -66,12 +67,14 @@ if __name__ == '__main__':
     plt.title('Segmented GRAPPA')
     plt.text(
         tx, ty, 'MSE: %.2f' % compare_nrmse(ph, cc_seg), text_args)
+    plt.axis('off')
 
     plt.subplot(2, 2, 2)
     plt.imshow(cc_grappa, cmap='gray')
     plt.title('GRAPPA')
     plt.text(
         tx, ty, 'MSE: %.4f' % compare_nrmse(ph, cc_grappa), text_args)
+    plt.axis('off')
 
     plt.subplot(2, 2, 3)
     calib_region = np.zeros((N, N), dtype=bool)
@@ -79,11 +82,13 @@ if __name__ == '__main__':
     calib_region[ctr-pad-offset:ctr+pad-offset, ...] = True
     plt.imshow(calib_region)
     plt.title('Segmented GRAPPA ACS regions')
+    plt.axis('off')
 
     plt.subplot(2, 2, 4)
     calib_region = np.zeros((N, N), dtype=bool)
     calib_region[ctr-pad_single:ctr+pad_single, ...] = True
     plt.imshow(calib_region)
     plt.title('GRAPPA ACS region')
+    plt.axis('off')
 
     plt.show()

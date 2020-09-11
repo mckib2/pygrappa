@@ -5,6 +5,8 @@ from collections import defaultdict
 import numpy as np
 from skimage.util import view_as_windows
 
+from .find_acs import find_acs
+
 
 def mdgrappa(
         kspace,
@@ -86,17 +88,19 @@ def mdgrappa(
         calib = np.moveaxis(calib, coil_axis, -1)
     else:
         # Find the calibration region and split it out from kspace
-        raise NotImplementedError("Auto ACS extraction not implemented!")
-        # calib = find_acs(kspace)
+        calib = find_acs(kspace, coil_axis=-1)
 
     # Pad the arrays
     pads = [int(k/2) for k in kernel_size]
     adjs = [np.mod(k, 2) for k in kernel_size]
-    kspace = np.pad(kspace, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
-    calib = np.pad(calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
+    kspace = np.pad(
+        kspace, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
+    calib = np.pad(
+        calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
+    mask = np.abs(kspace[..., 0]) > 0
 
     # Find all the unique sampling patterns
-    mask = np.abs(kspace[..., 0]) > 0
+    # TODO: this takes quite a bit of time
     P = defaultdict(list)
     for idx in np.argwhere(~mask[tuple([slice(pd, -pd) for pd in pads])]):
         p0 = mask[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
@@ -105,7 +109,9 @@ def mdgrappa(
 
     # We need all overlapping patches from calibration data
     A = view_as_windows(
-        calib, tuple(kernel_size) + (nc,)).reshape((-1, np.prod(kernel_size), nc,))
+        calib,
+        tuple(kernel_size) + (nc,)).reshape(
+            (-1, np.prod(kernel_size), nc,))
 
     # Train and apply kernels
     if ret_weights:
@@ -134,19 +140,6 @@ def mdgrappa(
         if ret_weights:
             weights2return[key] = W
 
-        # Doesn't seem to be a big difference in speed?
-        # Try gathering all sources and doing single matrix multiply
-        # S = np.empty((len(holes), W.shape[0]), dtype=kspace.dtype)
-        # targets = np.empty((kspace.ndim-1, len(holes)), dtype=int)
-        # for jj, idx in enumerate(holes):
-        #    S[jj, :] = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] +
-        #               [slice(None)])].reshape((-1, nc))[p0, :].flatten()
-        #     targets[:, jj] = [ii + pd for ii, pd in zip(idx, pads)]
-        # recon = np.reshape(recon, (-1, nc))
-        # targets = np.ravel_multi_index(targets, dims=kspace.shape[:-1])
-        # recon[targets, :] = S @ W
-        # recon = np.reshape(recon, kspace.shape)
-
         # Apply kernel to fill each hole
         for idx in holes:
             S = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] +
@@ -156,7 +149,8 @@ def mdgrappa(
     # Add back in the measured voxels, put axis back where it goes
     recon[mask] += kspace[mask]
     recon = np.moveaxis(
-        recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])], -1, coil_axis)
+        recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])],
+        -1, coil_axis)
 
     if ret_weights:
         return(recon, weights2return)

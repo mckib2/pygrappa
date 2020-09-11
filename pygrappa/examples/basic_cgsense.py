@@ -13,7 +13,7 @@ if __name__ == '__main__':
     N, nc = 128, 4
     sens = gaussian_csm(N, N, nc)
 
-    im = shepp_logan(N)
+    im = shepp_logan(N) + np.finfo('float').eps
     im = im[..., None]*sens
     kspace = np.fft.fftshift(np.fft.fft2(np.fft.ifftshift(
         im, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
@@ -43,7 +43,11 @@ if __name__ == '__main__':
     plt.axis('off')
 
     plt.subplot(nx, ny, 3)
-    plt.imshow(shepp_logan(N) - np.abs(res))
+    true = np.abs(shepp_logan(N))
+    true /= np.max(true)
+    res = np.abs(res)
+    res /= np.max(res)
+    plt.imshow(true - res)
     plt.title('|True - CG-SENSE|')
     plt.axis('off')
     divider = make_axes_locatable(plt.gca())

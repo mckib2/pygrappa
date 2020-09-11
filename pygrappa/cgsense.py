@@ -33,8 +33,12 @@ def cgsense(kspace, sens, coil_axis=-1):
     kspace : array_like
         Undersampled kspace data with exactly 0 in place of missing
         samples.
-    sens : array_like
-        Coil sensitivity maps.
+    sens : array_like or callable.
+        Coil sensitivity maps or a function that generates them with
+        the following function signature:
+
+            sens(kspace: np.ndarray, coil_axis: int) -> np.ndarray
+
     coil_axis : int, optional
         Dimension of kspace and sens holding the coil data.
 
@@ -62,9 +66,14 @@ def cgsense(kspace, sens, coil_axis=-1):
            International Society for Magnetic Resonance in Medicine
            46.4 (2001): 638-651.
     '''
-
     # Make sure coils are in the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
+
+    # Generate the coil sensitivities
+    if callable(sens):
+        imspace = _ifft(kspace)
+        sens = sens(imspace, coil_axis=coil_axis)
+
     sens = np.moveaxis(sens, coil_axis, -1)
     tipe = kspace.dtype
 
@@ -103,12 +112,14 @@ def cgsense(kspace, sens, coil_axis=-1):
     # Make LinearOperator, A^H b, and use CG to solve
     def E(x0):
         return _AH(_A(x0))
-    AHA = LinearOperator((np.prod(dims), np.prod(dims)), matvec=E, rmatvec=E)
+    AHA = LinearOperator(
+        (np.prod(dims), np.prod(dims)),
+        matvec=E, rmatvec=E)
     b = _AH(np.reshape(kspace, (-1,)))
 
     t0 = time()
     x, _info = cg(AHA, b, atol=0)
-    logging.info('CG-SENSE took %g sec' % (time() - t0))
+    logging.info('CG-SENSE took %g sec', (time() - t0))
 
     return np.reshape(x, dims).astype(tipe)
 
