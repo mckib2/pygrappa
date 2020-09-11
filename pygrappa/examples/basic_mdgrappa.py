@@ -12,7 +12,7 @@ from utils import gaussian_csm
 if __name__ == '__main__':
 
     # Generate fake sensitivity maps: mps
-    L, M, N = 128, 128, 32
+    L, M, N = 128, 128, 16
     ncoils = 4
     mps = gaussian_csm(L, M, ncoils)[..., None, :]
 
@@ -23,24 +23,26 @@ if __name__ == '__main__':
     kspace = np.fft.fftshift(np.fft.fftn(
         np.fft.ifftshift(imspace, axes=ax), axes=ax), axes=ax)
 
-    # crop 20x20xN window from the center of k-space for calibration
-    # (use all z-axis)
-    pd = 10
-    ctrs = [int(s/2) for s in kspace.shape[:2]]
-    calib = kspace[tuple([slice(ctr-pd, ctr+pd) for ctr in ctrs] + [slice(None), slice(None)])].copy()
-    # calib = kspace[ctr-pd:ctr+pd, ctr-pd:ctr+pd, :].copy()
-
     # calibrate a kernel
     kernel_size = (4, 5, 5)
 
     # undersample by a factor of 2 in both kx and ky
-    kspace[::2, 1::2, ...] = 0
-    kspace[1::2, ::2, ...] = 0
+    mask = np.ones(kspace.shape, dtype=bool)
+    mask[::2, 1::2, ...] = False
+    mask[1::2, ::2, ...] = False
+
+    # Include calib in data: 20x20xN window at center of k-space for
+    # calibration (use all z-axis)
+    ctrs = [int(s/2) for s in kspace.shape[:2]]
+    pd = 10
+    mask[tuple([slice(ctr-pd, ctr+pd) for ctr in ctrs] +
+               [slice(None), slice(None)])] = True
+    kspace *= mask
 
     # Do the recon
     t0 = time()
-    res = mdgrappa(kspace, calib, kernel_size)
-    print('Took %g sec' % (time() - t0))
+    res = mdgrappa(kspace, kernel_size=kernel_size)
+    print(f'Took {time() - t0} sec')
 
     # Take a look at a single slice (z=-.25)
     res = np.abs(np.fft.fftshift(np.fft.ifftn(
