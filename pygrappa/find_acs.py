@@ -46,7 +46,7 @@ def find_acs(kspace, coil_axis=-1):
            np.all(mask[tuple([slice(l-1, r+1) for
                               l, r in slices])])):  # hole check
         # expand isotropically until we can't no more
-        slices = [[l-1, r+1] for l, r in slices]
+        slices = [[l0-1, r0+1] for l0, r0 in slices]
     logging.info('Took %g sec to find hyper-cube', (time() - t0))
 
     # FOR DEBUG:
@@ -72,6 +72,6 @@ def find_acs(kspace, coil_axis=-1):
     logging.info('Took %g sec to find hyper-rect', (time() - t0))
 
     return np.moveaxis(
-        kspace[tuple([slice(l, r) for l, r in slices] +
+        kspace[tuple([slice(l0, r0) for l0, r0 in slices] +
                      [slice(None)])].copy(),  # extra dim for coils
         -1, coil_axis)
