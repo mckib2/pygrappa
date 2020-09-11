@@ -19,8 +19,8 @@ if __name__ == '__main__':
         im, axes=(0, 1)), axes=(0, 1)), axes=(0, 1))
 
     # Undersample
-    # kspace[::2, 1::2, :] = 0
-    # kspace[1::2, ::2, :] = 0
+    kspace[::2, 1::2, :] = 0
+    kspace[1::2, ::2, :] = 0
 
     # SOS of the aliased image
     aliased = np.fft.ifftshift(np.fft.ifft2(np.fft.fftshift(
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     aliased = np.sqrt(np.sum(np.abs(aliased)**2, axis=-1))
 
     # Reconstruct from undersampled data and coil sensitivities
-    res = cgsense(kspace, coil_axis=-1)
+    res = cgsense(kspace, sens, coil_axis=-1)
 
     # Take a look
     nx, ny = 1, 3
