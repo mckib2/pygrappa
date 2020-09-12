@@ -12,7 +12,7 @@ from utils import gaussian_csm
 if __name__ == '__main__':
 
     # Generate fake sensitivity maps: mps
-    L, M, N = 128, 128, 16
+    L, M, N = 128, 128, 2
     ncoils = 4
     mps = gaussian_csm(L, M, ncoils)[..., None, :]
 

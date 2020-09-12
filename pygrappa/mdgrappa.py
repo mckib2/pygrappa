@@ -1,6 +1,7 @@
 '''Python implementation of multidimensional GRAPPA.'''
 
 from collections import defaultdict
+from time import time
 
 import numpy as np
 from skimage.util import view_as_windows
@@ -14,7 +15,6 @@ def mdgrappa(
         kernel_size=None,
         coil_axis=-1,
         lamda=0.01,
-        nnz=None,
         weights=None,
         ret_weights=False):
     '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
@@ -37,10 +37,6 @@ def mdgrappa(
         Dimension holding coil images.
     lamda : float, optional
         Tikhonov regularization constant for kernel calibration.
-    nnz : int or None, optional
-        Number of nonzero elements in a multidimensional patch
-        required to train/apply a kernel.
-        Default: `sqrt(prod(kernel_size))`.
     weights : dict, optional
         Maps sampling patterns to trained kernels.
     ret_weights : bool, optional
@@ -79,10 +75,6 @@ def mdgrappa(
     assert len(kernel_size) == kspace.ndim-1, (
         'kernel_size must have %d entries' % (kspace.ndim-1))
 
-    # Only consider sampling patterns that have at least nnz samples
-    if nnz is None:
-        nnz = int(np.sqrt(np.prod(kernel_size)))
-
     # User can supply calibration region separately or we can find it
     if calib is not None:
         calib = np.moveaxis(calib, coil_axis, -1)
@@ -99,13 +91,18 @@ def mdgrappa(
         calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
     mask = np.abs(kspace[..., 0]) > 0
 
-    # Find all the unique sampling patterns
-    # TODO: this takes quite a bit of time
+    t0 = time()
+    padmask = ~mask
+    for ii in range(mask.ndim):
+        padmask[tuple([slice(0, pd) if ii == jj else slice(None) for jj, pd in enumerate(pads)])] = False
+        padmask[tuple([slice(-pd, None) if ii == jj else slice(None) for jj, pd in enumerate(pads)])] = False
     P = defaultdict(list)
-    for idx in np.argwhere(~mask[tuple([slice(pd, -pd) for pd in pads])]):
-        p0 = mask[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
-        if np.sum(p0) >= nnz:  # only counts if it has enough samples
-            P[tuple(p0.astype(int))].append(idx)
+    idxs = np.moveaxis(np.indices(mask.shape), 0, -1)[padmask]
+    for ii, idx in enumerate(idxs):
+        p0 = mask[tuple([slice(ii-pd, ii+pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
+        P[p0.tostring()].append(tuple(idx))
+    P = {k: np.array(v).T for k, v in P.items()}
+    print(f'Took {time() - t0} to run new')
 
     # We need all overlapping patches from calibration data
     A = view_as_windows(
@@ -113,47 +110,56 @@ def mdgrappa(
         tuple(kernel_size) + (nc,)).reshape(
             (-1, np.prod(kernel_size), nc,))
 
+    from pygrappa.train_kernels import train_kernels
+    Ws0 = train_kernels(kspace, nc, A, P, np.array(kernel_size, dtype=np.uintp), np.array(pads, dtype=np.uintp), lamda)
+
     # Train and apply kernels
-    if ret_weights:
-        weights2return = defaultdict(list)
+    ksize = np.prod(kernel_size)*nc
+    Ws = np.empty((len(P), ksize, nc), dtype=kspace.dtype)  # workspace for weights
+    S = np.empty(
+        (np.max((
+            np.max([v.shape[1] for v in P.values()]),
+            A.shape[0])),
+         ksize), dtype=kspace.dtype)  # workspace for sources
+    T = np.empty((A.shape[0], nc), dtype=kspace.dtype)
+    ShS = np.empty((ksize, ksize), dtype=kspace.dtype)
+    ShT = np.empty((ksize, nc), dtype=kspace.dtype)
+    recon = np.zeros((np.prod(kspace.shape[:-1]), nc), dtype=kspace.dtype)
     ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
-    recon = np.zeros(kspace.shape, dtype=kspace.dtype)
-    for key, holes in P.items():
+    for ii, (key, holes) in enumerate(P.items()):
+        p0 = np.fromstring(key, dtype=bool)
+        np0 = np.sum(p0)*nc
 
         # Used provided weights if we can, else compute them
         if weights is not None:
-            W = weights[key]
-            p0 = np.array(key, dtype=bool)
+            Ws[ii, ...] = weights[key]
         else:
-            # Get sampling pattern from key
-            p0 = np.array(key, dtype=bool)
-
             # Train kernels
-            S = A[:, p0, :].reshape(A.shape[0], -1)
+            S[:A.shape[0], :np0] = A[:, p0, :].reshape(A.shape[0], -1)
             T = A[:, ctr, :]
-            ShS = S.conj().T @ S
-            ShT = S.conj().T @ T
-            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
-            W = np.linalg.solve(
-                ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+            ShS[:np0, :np0] = S[:A.shape[0], :np0].conj().T @ S[:A.shape[0], :np0]
+            ShT[:np0, :] = S[:A.shape[0], :np0].conj().T @ T
+            lamda0 = lamda*np.linalg.norm(ShS[:np0, :np0])/np0
+            Ws[ii, :np0, :] = np.linalg.solve(
+                ShS[:np0, :np0] + lamda0*np.eye(np0), ShT[:np0, :])
 
-        if ret_weights:
-            weights2return[key] = W
+        # Collect all the sources
+        for jj, idx in enumerate(holes.T):
+            S[jj, :np0] = kspace[tuple([slice(kk-pd, kk+pd+adj) for kk, pd, adj in zip(idx, pads, adjs)])].reshape((-1, nc))[p0, :].flatten()
 
-        # Apply kernel to fill each hole
-        for idx in holes:
-            S = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] +
-                             [slice(None)])].reshape((-1, nc))[p0, :].flatten()
-            recon[tuple([ii + pd for ii, pd in zip(idx, pads)] + [slice(None)])] = S @ W
+        # Apply kernel to all sources to generate all targets at once
+        recon[np.ravel_multi_index(holes, mask.shape)] = np.einsum(
+            'fi,ij->fj', S[:holes.shape[1], :np0], Ws0[ii, :np0, :])
 
     # Add back in the measured voxels, put axis back where it goes
+    recon = np.reshape(recon, kspace.shape)
     recon[mask] += kspace[mask]
     recon = np.moveaxis(
         recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])],
         -1, coil_axis)
 
     if ret_weights:
-        return(recon, weights2return)
+        return(recon, {k: Ws[ii, :np.sim(k)*nc, :] for k in P})
     return recon
 
 

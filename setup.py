@@ -19,6 +19,7 @@ def pre_build_hook(build_ext, ext):
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from numpy import get_include
     config = Configuration('pygrappa', parent_package, top_path)
     config.version = VERSION
 
@@ -28,6 +29,17 @@ def configuration(parent_package='', top_path=None):
     if find_executable('cython') is not None:
         print('Running cython...')
         subprocess.call(['cython -3 --cplus src/*.pyx'], shell=True)
+
+    # GRAPPA helpers
+    config.add_extension(
+        'train_kernels',
+        sources=[
+            'src/train_kernels.cpp',
+        ],
+        include_dirs=['src/', get_include()],
+        language='c++',
+        define_macros=DEFINE_MACROS,
+    )
 
     # GRAPPA with some C components
     config.add_extension(
