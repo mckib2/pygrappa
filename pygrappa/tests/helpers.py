@@ -186,6 +186,13 @@ def make_base_test_case_2d(
                                                 undersampling_fun=undersampling_fun,
                                                 tipe=tipe,
                                         ):
+                                            # print(funcname_template.format(
+                                            #     phantom_fun=phantom_fun.__name__,
+                                            #     M=M, N=N, nc=nc,
+                                            #     calib_fun=calib_fun.__name__,
+                                            #     cM=cM, cN=cN,
+                                            #     undersampling_fun=undersampling_fun.__name__,
+                                            #     type=str(tipe[0])))
                                             imspace, _coil_ims, kspace, mps = phantom_fun(
                                                 M=M, N=N, nc=nc, dtype=tipe[1],
                                                 **phantom_fun_args)
@@ -218,7 +225,7 @@ def make_base_test_case_2d(
                                             recon /= np.max(recon.flatten())
 
                                             ssim0 = ssim(imspace, recon)
-                                            print(ssim0)
+                                            # print(ssim0)
                                             self.assertTrue(ssim0 > ssim_thresh, 'ssim=%g' % ssim0)
 
                                         # Add test function to TestClass

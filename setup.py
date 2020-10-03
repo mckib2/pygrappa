@@ -7,7 +7,7 @@ from numpy.distutils.core import setup
 
 from setup_helpers import get_build_ext_override
 
-VERSION = '0.23.0'
+VERSION = '0.24.0'
 
 
 def pre_build_hook(build_ext, ext):
@@ -19,6 +19,7 @@ def pre_build_hook(build_ext, ext):
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
+    from numpy import get_include
     config = Configuration('pygrappa', parent_package, top_path)
     config.version = VERSION
 
@@ -28,6 +29,17 @@ def configuration(parent_package='', top_path=None):
     if find_executable('cython') is not None:
         print('Running cython...')
         subprocess.call(['cython -3 --cplus src/*.pyx'], shell=True)
+
+    # GRAPPA helpers
+    config.add_extension(
+        'train_kernels',
+        sources=[
+            'src/train_kernels.cpp',
+        ],
+        include_dirs=['src/', get_include()],
+        language='c++',
+        define_macros=DEFINE_MACROS,
+    )
 
     # GRAPPA with some C components
     config.add_extension(
@@ -77,12 +89,12 @@ setup(
     description='GeneRalized Autocalibrating Partially Parallel Acquisitions.',
     long_description=open('README.rst', encoding='utf-8').read(),
     packages=find_packages(),
-    keywords=(
+    keywords=[
         'mri grappa parallel-imaging image-reconstruction python '
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
         'igrappa hp-grappa segmented-grappa grappa-operator '
         'through-time-grappa pars grog nonlinear-grappa g-factor'
-        'sense', 'cg-sense'),
+        'sense', 'cg-sense'],
     install_requires=open('requirements.txt').read().split(),
     setup_requires=['numpy', 'scipy'],
     python_requires='>=3.5',

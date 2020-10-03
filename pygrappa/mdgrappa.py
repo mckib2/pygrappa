@@ -1,10 +1,13 @@
 '''Python implementation of multidimensional GRAPPA.'''
 
 from collections import defaultdict
+from time import time
+import logging
 
 import numpy as np
 from skimage.util import view_as_windows
 
+from pygrappa.train_kernels import train_kernels
 from .find_acs import find_acs
 
 
@@ -14,7 +17,6 @@ def mdgrappa(
         kernel_size=None,
         coil_axis=-1,
         lamda=0.01,
-        nnz=None,
         weights=None,
         ret_weights=False):
     '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
@@ -37,10 +39,6 @@ def mdgrappa(
         Dimension holding coil images.
     lamda : float, optional
         Tikhonov regularization constant for kernel calibration.
-    nnz : int or None, optional
-        Number of nonzero elements in a multidimensional patch
-        required to train/apply a kernel.
-        Default: `sqrt(prod(kernel_size))`.
     weights : dict, optional
         Maps sampling patterns to trained kernels.
     ret_weights : bool, optional
@@ -79,10 +77,6 @@ def mdgrappa(
     assert len(kernel_size) == kspace.ndim-1, (
         'kernel_size must have %d entries' % (kspace.ndim-1))
 
-    # Only consider sampling patterns that have at least nnz samples
-    if nnz is None:
-        nnz = int(np.sqrt(np.prod(kernel_size)))
-
     # User can supply calibration region separately or we can find it
     if calib is not None:
         calib = np.moveaxis(calib, coil_axis, -1)
@@ -99,13 +93,18 @@ def mdgrappa(
         calib, [(pd, pd) for pd in pads] + [(0, 0)], mode='constant')
     mask = np.abs(kspace[..., 0]) > 0
 
-    # Find all the unique sampling patterns
-    # TODO: this takes quite a bit of time
+    t0 = time()
+    padmask = ~mask
+    for ii in range(mask.ndim):
+        padmask[tuple([slice(0, pd) if ii == jj else slice(None) for jj, pd in enumerate(pads)])] = False
+        padmask[tuple([slice(-pd, None) if ii == jj else slice(None) for jj, pd in enumerate(pads)])] = False
     P = defaultdict(list)
-    for idx in np.argwhere(~mask[tuple([slice(pd, -pd) for pd in pads])]):
-        p0 = mask[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
-        if np.sum(p0) >= nnz:  # only counts if it has enough samples
-            P[tuple(p0.astype(int))].append(idx)
+    idxs = np.moveaxis(np.indices(mask.shape), 0, -1)[padmask]
+    for ii, idx in enumerate(idxs):
+        p0 = mask[tuple([slice(ii-pd, ii+pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
+        P[p0.tobytes()].append(tuple(idx))
+    P = {k: np.array(v).T for k, v in P.items()}
+    logging.info('Took %g seconds to find geometries and holes', (time() - t0))
 
     # We need all overlapping patches from calibration data
     A = view_as_windows(
@@ -113,47 +112,57 @@ def mdgrappa(
         tuple(kernel_size) + (nc,)).reshape(
             (-1, np.prod(kernel_size), nc,))
 
-    # Train and apply kernels
-    if ret_weights:
-        weights2return = defaultdict(list)
-    ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
-    recon = np.zeros(kspace.shape, dtype=kspace.dtype)
-    for key, holes in P.items():
+    # Set everything up to train and apply weights
+    ksize = np.prod(kernel_size)*nc
+    S = np.empty((np.max([P[k].shape[1] for k in P] if P else [0]), ksize), dtype=kspace.dtype)
+    recon = np.zeros((np.prod(kspace.shape[:-1]), nc), dtype=kspace.dtype)
 
-        # Used provided weights if we can, else compute them
-        if weights is not None:
-            W = weights[key]
-            p0 = np.array(key, dtype=bool)
-        else:
-            # Get sampling pattern from key
-            p0 = np.array(key, dtype=bool)
+    def _apply_weights(holes, p0, np0, Ws0):
+        # Collect all the sources
+        for jj, _idx in enumerate(holes.T):
+            S[jj, :np0] = kspace[tuple([slice(kk-pd, kk+pd+adj)
+                                        for kk, pd, adj in zip(_idx, pads, adjs)])].reshape((-1, nc))[p0, :].flatten()
+        # Apply kernel to all sources to generate all targets at once
+        recon[np.ravel_multi_index(holes, mask.shape)] = np.einsum(
+            'fi,ij->fj', S[:holes.shape[1], :np0], Ws0)
 
-            # Train kernels
-            S = A[:, p0, :].reshape(A.shape[0], -1)
-            T = A[:, ctr, :]
-            ShS = S.conj().T @ S
-            ShT = S.conj().T @ T
-            lamda0 = lamda*np.linalg.norm(ShS)/ShS.shape[0]
-            W = np.linalg.solve(
-                ShS + lamda0*np.eye(ShS.shape[0]), ShT)
+    if not weights:
+        # train weights
+        t0 = time()
+        Ws = train_kernels(kspace.astype(np.complex128), nc, A.astype(np.complex128), P,
+                           np.array(kernel_size, dtype=np.uintp),
+                           np.array(pads, dtype=np.uintp), lamda)
+        logging.info('Took %g seconds to train weights', (time() - t0))
 
-        if ret_weights:
-            weights2return[key] = W
-
-        # Apply kernel to fill each hole
-        for idx in holes:
-            S = kspace[tuple([slice(ii, ii+2*pd+adj) for ii, pd, adj in zip(idx, pads, adjs)] +
-                             [slice(None)])].reshape((-1, nc))[p0, :].flatten()
-            recon[tuple([ii + pd for ii, pd in zip(idx, pads)] + [slice(None)])] = S @ W
+        # Fill holes for each geometry
+        t0 = time()
+        for ii, (key, holes) in enumerate(P.items()):
+            p0 = np.frombuffer(key, dtype=bool)
+            np0 = np.sum(p0)*nc
+            _apply_weights(holes, p0, np0, Ws[ii, :np0, :])
+        logging.info('Took %g seconds to apply weights', (time() - t0))
+    else:
+        # Unpack weights and fill holes for each geometry
+        t0 = time()
+        for ii, (key, holes) in enumerate(P.items()):
+            p0 = np.frombuffer(key, dtype=bool)
+            np0 = weights[key].shape[0]
+            _apply_weights(holes, p0, np0, weights[key])
+        logging.info('Took %g seconds to unpack and apply weights', (time() - t0))
 
     # Add back in the measured voxels, put axis back where it goes
+    recon = np.reshape(recon, kspace.shape)
     recon[mask] += kspace[mask]
     recon = np.moveaxis(
         recon[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])],
         -1, coil_axis)
 
     if ret_weights:
-        return(recon, weights2return)
+        if weights:
+            return(recon, weights)
+        return(recon,
+               {k: Ws[ii, :np.sum(np.frombuffer(k, dtype=bool))*nc, :]
+                for ii, k in enumerate(P)})
     return recon
 
 

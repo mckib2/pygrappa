@@ -29,7 +29,7 @@ from time import time
 from tempfile import NamedTemporaryFile as NTF
 
 import numpy as np
-from skimage.util import pad, view_as_windows
+from skimage.util import view_as_windows
 
 
 def grappa(
@@ -111,9 +111,9 @@ def grappa(
     adjy = np.mod(ky, 2)
 
     # Pad kspace data
-    kspace = pad(  # pylint: disable=E1102
+    kspace = np.pad(  # pylint: disable=E1102
         kspace, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
-    calib = pad(  # pylint: disable=E1102
+    calib = np.pad(  # pylint: disable=E1102
         calib, ((kx2, kx2), (ky2, ky2), (0, 0)), mode='constant')
 
     # Notice that all coils have same sampling pattern, so choose

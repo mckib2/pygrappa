@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from pygrappa import cgrappa
+from pygrappa import mdgrappa
 
 
 def hpgrappa(
@@ -44,7 +44,6 @@ def hpgrappa(
         'kernel_size': kernel_size,
         'coil_axis': -1,
         'lamda': lamda,
-        'silent': silent
     }
 
     # Put the coil dim in the back
@@ -79,7 +78,7 @@ def hpgrappa(
     calib_fil = calib*F2[kx2-cx2:kx2+cx2, ky2-cy2:ky2+cy2, None]
 
     # Do regular old GRAPPA on filtered data
-    res = cgrappa(kspace_fil, calib_fil, **grappa_args)
+    res = mdgrappa(kspace_fil, calib_fil, **grappa_args)
 
     # Inverse filter
     res = res/F2[..., None]
