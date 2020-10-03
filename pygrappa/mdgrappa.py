@@ -120,11 +120,7 @@ def mdgrappa(
 
     # Set everything up to train and apply weights
     ksize = np.prod(kernel_size)*nc
-    S = np.empty(
-        (np.max((
-            np.max([v.shape[1] for v in P.values()]),  # requires nonempty P
-            A.shape[0])),
-         ksize), dtype=kspace.dtype)  # workspace for sources
+    S = np.empty((np.max([P[k].shape[1] for k in P]), ksize), dtype=kspace.dtype)
     recon = np.zeros((np.prod(kspace.shape[:-1]), nc), dtype=kspace.dtype)
 
     def _apply_weights(holes, p0, np0, Ws0):

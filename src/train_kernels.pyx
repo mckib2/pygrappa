@@ -18,13 +18,10 @@ def train_kernels(
         const double lamda):
 
     # Train and apply kernels
-    # cdef Py_ssize_t ksize = nc
-    # cdef Py_ssize_t ii
-    # for ii in range(kernel_size.shape[0]):
-    #     ksize *= kernel_size[ii]
-
-    # Find the max size that sources workspace can be
-    cdef Py_ssize_t ksize = np.max([v.shape[1] for v in P.values()])
+    cdef Py_ssize_t ksize = nc
+    cdef Py_ssize_t ii
+    for ii in range(kernel_size.shape[0]):
+        ksize *= kernel_size[ii]
     cdef complex[:, :, ::1] Ws = np.empty((len(P), ksize, nc), dtype=kspace.dtype)
     cdef complex[:, ::1] S = np.empty((A.shape[0], ksize), dtype=kspace.dtype, order='C')
     cdef Py_ssize_t ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
