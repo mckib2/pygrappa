@@ -106,12 +106,6 @@ def mdgrappa(
     P = {k: np.array(v).T for k, v in P.items()}
     logging.info('Took %g seconds to find geometries and holes', (time() - t0))
 
-    # If there are no patterns, then we're done!
-    if not P:
-        return np.moveaxis(
-            kspace[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])],
-            -1, coil_axis)
-
     # We need all overlapping patches from calibration data
     A = view_as_windows(
         calib,
@@ -120,7 +114,7 @@ def mdgrappa(
 
     # Set everything up to train and apply weights
     ksize = np.prod(kernel_size)*nc
-    S = np.empty((np.max([P[k].shape[1] for k in P]), ksize), dtype=kspace.dtype)
+    S = np.empty((np.max([P[k].shape[1] for k in P] if P else [0]), ksize), dtype=kspace.dtype)
     recon = np.zeros((np.prod(kspace.shape[:-1]), nc), dtype=kspace.dtype)
 
     def _apply_weights(holes, p0, np0, Ws0):
