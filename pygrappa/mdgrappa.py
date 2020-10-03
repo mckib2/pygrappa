@@ -102,9 +102,15 @@ def mdgrappa(
     idxs = np.moveaxis(np.indices(mask.shape), 0, -1)[padmask]
     for ii, idx in enumerate(idxs):
         p0 = mask[tuple([slice(ii-pd, ii+pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
-        P[p0.tostring()].append(tuple(idx))
+        P[p0.tobytes()].append(tuple(idx))
     P = {k: np.array(v).T for k, v in P.items()}
     logging.info('Took %g seconds to find geometries and holes', (time() - t0))
+
+    # If there are no patterns, then we're done!
+    if not P:
+        return np.moveaxis(
+            kspace[tuple([slice(pd, -pd) for pd in pads] + [slice(None)])],
+            -1, coil_axis)
 
     # We need all overlapping patches from calibration data
     A = view_as_windows(
@@ -116,7 +122,7 @@ def mdgrappa(
     ksize = np.prod(kernel_size)*nc
     S = np.empty(
         (np.max((
-            np.max([v.shape[1] for v in P.values()]),
+            np.max([v.shape[1] for v in P.values()]),  # requires nonempty P
             A.shape[0])),
          ksize), dtype=kspace.dtype)  # workspace for sources
     recon = np.zeros((np.prod(kspace.shape[:-1]), nc), dtype=kspace.dtype)
@@ -133,7 +139,7 @@ def mdgrappa(
     if not weights:
         # train weights
         t0 = time()
-        Ws = train_kernels(kspace, nc, A, P,
+        Ws = train_kernels(kspace.astype(np.complex128), nc, A.astype(np.complex128), P,
                            np.array(kernel_size, dtype=np.uintp),
                            np.array(pads, dtype=np.uintp), lamda)
         logging.info('Took %g seconds to train weights', (time() - t0))
@@ -141,7 +147,7 @@ def mdgrappa(
         # Fill holes for each geometry
         t0 = time()
         for ii, (key, holes) in enumerate(P.items()):
-            p0 = np.fromstring(key, dtype=bool)
+            p0 = np.frombuffer(key, dtype=bool)
             np0 = np.sum(p0)*nc
             _apply_weights(holes, p0, np0, Ws[ii, :np0, :])
         logging.info('Took %g seconds to apply weights', (time() - t0))
@@ -149,7 +155,7 @@ def mdgrappa(
         # Unpack weights and fill holes for each geometry
         t0 = time()
         for ii, (key, holes) in enumerate(P.items()):
-            p0 = np.fromstring(key, dtype=bool)
+            p0 = np.frombuffer(key, dtype=bool)
             np0 = weights[key].shape[0]
             _apply_weights(holes, p0, np0, weights[key])
         logging.info('Took %g seconds to unpack and apply weights', (time() - t0))
@@ -165,7 +171,7 @@ def mdgrappa(
         if weights:
             return(recon, weights)
         return(recon,
-               {k: Ws[ii, :np.sum(np.fromstring(k, dtype=bool))*nc, :]
+               {k: Ws[ii, :np.sum(np.frombuffer(k, dtype=bool))*nc, :]
                 for ii, k in enumerate(P)})
     return recon
 

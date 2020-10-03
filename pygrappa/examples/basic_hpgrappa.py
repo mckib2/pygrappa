@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D  # pylint: disable=W0611 # NOQA
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
-from pygrappa import hpgrappa, cgrappa
+from pygrappa import hpgrappa, mdgrappa
 from utils import gaussian_csm
 
 if __name__ == '__main__':
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # Run hp-GRAPPA and GRAPPA to compare results
     res_hpgrappa, F2 = hpgrappa(
         kspace, calib, fov=fov, ret_filter=True)
-    res_grappa = cgrappa(kspace, calib)
+    res_grappa = mdgrappa(kspace, calib)
 
     # Into image space
     imspace_hpgrappa = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(
