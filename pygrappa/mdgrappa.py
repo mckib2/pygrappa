@@ -2,10 +2,12 @@
 
 from collections import defaultdict
 from time import time
+import logging
 
 import numpy as np
 from skimage.util import view_as_windows
 
+from pygrappa.train_kernels import train_kernels
 from .find_acs import find_acs
 
 
@@ -102,7 +104,7 @@ def mdgrappa(
         p0 = mask[tuple([slice(ii-pd, ii+pd+adj) for ii, pd, adj in zip(idx, pads, adjs)])].flatten()
         P[p0.tostring()].append(tuple(idx))
     P = {k: np.array(v).T for k, v in P.items()}
-    print(f'Took {time() - t0} to run new')
+    logging.info('Took %g seconds to find geometries and holes', (time() - t0))
 
     # We need all overlapping patches from calibration data
     A = view_as_windows(
@@ -110,46 +112,47 @@ def mdgrappa(
         tuple(kernel_size) + (nc,)).reshape(
             (-1, np.prod(kernel_size), nc,))
 
-    from pygrappa.train_kernels import train_kernels
-    Ws0 = train_kernels(kspace, nc, A, P, np.array(kernel_size, dtype=np.uintp), np.array(pads, dtype=np.uintp), lamda)
-
-    # Train and apply kernels
+    # Set everything up to train and apply weights
     ksize = np.prod(kernel_size)*nc
-    Ws = np.empty((len(P), ksize, nc), dtype=kspace.dtype)  # workspace for weights
     S = np.empty(
         (np.max((
             np.max([v.shape[1] for v in P.values()]),
             A.shape[0])),
          ksize), dtype=kspace.dtype)  # workspace for sources
-    T = np.empty((A.shape[0], nc), dtype=kspace.dtype)
-    ShS = np.empty((ksize, ksize), dtype=kspace.dtype)
-    ShT = np.empty((ksize, nc), dtype=kspace.dtype)
     recon = np.zeros((np.prod(kspace.shape[:-1]), nc), dtype=kspace.dtype)
-    ctr = np.ravel_multi_index([pd for pd in pads], dims=kernel_size)
-    for ii, (key, holes) in enumerate(P.items()):
-        p0 = np.fromstring(key, dtype=bool)
-        np0 = np.sum(p0)*nc
 
-        # Used provided weights if we can, else compute them
-        if weights is not None:
-            Ws[ii, ...] = weights[key]
-        else:
-            # Train kernels
-            S[:A.shape[0], :np0] = A[:, p0, :].reshape(A.shape[0], -1)
-            T = A[:, ctr, :]
-            ShS[:np0, :np0] = S[:A.shape[0], :np0].conj().T @ S[:A.shape[0], :np0]
-            ShT[:np0, :] = S[:A.shape[0], :np0].conj().T @ T
-            lamda0 = lamda*np.linalg.norm(ShS[:np0, :np0])/np0
-            Ws[ii, :np0, :] = np.linalg.solve(
-                ShS[:np0, :np0] + lamda0*np.eye(np0), ShT[:np0, :])
-
+    def _apply_weights(holes, p0, np0, Ws0):
         # Collect all the sources
-        for jj, idx in enumerate(holes.T):
-            S[jj, :np0] = kspace[tuple([slice(kk-pd, kk+pd+adj) for kk, pd, adj in zip(idx, pads, adjs)])].reshape((-1, nc))[p0, :].flatten()
-
+        for jj, _idx in enumerate(holes.T):
+            S[jj, :np0] = kspace[tuple([slice(kk-pd, kk+pd+adj)
+                                        for kk, pd, adj in zip(_idx, pads, adjs)])].reshape((-1, nc))[p0, :].flatten()
         # Apply kernel to all sources to generate all targets at once
         recon[np.ravel_multi_index(holes, mask.shape)] = np.einsum(
-            'fi,ij->fj', S[:holes.shape[1], :np0], Ws0[ii, :np0, :])
+            'fi,ij->fj', S[:holes.shape[1], :np0], Ws0)
+
+    if not weights:
+        # train weights
+        t0 = time()
+        Ws = train_kernels(kspace, nc, A, P,
+                           np.array(kernel_size, dtype=np.uintp),
+                           np.array(pads, dtype=np.uintp), lamda)
+        logging.info('Took %g seconds to train weights', (time() - t0))
+
+        # Fill holes for each geometry
+        t0 = time()
+        for ii, (key, holes) in enumerate(P.items()):
+            p0 = np.fromstring(key, dtype=bool)
+            np0 = np.sum(p0)*nc
+            _apply_weights(holes, p0, np0, Ws[ii, :np0, :])
+        logging.info('Took %g seconds to apply weights', (time() - t0))
+    else:
+        # Unpack weights and fill holes for each geometry
+        t0 = time()
+        for ii, (key, holes) in enumerate(P.items()):
+            p0 = np.fromstring(key, dtype=bool)
+            np0 = weights[key].shape[0]
+            _apply_weights(holes, p0, np0, weights[key])
+        logging.info('Took %g seconds to unpack and apply weights', (time() - t0))
 
     # Add back in the measured voxels, put axis back where it goes
     recon = np.reshape(recon, kspace.shape)
@@ -159,7 +162,11 @@ def mdgrappa(
         -1, coil_axis)
 
     if ret_weights:
-        return(recon, {k: Ws[ii, :np.sim(k)*nc, :] for k in P})
+        if weights:
+            return(recon, weights)
+        return(recon,
+               {k: Ws[ii, :np.sum(np.fromstring(k, dtype=bool))*nc, :]
+                for ii, k in enumerate(P)})
     return recon
 
 

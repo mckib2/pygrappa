@@ -7,7 +7,7 @@ from numpy.distutils.core import setup
 
 from setup_helpers import get_build_ext_override
 
-VERSION = '0.23.0'
+VERSION = '0.24.0'
 
 
 def pre_build_hook(build_ext, ext):
@@ -89,12 +89,12 @@ setup(
     description='GeneRalized Autocalibrating Partially Parallel Acquisitions.',
     long_description=open('README.rst', encoding='utf-8').read(),
     packages=find_packages(),
-    keywords=(
+    keywords=[
         'mri grappa parallel-imaging image-reconstruction python '
         'tgrappa slice-grappa sms split-slice-grappa vc-grappa '
         'igrappa hp-grappa segmented-grappa grappa-operator '
         'through-time-grappa pars grog nonlinear-grappa g-factor'
-        'sense', 'cg-sense'),
+        'sense', 'cg-sense'],
     install_requires=open('requirements.txt').read().split(),
     setup_requires=['numpy', 'scipy'],
     python_requires='>=3.5',
