@@ -2,8 +2,11 @@
 
 from time import time
 import logging
+import pathlib
 
 import numpy as np
+
+logger = logging.getLogger(name=pathlib.Path(__file__).name)
 
 
 def find_acs(kspace, coil_axis=-1):
@@ -47,7 +50,7 @@ def find_acs(kspace, coil_axis=-1):
                               l, r in slices])])):  # hole check
         # expand isotropically until we can't no more
         slices = [[l0-1, r0+1] for l0, r0 in slices]
-    logging.info('Took %g sec to find hyper-cube', (time() - t0))
+    logger.info('Took %g sec to find hyper-cube', (time() - t0))
 
     # FOR DEBUG:
     # region = np.zeros(mask.shape, dtype=bool)
@@ -69,7 +72,7 @@ def find_acs(kspace, coil_axis=-1):
                np.all(mask[tuple([slice(l, r+(dim == k)) for
                                   k, (l, r) in enumerate(slices)])])):
             slices[dim][1] += 1
-    logging.info('Took %g sec to find hyper-rect', (time() - t0))
+    logger.info('Took %g sec to find hyper-rect', (time() - t0))
 
     return np.moveaxis(
         kspace[tuple([slice(l0, r0) for l0, r0 in slices] +
