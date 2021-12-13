@@ -1,7 +1,6 @@
 '''Reference GRAPPA implementation ported to python.'''
 
 import numpy as np
-from skimage.util import pad
 from tqdm import trange
 
 
@@ -121,7 +120,7 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
     # Zero-pad data
     px = int(kx/2)
     py = int(ky/2)
-    kspace = pad(  # pylint: disable=E1102
+    kspace = np.pad(  # pylint: disable=E1102
         kspace, ((px, px), (py, py), (0, 0)), mode='constant')
 
     dummyK = np.zeros((kx, ky, ncoils))
