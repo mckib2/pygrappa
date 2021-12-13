@@ -13,6 +13,7 @@ on: workflow_dispatch
 
 env:
   CIBW_SKIP: cp27-* pp27-* cp35-* cp36-* cp37-* # skip python2.7 builds, python3.[567]
+  CIBW_BEFORE_BUILD: python -m pip install numpy scipy
 
 jobs:
   build_wheels:
@@ -33,9 +34,6 @@ jobs:
       - name: Install cibuildwheel
         run: |
           python -m pip install cibuildwheel
-
-      - name: Install dependencies
-        run: python -m pip install numpy scipy
 
       - name: Build wheels
         run: |
