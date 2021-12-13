@@ -34,6 +34,9 @@ jobs:
         run: |
           python -m pip install cibuildwheel
 
+      - name: Install dependencies
+        run: python -m pip install numpy scipy
+
       - name: Build wheels
         run: |
           python -m cibuildwheel --output-dir wheelhouse
