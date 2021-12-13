@@ -53,6 +53,9 @@ jobs:
         with:
           python-version: '3.8'
 
+      - name: Install dependencies
+        run: python -m pip install numpy scipy
+
       - name: Build sdist
         run: python setup.py sdist
 
