@@ -5,7 +5,7 @@ from time import time
 
 import numpy as np
 cimport numpy as np
-from skimage.util import pad, view_as_windows
+from skimage.util import view_as_windows
 from libcpp.map cimport map
 from libcpp.vector cimport vector
 cimport cython
@@ -74,9 +74,9 @@ def cgrappa(
         nc_desired = nc
 
     # Pad the arrays
-    kspace = pad(
+    kspace = np.pad(
         kspace, ((ksx2, ksx2), (ksy2, ksy2), (0, 0)), mode='constant')
-    calib = pad(
+    calib = np.pad(
         calib, ((ksx2, ksx2), (ksy2, ksy2), (0, 0)), mode='constant')
 
     # Pass in arguments to C function, arrays pass pointer to start
