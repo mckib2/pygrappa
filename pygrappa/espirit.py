@@ -1,7 +1,7 @@
-'''ESPIRiT—an eigenvalue approach to autocalibrating parallel MRI.
+"""ESPIRiT—an eigenvalue approach to autocalibrating parallel MRI.
 
 Where SENSE meets GRAPPA.
-'''
+"""
 
 import logging
 from time import time
@@ -33,6 +33,11 @@ def _espirit_kernel(kspace_sh, axes, calib, kernel_size, eig_thresh_1, eig_thres
                 A.shape, time()-t0)
     k = np.reshape(v, kernel_size + (nc, v.shape[1]))
     nv = s[s >= eig_thresh_1*s[0]].size
+
+    # plt.plot(np.abs(s))
+    # plt.plot([nv, nv], [0, np.max(np.abs(s))])
+    # plt.show()
+
     k = k[..., :nv]
     logger.info('Found %d significant (thresh=%g) singular values',
                 nv, eig_thresh_1*s[0])
@@ -49,9 +54,9 @@ def _espirit_kernel(kspace_sh, axes, calib, kernel_size, eig_thresh_1, eig_thres
     k = np.reshape(k, kernel_size + (nv, nc))
     k = np.moveaxis(k, -1, -2)
     t0 = time()
-    pds = (ss//2 - kk//2 for ss, kk in zip(kspace_sh[:-1], kernel_size))  # TODO: consider odd/even cases
+    pds = (ss//2 - kk//2 for ss, kk in zip(kspace_sh[:-1], kernel_size))
     k = _fft(np.pad(np.conj(k[::-1, ::-1, ...]),
-                    tuple((pd, pd) for pd in pds) + ((0, 0), (0, 0))),
+                    tuple((pd - (not pd % 2), pd) for pd in pds) + ((0, 0), (0, 0))),
              axes=axes)/np.sqrt(np.prod(kspace_sh[:-1]))
     #KERNEL = np.zeros((sx, sy, k.shape[2], k.shape[3]), dtype=k.dtype)
     #for n in range(k.shape[3]):
@@ -72,34 +77,34 @@ def _espirit_kernel(kspace_sh, axes, calib, kernel_size, eig_thresh_1, eig_thres
     M = np.einsum('ij,xyjk->xyik', v, c*ph)[..., ::-1]
     W = np.real(d)[..., ::-1]
 
-    #import matplotlib.pyplot as plt
-    #idx = 1
-    #for ii in range(min(nc, nv)):
-    #    plt.subplot(1, nc, idx)
-    #    plt.imshow(np.abs(W[..., ii]))
-    #    idx += 1
-    #plt.title('W')
-    #plt.show()
-    #idx = 1
-    #for ii in range(nc):
-    #    for jj in range(min(nc, nv)):
-    #        plt.subplot(nc, nc, idx)
-    #        plt.imshow(np.abs(M[..., jj, ii]))
-    #        idx += 1
-    #plt.show()
-    #idx = 1
-    #for ii in range(nc):
-    #    for jj in range(min(nc, nv)):
-    #        plt.subplot(nc, nc, idx)
-    #        plt.imshow(np.angle(M[..., jj, ii]))
-    #        idx += 1
-    #plt.show()
+    # import matplotlib.pyplot as plt
+    # idx = 1
+    # for ii in range(min(nc, nv)):
+    #     plt.subplot(1, nc, idx)
+    #     plt.imshow(np.abs(W[..., ii]))
+    #     idx += 1
+    # plt.title('W')
+    # plt.show()
+    # idx = 1
+    # for ii in range(nc):
+    #     for jj in range(min(nc, nv)):
+    #         plt.subplot(nc, nc, idx)
+    #         plt.imshow(np.abs(M[..., jj, ii]))
+    #         idx += 1
+    # plt.show()
+    # idx = 1
+    # for ii in range(nc):
+    #     for jj in range(min(nc, nv)):
+    #         plt.subplot(nc, nc, idx)
+    #         plt.imshow(np.angle(M[..., jj, ii]))
+    #         idx += 1
+    # plt.show()
 
     return M, W
 
 
 def espirit(kspace, calib, kernel_size=None, eig_thresh_1=0.02, eig_thresh_2=0.95, axes=None, coil_axis=-1):
-    '''ESPIRiT Python implementation.'''
+    """ESPIRiT Python implementation."""
 
     # default is all axes except coil
     if axes is None:
@@ -122,7 +127,7 @@ def espirit(kspace, calib, kernel_size=None, eig_thresh_1=0.02, eig_thresh_2=0.9
 
     # default kernel size if None given
     if kernel_size is None:
-        kernel_size = tuple([6,]*len(axes))
+        kernel_size = tuple([6, ]*len(axes))
         logger.info('Choosing default kernel size %s', kernel_size)
 
     # do kernel training and calculate eigenvalues/vectors
@@ -142,10 +147,10 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from scipy.io import loadmat
     # from pygrappa import find_acs
-    matdata = loadmat('/home/nmckibben/Documents/SPIRiT_v0.3/ESPIRiT/data/brain_8ch.mat')
-    #matdata = loadmat('/home/nmckibben/Documents/SPIRiT_v0.3/ESPIRiT/data/brain_alias_8ch.mat')
+    # matdata = loadmat('/home/nmckibben/Downloads/SPIRiT_v0.3/ESPIRiT/data/brain_8ch.mat')
+    matdata = loadmat('/home/nmckibben/Downloads/SPIRiT_v0.3/ESPIRiT/data/brain_alias_8ch.mat')
     data = matdata['DATA']
-    #mask = matdata['mask_unif']
+    # mask = matdata['mask_unif']
     # data = data*mask[..., None]
     # plt.imshow(np.abs(_fft(data[..., 0], axes=(0, 1))))
     # plt.show()

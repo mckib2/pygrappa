@@ -24,5 +24,6 @@ from .nlgrappa_matlab import nlgrappa_matlab  # NOQA
 from .gfactor import gfactor, gfactor_single_coil_R2  # NOQA
 from .sense1d import sense1d  # NOQA
 from .cgsense import cgsense  # NOQA
+from .espirit import espirit  # NOQA
 
 from .find_acs import find_acs  # NOQA
