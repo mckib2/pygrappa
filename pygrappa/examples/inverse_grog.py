@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from phantominator import radial, kspace_shepp_logan
 
 from pygrappa import radialgrappaop, grog
-from utils import gridder
+from pygrappa.utils import gridder
 
 
 # Helpers

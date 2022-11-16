@@ -7,7 +7,7 @@ from phantominator.kspace import _kspace_ellipse_sens
 from phantominator.sens_coeffs import _sens_coeffs
 
 from pygrappa import pars
-from utils import gridder
+from pygrappa.utils import gridder
 
 
 # Helper functions

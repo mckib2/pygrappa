@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
     import matplotlib.pyplot as plt
     from phantominator import shepp_logan
-    from utils import gaussian_csm
+    from pygrappa.utils import gaussian_csm
 
     N, nc = 128, 8
     ph = shepp_logan(N)[..., None]*gaussian_csm(N, N, nc)

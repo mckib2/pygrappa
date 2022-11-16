@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
 from pygrappa import mdgrappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 
     # Generate fake sensitivity maps: mps
-    L, M, N = 128, 128, 2
-    ncoils = 4
+    L, M, N = 160, 92, 8
+    ncoils = 15
     mps = gaussian_csm(L, M, ncoils)[..., None, :]
 
     # generate 3D phantom
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         np.fft.ifftshift(imspace, axes=ax), axes=ax), axes=ax)
 
     # calibrate a kernel
-    kernel_size = (4, 5, 5)
+    kernel_size = (5, 5, 5)
 
     # undersample by a factor of 2 in both kx and ky
     mask = np.ones(kspace.shape, dtype=bool)
@@ -34,8 +34,8 @@ if __name__ == '__main__':
     # Include calib in data: 20x20xN window at center of k-space for
     # calibration (use all z-axis)
     ctrs = [int(s/2) for s in kspace.shape[:2]]
-    pd = 10
-    mask[tuple([slice(ctr-pd, ctr+pd) for ctr in ctrs] +
+    pds = [20, 8, 4]
+    mask[tuple([slice(ctr-pd, ctr+pd) for ctr, pd in zip(ctrs, pds)] +
                [slice(None), slice(None)])] = True
     kspace *= mask
 

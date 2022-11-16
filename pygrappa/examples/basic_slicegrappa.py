@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from pygrappa import slicegrappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 

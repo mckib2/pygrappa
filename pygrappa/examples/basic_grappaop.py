@@ -9,7 +9,7 @@ except ImportError:
     from skimage.measure import compare_nrmse
 
 from pygrappa import cgrappa, grappaop
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 
 def fft(x0):

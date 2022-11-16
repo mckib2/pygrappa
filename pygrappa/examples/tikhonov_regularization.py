@@ -10,7 +10,7 @@ except ImportError:
 from tqdm import tqdm
 
 from pygrappa import cgrappa as grappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 

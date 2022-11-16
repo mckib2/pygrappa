@@ -7,7 +7,7 @@ from phantominator import shepp_logan
 
 from pygrappa import cgrappa
 from pygrappa import grappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 

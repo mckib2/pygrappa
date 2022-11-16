@@ -9,7 +9,7 @@ except ImportError:
 from phantominator import shepp_logan
 
 from pygrappa import nlgrappa, cgrappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 

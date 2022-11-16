@@ -9,7 +9,7 @@ except ImportError:
     from skimage.measure import compare_nrmse
 
 from pygrappa import vcgrappa, grappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 

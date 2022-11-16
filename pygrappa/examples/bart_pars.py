@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from pygrappa import pars
-from utils import gridder
+from pygrappa.utils import gridder
 
 from bart import bart  # pylint: disable=E0401
 
