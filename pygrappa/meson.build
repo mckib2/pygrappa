@@ -20,6 +20,7 @@ py3.install_sources([
     'pars.py',
     'pruno.py',
     'radialgrappaop.py',
+    'run_tests.py',
     'seggrappa.py',
     'sense1d.py',
     'slicegrappa.py',
