@@ -26,5 +26,5 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "flake8"]
-examples = ["matplotlib", "phantominator"]
+test = ["pytest", "flake8", "phantominator"]
+examples = ["matplotlib"]
