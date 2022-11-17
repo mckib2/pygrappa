@@ -28,7 +28,7 @@ py3.install_sources([
     'ttgrappa.py',
     'vcgrappa.py'
   ],
-  subdir: 'pygrappa/pygrappa'
+  subdir: 'pygrappa'
 )
 
 subdir('src')

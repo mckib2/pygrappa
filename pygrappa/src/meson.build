@@ -3,7 +3,7 @@ pglib = py3.extension_module('train_kernels',
   cpp_args: cython_cpp_args,
   include_directories: [inc_np],
   install: true,
-  subdir: 'pygrappa/pygrappa'
+  subdir: 'pygrappa'
 )
 
 pglib = py3.extension_module('cgrappa',
@@ -14,7 +14,7 @@ pglib = py3.extension_module('cgrappa',
   cpp_args: cython_cpp_args,
   include_directories: [inc_np],
   install: true,
-  subdir: 'pygrappa/pygrappa'
+  subdir: 'pygrappa'
 )
 
 pglib = py3.extension_module('grog_powers',
@@ -25,7 +25,7 @@ pglib = py3.extension_module('grog_powers',
   cpp_args: cython_cpp_args,
   include_directories: [inc_np],
   install: true,
-  subdir: 'pygrappa/pygrappa'
+  subdir: 'pygrappa'
 )
 
 pglib = py3.extension_module('grog_gridding',
@@ -33,5 +33,5 @@ pglib = py3.extension_module('grog_gridding',
   cpp_args: cython_cpp_args,
   include_directories: [inc_np],
   install: true,
-  subdir: 'pygrappa/pygrappa'
+  subdir: 'pygrappa'
 )

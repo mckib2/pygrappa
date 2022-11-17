@@ -30,5 +30,5 @@ py3.install_sources([
     'tikhonov_regularization.py',
     'use_memmap.py'
   ],
-  subdir: 'pygrappa/pygrappa/examples'
+  subdir: 'pygrappa/examples'
 )

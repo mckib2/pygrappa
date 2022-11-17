@@ -5,5 +5,5 @@ py3.install_sources([
     'gaussian_csm.py',
     'gridder.py'
   ],
-  subdir: 'pygrappa/pygrappa/utils'
+  subdir: 'pygrappa/utils'
 )
