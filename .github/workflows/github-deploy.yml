@@ -36,12 +36,12 @@ jobs:
           python -m pip install cibuildwheel
 
       - name: Build wheels
-        if: runner.os != "Windows"
+        if: runner.os != 'Windows'
         run: |
           python -m cibuildwheel --output-dir wheelhouse
 
       - name: Build wheel (Windows)
-        if: runner.os == "Windows"
+        if: runner.os == 'Windows'
         run: |
           python -m cibuildwheel --output-dir wheelhouse
         shell: cmd
