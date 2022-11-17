@@ -24,11 +24,6 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Create/install local wheel
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install build
-        python -m build --wheel --no-isolation .
     - name: Lint with flake8
       run: |
         python -m pip install flake8
@@ -36,6 +31,12 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-line-length=127 --statistics
+    - name: Create/install local wheel
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install build
+        python -m build .
+        python -m pip install dist/*
     - name: Test with pytest
       run: |
         python -m pip install pytest
