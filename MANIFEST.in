@@ -1,3 +1,0 @@
-include src/get_sampling_patterns.h
-include src/_grog_powers_template.h
-include requirements.txt
