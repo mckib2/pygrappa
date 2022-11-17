@@ -1,12 +1,6 @@
 [build-system]
-requires = ["meson", "ninja", "Cython", "numpy", "scipy", "mesonpep517"]
-build-backend = "mesonpep517.buildapi"
-
-[tool.mesonpep517.metadata]
-author = "Nicholas McKibben"
-author-email = "nicholas.bgp@gmail.com"
-home-page = "https://github.com/mckib2/pygrappa"
-summary = "GeneRalized Autocalibrating Partially Parallel Acquisitions."
+requires = ["meson", "ninja", "Cython", "numpy", "scipy", "meson-python"]
+build-backend = "mesonpy"
 
 [project]
 name = "pygrappa"

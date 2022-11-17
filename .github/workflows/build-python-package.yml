@@ -45,15 +45,8 @@ jobs:
       if: runner.os == 'Windows'
       run: |
         # install all build dependencies
-        python -m pip install build meson ninja Cython numpy scipy mesonpep517
-
-        # patch mesonpep517
-        python patch_mesonpep517.py
-
-        # build wheel using patched dependencies
-        python -m build --no-isolation --wheel .
-        
-        # install
+        python -m pip install build
+        python -m build --wheel .
         python -m pip install (get-item dist\*.whl).FullName
     - name: Test with pytest
       run: |
