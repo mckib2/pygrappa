@@ -23,7 +23,7 @@ def shepp_logan2d(M=64, N=64, nc=4, dtype=np.complex128):
     kspace = kspace.astype(dtype)
     imspace = np.abs(imspace)
     imspace /= np.max(imspace.flatten())  # normalize
-    return(imspace, coil_ims, kspace, mps)
+    return (imspace, coil_ims, kspace, mps)
 
 
 def calib2d(kspace, M=10, N=10):

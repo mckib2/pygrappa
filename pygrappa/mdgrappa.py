@@ -159,10 +159,10 @@ def mdgrappa(
 
     if ret_weights:
         if weights:
-            return(recon, weights)
-        return(recon,
-               {k: Ws[ii, :np.sum(np.frombuffer(k, dtype=bool))*nc, :]
-                for ii, k in enumerate(P)})
+            return (recon, weights)
+        return (recon,
+                {k: Ws[ii, :np.sum(np.frombuffer(k, dtype=bool))*nc, :]
+                 for ii, k in enumerate(P)})
     return recon
 
 

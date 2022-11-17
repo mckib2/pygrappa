@@ -134,7 +134,7 @@ def radialgrappaop(
 
     # Take matrix exponential to get from (lGx, lGy) -> (Gx, Gy)
     # and we're done!
-    return(expm(lGx), expm(lGy))
+    return (expm(lGx), expm(lGy))
 
 
 if __name__ == '__main__':

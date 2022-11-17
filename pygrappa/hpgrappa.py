@@ -91,7 +91,7 @@ def hpgrappa(
 
     # Return the filter if user asked for it
     if ret_filter:
-        return(res.astype(tipe), F2)
+        return (res.astype(tipe), F2)
     return res.astype(tipe)
 
 

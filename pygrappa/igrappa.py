@@ -167,5 +167,5 @@ def igrappa(
     # otherwise, just return reconstruction
     kIm = np.moveaxis(kIm, -1, coil_axis)
     if ref is not None:
-        return(kIm.astype(tipe), mse)
+        return (kIm.astype(tipe), mse)
     return kIm.astype(tipe)

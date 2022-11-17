@@ -240,7 +240,7 @@ def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     kernel[idxA_flat] = rawkernel.squeeze()
     kernel = np.reshape(kernel, sampling.shape, order='F')
 
-    return(kernel, rawkernel)
+    return (kernel, rawkernel)
 
 
 if __name__ == '__main__':
