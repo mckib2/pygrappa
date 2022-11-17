@@ -32,21 +32,24 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-line-length=127 --statistics
-    - name: Create/install local wheel
+    - name: Create local wheel
+      if: runner.os != 'Windows'
       run: |
         python -m pip install build
-        if [ "$RUNNER_OS" -ne "Windows" ]; then
-          python -m build --wheel .
-        else
-          # install all build dependencies
-          python -m pip install meson ninja Cython numpy scipy mesonpep517
-          
-          # patch mesonpep517
-          python patch_mesonpep517.py
-          
-          # build wheel using patched dependencies
-          python -m build --no-isolation --wheel .
-        fi
+        python -m build --wheel .
+    - name: Create local wheel (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        # install all build dependencies
+        python -m pip install build meson ninja Cython numpy scipy mesonpep517
+
+        # patch mesonpep517
+        python patch_mesonpep517.py
+
+        # build wheel using patched dependencies
+        python -m build --no-isolation --wheel .
+    - name: Install local wheel
+      run: |
         python -m pip install dist/*.whl
     - name: Test with pytest
       run: |
