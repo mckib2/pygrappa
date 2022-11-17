@@ -7,7 +7,6 @@ author = "Nicholas McKibben"
 author-email = "nicholas.bgp@gmail.com"
 home-page = "https://github.com/mckib2/pygrappa"
 summary = "GeneRalized Autocalibrating Partially Parallel Acquisitions."
-version = "0.26.0"
 
 [project]
 name = "pygrappa"
@@ -25,7 +24,6 @@ dependencies = [
     "scikit-image",
     "tqdm",
 ]
-version = "0.26.0"
 
 [project.optional-dependencies]
 test = ["pytest"]
