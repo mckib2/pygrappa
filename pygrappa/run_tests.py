@@ -1,4 +1,7 @@
+import pathlib
 import pytest
 
+
 if __name__ == "__main__":
-    retcode = pytest.main()
+    this_dir = pathlib.Path(__file__).parent.resolve()
+    retcode = pytest.main([f"{this_dir / 'tests'}"])
