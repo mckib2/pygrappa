@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
 from pygrappa import sense1d
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
     N, nc = 128, 8

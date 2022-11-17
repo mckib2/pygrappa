@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
 from pygrappa import cgsense
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 

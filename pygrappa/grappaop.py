@@ -60,7 +60,7 @@ def grappaop(calib, coil_axis=-1, lamda=0.01):
     lamda0 = lamda*np.linalg.norm(Syh)/Syh.shape[0]
     Gy = np.linalg.solve(
         Syh @ Sy + lamda0*np.eye(Syh.shape[0]), Syh @ Ty)
-    return(Gx, Gy)
+    return (Gx, Gy)
 
 
 if __name__ == '__main__':

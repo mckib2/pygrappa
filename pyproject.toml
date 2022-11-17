@@ -1,0 +1,30 @@
+[build-system]
+requires = ["meson", "ninja", "Cython", "numpy", "scipy", "mesonpep517"]
+build-backend = "mesonpep517.buildapi"
+
+[tool.mesonpep517.metadata]
+author = "Nicholas McKibben"
+author-email = "nicholas.bgp@gmail.com"
+home-page = "https://github.com/mckib2/pygrappa"
+summary = "GeneRalized Autocalibrating Partially Parallel Acquisitions."
+
+[project]
+name = "pygrappa"
+description = "GeneRalized Autocalibrating Partially Parallel Acquisitions."
+readme = "README.rst"
+requires-python = ">=3.8"
+keywords = ["mri", "grappa", "sense"]
+license = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "scikit-image",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "flake8", "phantominator"]
+examples = ["matplotlib"]

@@ -8,7 +8,7 @@ try:
     from skimage.metrics import structural_similarity as ssim
 except ImportError:
     from skimage.measure import compare_ssim as ssim
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 
 def shepp_logan2d(M=64, N=64, nc=4, dtype=np.complex128):
@@ -23,7 +23,7 @@ def shepp_logan2d(M=64, N=64, nc=4, dtype=np.complex128):
     kspace = kspace.astype(dtype)
     imspace = np.abs(imspace)
     imspace /= np.max(imspace.flatten())  # normalize
-    return(imspace, coil_ims, kspace, mps)
+    return (imspace, coil_ims, kspace, mps)
 
 
 def calib2d(kspace, M=10, N=10):

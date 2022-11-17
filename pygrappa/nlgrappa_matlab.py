@@ -351,7 +351,7 @@ def nlgrappa_matlab(
 
     coef0 = fit_coef
 
-    return(full_fourier_data, rec_img, coef0)
+    return (full_fourier_data, rec_img, coef0)
 
 
 if __name__ == '__main__':

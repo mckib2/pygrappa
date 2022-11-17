@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
 from pygrappa import splitslicegrappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 
@@ -57,12 +57,12 @@ if __name__ == '__main__':
     def init():
         '''Initialize ax data.'''
         ax.set_array(np.abs(res0[..., 0]))
-        return(ax,)
+        return (ax,)
 
     def animate(frame):
         '''Update frame.'''
         ax.set_array(np.abs(res0[..., frame]))
-        return(ax,)
+        return (ax,)
 
     anim = FuncAnimation(
         fig, animate, init_func=init, frames=nt,

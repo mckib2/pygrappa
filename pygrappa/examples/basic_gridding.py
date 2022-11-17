@@ -37,7 +37,7 @@ except ImportError:  # ModuleNotFoundError:
     FOUND_BART = False
 
 from pygrappa import radialgrappaop, grog
-from utils import gridder
+from pygrappa.utils import gridder
 
 
 # Helper functions for sum-of-squares coil combine and ifft2

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
 from pygrappa import hpgrappa, mdgrappa
-from utils import gaussian_csm
+from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
 
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # Take a look
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     X, Y = np.meshgrid(
         np.linspace(-1, 1, N),
         np.linspace(-1, 1, N))

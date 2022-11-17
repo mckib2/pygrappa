@@ -1,0 +1,39 @@
+
+py3.install_sources([
+    '__init__.py',
+    'cgsense.py',
+    'coils.py',
+    'find_acs.py',
+    'gfactor.py',
+    'grappa.py',
+    'grappaop.py',
+    'grog.py',
+    'hpgrappa.py',
+    'igrappa.py',
+    'kernels.py',
+    'kspa.py',
+    'lustig_grappa.py',
+    'mdgrappa.py',
+    'ncgrappa.py',
+    'nlgrappa.py',
+    'nlgrappa_matlab.py',
+    'pars.py',
+    'pruno.py',
+    'radialgrappaop.py',
+    'run_tests.py',
+    'seggrappa.py',
+    'sense1d.py',
+    'slicegrappa.py',
+    'splitslicegrappa.py',
+    'tgrappa.py',
+    'ttgrappa.py',
+    'vcgrappa.py'
+  ],
+  subdir: 'pygrappa'
+)
+
+subdir('src')
+subdir('examples')
+subdir('utils')
+subdir('tests')
+subdir('benchmarks')
