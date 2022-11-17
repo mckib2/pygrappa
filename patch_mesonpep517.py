@@ -11,3 +11,10 @@ if __name__ == "__main__":
     with open(buildapi, "w") as fp:
         fp.write(contents)
     print("Patched buildapi.py for Windows!")
+
+    pyproject = pathlib.Path(__file__).parent / "pyproject.toml"
+    with open(pyproject, "r") as fp:
+        contents = fp.read()
+    contents += "\n\n[tools.pip]\ndisable-isolated-build = true\n"
+    with open(pyproject, "w") as fp:
+        fp.write(contents)

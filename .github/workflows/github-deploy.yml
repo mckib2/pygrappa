@@ -13,7 +13,7 @@ on: workflow_dispatch
 
 env:
   CIBW_SKIP: cp27-* pp27-* pp37-* pp38-* cp35-* cp36-* cp37-* cp38-win32 cp39-win32 cp310-win32 cp311-win32 cp310-manylinux_i686 cp*-musl*
-  CIBW_BEFORE_ALL_WINDOWS: python patch_mesonpep517.py
+  CIBW_BEFORE_ALL_WINDOWS: python -m pip install build meson ninja Cython numpy scipy mesonpep517 && python patch_mesonpep517.py
 
 jobs:
   build_wheels:
@@ -33,6 +33,7 @@ jobs:
 
       - name: Install cibuildwheel
         run: |
+          python -m pip install --upgrade pip
           python -m pip install cibuildwheel
 
       - name: Build wheels
