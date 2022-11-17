@@ -1,7 +1,5 @@
 '''Bring functions up to the correct level.'''
 
-__version__ = "0.26.0"
-
 # GRAPPA
 from .mdgrappa import mdgrappa  # NOQA
 from .cgrappa import cgrappa  # pylint: disable=E0611  # NOQA

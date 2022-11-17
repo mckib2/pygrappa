@@ -24,7 +24,7 @@ dependencies = [
     "scikit-image",
     "tqdm",
 ]
-dynamic = ["version"]
+version = "0.26.0"
 
 [project.optional-dependencies]
 test = ["pytest"]
