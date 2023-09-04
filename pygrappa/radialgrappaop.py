@@ -67,7 +67,11 @@ def radialgrappaop(
     '''
 
     # Move coils and spoke_axis to the back:
-    k = np.moveaxis(k, (spoke_axis, coil_axis), (-2, -1))
+    if k.ndim == 2:
+        # assume we only have a coil axis
+        k = np.moveaxis(k, coil_axis, -1)
+    else:
+        k = np.moveaxis(k, (spoke_axis, coil_axis), (-2, -1))
     kx = np.moveaxis(kx, spoke_axis_coord, -1)
     ky = np.moveaxis(ky, spoke_axis_coord, -1)
 
