@@ -12,7 +12,7 @@ on: workflow_dispatch
 #      - published
 
 env:
-  CIBW_SKIP: cp27-* pp27-* pp37-* pp38-* pp39-* cp35-* cp36-* cp37-* cp*-win32 cp*-manylinux_i686 cp*-musl* cp312-*  # skip 3.12 for now until numpy releases
+  CIBW_SKIP: cp27-* pp27-* pp37-* pp38-* pp39-* pp310-* cp35-* cp36-* cp37-* cp*-win32 cp*-manylinux_i686 cp*-musl* cp312-*  # skip 3.12 for now until numpy releases
 
 jobs:
   build_wheels:
