@@ -224,9 +224,11 @@ def make_base_test_case_2d(
                                                 recon = np.abs(recon).astype(imspace.dtype)
                                             recon /= np.max(recon.flatten())
 
-                                            ssim0 = ssim(imspace, recon)
+                                            ssim0 = ssim(
+                                                imspace, recon,
+                                                data_range=imspace.flatten().max() - imspace.flatten().min())
                                             # print(ssim0)
-                                            self.assertTrue(ssim0 > ssim_thresh, 'ssim=%g' % ssim0)
+                                            self.assertTrue(ssim0 > ssim_thresh, f'ssim={ssim0} ({ssim_thresh})')
 
                                         # Add test function to TestClass
                                         setattr(
