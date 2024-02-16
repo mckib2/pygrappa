@@ -1,7 +1,7 @@
 project(
   'pygrappa',
   'c', 'cpp',
-  version: '0.26.1',
+  version: '0.26.2',
   license: '',
   meson_version: '>= 0.64.0',
   default_options: [

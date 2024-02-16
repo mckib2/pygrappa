@@ -4,6 +4,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "pygrappa"
+version = "0.26.2"
 description = "GeneRalized Autocalibrating Partially Parallel Acquisitions."
 readme = "README.rst"
 requires-python = ">=3.8"
