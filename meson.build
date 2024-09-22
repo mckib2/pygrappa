@@ -5,7 +5,7 @@ project(
   license: 'MIT',
   meson_version: '>= 1.5.0',
   default_options: [
-    'buildtype=debugoptimized',
+    'buildtype=release',
     'b_ndebug=if-release',
     'c_std=c99',
     'cpp_std=c++14',
