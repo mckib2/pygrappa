@@ -6,7 +6,7 @@ import logging
 import numpy as np
 
 
-def find_acs(kspace, coil_axis: int=-1):
+def find_acs(kspace, coil_axis: int = -1):
     """Find the largest centered hyper-rectangle possible.
 
     Parameters

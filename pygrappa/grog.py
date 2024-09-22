@@ -12,15 +12,15 @@ from pygrappa.grog_gridding import (
     grog_gridding_double, grog_gridding_float)  # pylint: disable=E0611
 
 
-def _make_key(key, precision):
+def _make_key(key, precision: int):
     """Dictionary keys."""
     return np.around(key, decimals=int(precision))
 
 
 def grog(
-        kx, ky, k, N: int, M: int, Gx, Gy, precision: int=2, radius: float=.75, Dx: dict=None,
-        Dy: dict=None, coil_axis: int=-1, ret_image: bool=False, ret_dicts: bool=False,
-        use_primefac: bool=False, remove_os: bool=True, inverse: bool=False):
+        kx, ky, k, N: int, M: int, Gx, Gy, precision: int = 2, radius: float = .75, Dx: dict = None,
+        Dy: dict = None, coil_axis: int = -1, ret_image: bool = False, ret_dicts: bool = False,
+        use_primefac: bool = False, remove_os: bool = True, inverse: bool = False):
     """GRAPPA operator gridding.
 
     Parameters

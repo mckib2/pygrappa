@@ -8,7 +8,7 @@ from pygrappa import mdgrappa as grappa
 
 def tgrappa(
         kspace, calib_size=(20, 20), kernel_size=(5, 5),
-        coil_axis: int=-2, time_axis: int=-1):
+        coil_axis: int = -2, time_axis: int = -1):
     """Temporal GRAPPA.
 
     Parameters

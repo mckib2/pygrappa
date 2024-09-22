@@ -15,10 +15,10 @@ def mdgrappa(
         kspace,
         calib=None,
         kernel_size=None,
-        coil_axis: int=-1,
-        lamda: float=0.01,
-        weights=None,
-        ret_weights: bool=False):
+        coil_axis: int = -1,
+        lamda: float = 0.01,
+        weights: dict = None,
+        ret_weights: bool = False):
     """GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters

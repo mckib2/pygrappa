@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def gfactor(coils, Rx: int, Ry: int, coil_axis: int=-1, tol: float=1e-6):
+def gfactor(coils, Rx: int, Ry: int, coil_axis: int = -1, tol: float = 1e-6):
     """Compute g-factor map for coil sensitities and accelerations.
 
     Parameters
@@ -67,7 +67,7 @@ def gfactor(coils, Rx: int, Ry: int, coil_axis: int=-1, tol: float=1e-6):
     return g
 
 
-def gfactor_single_coil_R2(coil, Rx: int=2, Ry: int=1):
+def gfactor_single_coil_R2(coil, Rx: int = 2, Ry: int = 1):
     """Specific example of a single homogeneous coil, R=2.
 
     Parameters

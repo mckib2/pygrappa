@@ -6,8 +6,8 @@ from pygrappa import mdgrappa
 
 
 def hpgrappa(
-        kspace, calib, fov, kernel_size=(5, 5), w: float=None, c: float=None,
-        ret_filter: bool=False, coil_axis: int=-1, lamda: float=0.01):
+        kspace, calib, fov, kernel_size=(5, 5), w: float = None, c: float = None,
+        ret_filter: bool = False, coil_axis: int = -1, lamda: float = 0.01):
     """High-pass GRAPPA.
 
     Parameters

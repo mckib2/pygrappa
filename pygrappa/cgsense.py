@@ -25,7 +25,7 @@ def _ifft(x0, axes=None):
         x0, axes=axes), axes=axes), axes=axes)
 
 
-def cgsense(kspace, sens, coil_axis: int=-1):
+def cgsense(kspace, sens, coil_axis: int = -1):
     """Conjugate Gradient SENSE for arbitrary Cartesian acquisitions.
 
     Parameters

@@ -5,14 +5,14 @@ from scipy.interpolate import griddata
 
 
 def gridder(
-        kx, ky, k, sx: int, sy: int, coil_axis: int=-1, ifft: bool=True, os: float=2.0,
-        method: str='linear'):
+        kx, ky, k, sx: int, sy: int, coil_axis: int = -1, ifft: bool = True, os: float = 2.0,
+        method: str = "linear"):
     """Helper function to grid non-Cartesian data.
 
     Parameters
     ----------
     kx, ky : array_like
-        1D arrays of (kx, ky) coordinates cooresponding to
+        1D arrays of (kx, ky) coordinates corresponding to
         measurements, k.
     k : array_like
         k-space measurements corresponding to spatial frequencies

@@ -5,8 +5,8 @@ from tqdm import trange
 
 
 def lustig_grappa(
-        kspace, calib, kernel_size=(5, 5), coil_axis: int=-1, lamda: float=0.01,
-        disp: bool=False, memmap: bool=False, memmap_filename: str='out.memmap'):
+        kspace, calib, kernel_size=(5, 5), coil_axis: int = -1, lamda: float = 0.01,
+        disp: bool = False, memmap: bool = False, memmap_filename: str = "out.memmap"):
     """GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
@@ -112,7 +112,7 @@ def lustig_grappa(
     return res
 
 
-def ARC(kspace, AtA, kernel_size, c, lamda):
+def ARC(kspace, AtA, kernel_size, c, lamda: float):
     """ARC."""
     sx, sy, ncoils = kspace.shape[:]
     kx, ky = kernel_size[:]

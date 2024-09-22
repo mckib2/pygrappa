@@ -9,7 +9,7 @@ from scipy.interpolate import griddata
 
 
 def kspa(
-        kx, ky, k, sens, coil_axis: int=-1, sens_coil_axis: int=-1):
+        kx, ky, k, sens, coil_axis: int = -1, sens_coil_axis: int = -1):
     """Recon for arbitrary trajectories using k‐space sparse matrices.
 
     Parameters

@@ -11,8 +11,8 @@ from pygrappa import mdgrappa
 
 
 def igrappa(
-        kspace, calib, kernel_size=(5, 5), k: float=0.3, coil_axis: int=-1,
-        lamda: float=0.01, ref=None, niter: int=10, silent: bool=True, backend=mdgrappa):
+        kspace, calib, kernel_size=(5, 5), k: float = 0.3, coil_axis: int = -1,
+        lamda: float = 0.01, ref=None, niter: int = 10, silent: bool = True, backend=mdgrappa):
     """Iterative GRAPPA.
 
     Parameters

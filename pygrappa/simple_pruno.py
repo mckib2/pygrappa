@@ -10,7 +10,7 @@ from phantominator import shepp_logan
 
 
 def simple_pruno(
-        kspace, calib, kernel_size=(5, 5), coil_axis: int=-1,
+        kspace, calib, kernel_size=(5, 5), coil_axis: int = -1,
         sens=None, ph=None, kspace_ref=None):
     """PRUNO."""
 

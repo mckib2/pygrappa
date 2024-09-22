@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import cKDTree  # pylint: disable=E0611
 
 
-def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis: int=-1):
+def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis: int = -1):
     """Non-Cartesian GRAPPA.
 
     Parameters

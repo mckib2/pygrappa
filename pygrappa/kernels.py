@@ -4,7 +4,7 @@ import numpy as np
 # from sklearn.preprocessing import PolynomialFeatures
 
 
-def polynomial_kernel(X, cross_term_neighbors: int=2):
+def polynomial_kernel(X, cross_term_neighbors: int = 2):
     """Computes polynomial kernel.
 
     Parameters

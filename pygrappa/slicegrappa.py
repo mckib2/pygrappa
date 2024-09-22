@@ -6,8 +6,8 @@ from tqdm import trange
 
 
 def slicegrappa(
-        kspace, calib, kernel_size=(5, 5), prior: str='sim', coil_axis: int=-2,
-        time_axis: int=-1, slice_axis: int=-1, lamda: float=0.01, split: bool=False):
+        kspace, calib, kernel_size=(5, 5), prior: str = "sim", coil_axis: int = -2,
+        time_axis: int = -1, slice_axis: int = -1, lamda: float = 0.01, split: bool = False):
     """(Split)-Slice-GRAPPA for SMS reconstruction.
 
     Parameters

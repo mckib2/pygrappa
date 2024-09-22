@@ -8,8 +8,8 @@ from pygrappa.kernels import polynomial_kernel
 
 
 def nlgrappa(
-        kspace, calib, kernel_size=(5, 5), ml_kernel='polynomial',
-        ml_kernel_args=None, coil_axis=-1):
+        kspace, calib, kernel_size=(5, 5), ml_kernel: str = "polynomial",
+        ml_kernel_args: dict = None, coil_axis: int = -1):
     """NL-GRAPPA.
 
     Parameters

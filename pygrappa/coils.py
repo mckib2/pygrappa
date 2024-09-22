@@ -5,7 +5,7 @@ from scipy.linalg import eigh
 from skimage.filters import threshold_li
 
 
-def walsh(imspace, mask=None, coil_axis: int=-1):
+def walsh(imspace, mask=None, coil_axis: int = -1):
     """Stochastic matched filter coil combine.
 
     Parameters

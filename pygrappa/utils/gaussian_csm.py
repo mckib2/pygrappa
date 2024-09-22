@@ -4,7 +4,7 @@ import numpy as np
 from scipy.stats import multivariate_normal
 
 
-def gaussian_csm(sx: int, sy: int, ncoil: int, sigma: float=1.0):
+def gaussian_csm(sx: int, sy: int, ncoil: int, sigma: float = 1.0):
     """Make a 2D Gaussian walk in a circle for coil sensitivities.
 
     Parameters

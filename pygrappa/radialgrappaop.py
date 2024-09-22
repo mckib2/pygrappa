@@ -5,9 +5,9 @@ from scipy.linalg import expm, logm
 
 
 def radialgrappaop(
-        kx, ky, k, nspokes: int=None, spoke_axis: int=-2, coil_axis: int=-1,
-        spoke_axis_coord: int=-1, lamda: float=0.01, ret_lGtheta: bool=False,
-        traj_warn: bool=True):
+        kx, ky, k, nspokes: int = None, spoke_axis: int = -2, coil_axis: int = -1,
+        spoke_axis_coord: int = -1, lamda: float = 0.01, ret_lGtheta: bool = False,
+        traj_warn: bool = True):
     """Non-Cartesian Radial GRAPPA operator.
 
     Parameters

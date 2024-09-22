@@ -5,7 +5,7 @@ import numpy as np
 from pygrappa import mdgrappa as grappa
 
 
-def vcgrappa(kspace, calib, *args, coil_axis: int=-1, **kwargs):
+def vcgrappa(kspace, calib, *args, coil_axis: int = -1, **kwargs):
     """Virtual Coil GRAPPA.
 
     See pygrappa.grappa() for argument list.
@@ -38,9 +38,6 @@ def vcgrappa(kspace, calib, *args, coil_axis: int=-1, **kwargs):
     # remember the type we started out with, np.fft will change
     # to complex128 regardless of what we started with
     tipe = kspace.dtype
-
-    # We will return twice the number of coils we started with
-    nc = kspace.shape[-1]
 
     # In and out of kspace to get conjugate coils
     vc_kspace = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(

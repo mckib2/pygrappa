@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def grappaop(calib, coil_axis: int=-1, lamda: int=0.01):
+def grappaop(calib, coil_axis: int = -1, lamda: int = 0.01):
     """GRAPPA operator for Cartesian calibration datasets.
 
     Parameters

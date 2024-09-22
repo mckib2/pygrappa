@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 
 def pars(
-        kx, ky, k, sens, tx=None, ty=None, kernel_size: int=25,
-        kernel_radius: float=None, coil_axis: int=-1):
+        kx, ky, k, sens, tx=None, ty=None, kernel_size: int = 25,
+        kernel_radius: float = None, coil_axis: int = -1):
     """Parallel MRI with adaptive radius in k‐space.
 
     Parameters

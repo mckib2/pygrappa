@@ -10,7 +10,7 @@ from scipy.signal import lfilter
 from tqdm import trange
 
 
-def pruno(kspace, calib, kernel_size=(5, 5), coil_axis: int=-1):
+def pruno(kspace, calib, kernel_size=(5, 5), coil_axis: int = -1):
     """Parallel Reconstruction Using Null Operations (PRUNO).
 
     Parameters

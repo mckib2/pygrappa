@@ -8,9 +8,9 @@ from tqdm import tqdm
 
 
 def ttgrappa(
-        kx, ky, kspace, cx, cy, calib, kernel_size: int=25,
-        kernel_radius: float=None, max_kernel_size: int=25, coil_axis: int=-1,
-        time_axis: int=-2, lamda: float=0.01):
+        kx, ky, kspace, cx, cy, calib, kernel_size: int = 25,
+        kernel_radius: float = None, max_kernel_size: int = 25, coil_axis: int = -1,
+        time_axis: int = -2, lamda: float = 0.01):
     """Through-time GRAPPA.
 
     Parameters

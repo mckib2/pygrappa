@@ -33,8 +33,8 @@ from skimage.util import view_as_windows
 
 
 def grappa(
-        kspace, calib, kernel_size=(5, 5), coil_axis: int=-1, lamda: float=0.01,
-        memmap: bool=False, memmap_filename: str='out.memmap', silent: bool=True):
+        kspace, calib, kernel_size=(5, 5), coil_axis: int = -1, lamda: float = 0.01,
+        memmap: bool = False, memmap_filename: str = 'out.memmap', silent: bool = True):
     """GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
