@@ -1,3 +1,5 @@
+WARNING: this may contain outdated information.
+
 Windows 10 Installation
 =======================
 

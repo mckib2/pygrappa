@@ -12,7 +12,7 @@ on: workflow_dispatch
 #      - published
 
 env:
-  CIBW_SKIP: cp27-* pp27-* pp37-* pp38-* pp39-* pp310-* cp35-* cp36-* cp37-* cp*-win32 cp*-manylinux_i686 cp*-musl* cp312-*  # skip 3.12 for now until numpy releases
+  CIBW_SKIP: cp27-* pp27-* pp37-* pp38-* pp39-* pp310-* cp35-* cp36-* cp37-* cp38-* cp*-win32 cp*-manylinux_i686 cp*-musl*
 
 jobs:
   build_wheels:
@@ -20,7 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-python@v2
         name: Install Python
         with:
-          python-version: '3.8'
+          python-version: '3.12'
 
       - name: Install cibuildwheel
         run: |
@@ -56,7 +56,7 @@ jobs:
       - uses: actions/setup-python@v2
         name: Install Python
         with:
-          python-version: '3.8'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
@@ -79,7 +79,7 @@ jobs:
       id-token: write
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: artifact
           path: dist
