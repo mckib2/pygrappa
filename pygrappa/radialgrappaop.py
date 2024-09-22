@@ -132,7 +132,7 @@ def radialgrappaop(
     RtR = dxy.T @ dxy
     RtG = dxy.T @ lGtheta
     lamda0 = lamda*np.linalg.norm(RtR)/RtR.shape[0]
-    res = np.linalg.solve(RtR + lamda*np.eye(RtR.shape[0]), RtG)
+    res = np.linalg.solve(RtR + lamda0*np.eye(RtR.shape[0]), RtG)
     lGx = np.reshape(res[0, :], (nc, nc))
     lGy = np.reshape(res[1, :], (nc, nc))
 
