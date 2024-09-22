@@ -1,4 +1,4 @@
-'''Basic demo of Slice-GRAPPA.'''
+"""Basic demo of Slice-GRAPPA."""
 
 import numpy as np
 from phantominator import shepp_logan
@@ -8,8 +8,8 @@ from matplotlib.animation import FuncAnimation
 from pygrappa import slicegrappa
 from pygrappa.utils import gaussian_csm
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # Get slices of 3D Shepp-Logan phantom
     N = 128
     ns = 2
@@ -55,12 +55,12 @@ if __name__ == '__main__':
     ax = plt.imshow(np.abs(res0[..., 0]), cmap='gray')
 
     def init():
-        '''Initialize ax data.'''
+        """Initialize ax data."""
         ax.set_array(np.abs(res0[..., 0]))
         return (ax,)
 
     def animate(frame):
-        '''Update frame.'''
+        """Update frame."""
         ax.set_array(np.abs(res0[..., frame]))
         return (ax,)
 

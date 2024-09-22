@@ -1,11 +1,12 @@
 project(
   'pygrappa',
-  'c', 'cpp',
+  'c', 'cpp', 'cython',
   version: '0.26.3',
-  license: '',
-  meson_version: '>= 0.64.0',
+  license: 'MIT',
+  meson_version: '>= 1.5.0',
   default_options: [
     'buildtype=debugoptimized',
+    'b_ndebug=if-release',
     'c_std=c99',
     'cpp_std=c++14',
   ],
@@ -13,32 +14,47 @@ project(
 
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
-cython = find_program('cython')
+cy = meson.get_compiler('cython')
+cython = find_program(cy.cmd_array()[0])
+if not cy.version().version_compare('>=3.0.8')
+  error('SciPy requires Cython >= 3.0.8')
+endif
 
 is_windows = host_machine.system() == 'windows'
 
 # https://mesonbuild.com/Python-module.html
-py_mod = import('python')
-py3 = py_mod.find_installation(pure: false)
+py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
 
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
-  [
-    '-c',
-    'import os; os.chdir(".."); import numpy; print(numpy.get_include())'
-  ],
-  check: true
+    [
+      '-c',
+      '''import os
+#os.chdir(os.path.join("..", "tools"))
+import numpy as np
+try:
+    incdir = os.path.relpath(np.get_include())
+except Exception:
+    incdir = np.get_include()
+print(incdir)
+    '''
+    ],
+    check: true
 ).stdout().strip()
+message(incdir_numpy)
 
 inc_np = include_directories(incdir_numpy)
 numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
+cython_args = ['-3', '--fast-fail', '--output-file', '@OUTPUT@', '--include-dir', '@BUILD_ROOT@', '@INPUT@']
+if cy.version().version_compare('>=3.1.0')
+  cython_args += ['-Xfreethreading_compatible=True']
+endif
+cython_cplus_args = ['--cplus'] + cython_args
 
-cython_cli = find_program('pygrappa/utils/cythoner.py')
-
-cython_gen_cpp = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
   depends : [])
 

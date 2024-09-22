@@ -1,4 +1,4 @@
-'''Example demonstrating how to use TGRAPPA.'''
+"""Example demonstrating how to use TGRAPPA."""
 
 import numpy as np
 from phantominator import dynamic
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     kspace[0::2, 1::2, :, 0::2] = 0
     kspace[1::2, 0::2, :, 1::2] = 0
 
-    # Reconstuct using TGRAPPA algorithm:
+    # Reconstruct using TGRAPPA algorithm:
     #    Use 20x20 calibration region
     #    Kernel size: (4, 5)
     res = tgrappa(kspace, calib_size=(20, 20), kernel_size=(4, 5))
@@ -52,12 +52,12 @@ if __name__ == '__main__':
     ax = plt.imshow(np.abs(res0[..., 0]), cmap='gray')
 
     def init():
-        '''Initialize ax data.'''
+        """Initialize ax data."""
         ax.set_array(np.abs(res0[..., 0]))
         return (ax,)
 
     def animate(frame):
-        '''Update frame.'''
+        """Update frame."""
         ax.set_array(np.abs(res0[..., frame]))
         return (ax,)
 

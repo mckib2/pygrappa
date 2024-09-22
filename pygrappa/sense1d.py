@@ -1,12 +1,12 @@
-'''Python implementation of SENSE.'''
+"""Python implementation of SENSE."""
 
 from time import time
 
 import numpy as np
 
 
-def sense1d(im, sens, Rx=1, Ry=1, coil_axis=-1, imspace=True):
-    '''Sensitivity Encoding for Fast MRI (SENSE) along one dimension.
+def sense1d(im, sens, Rx: int=1, Ry: int=1, coil_axis: int=-1, imspace: bool=True):
+    """Sensitivity Encoding for Fast MRI (SENSE) along one dimension.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def sense1d(im, sens, Rx=1, Ry=1, coil_axis=-1, imspace=True):
            Resonance in Medicine 42.5 (1999): 952-962.
     .. [2] https://users.fmrib.ox.ac.uk/~mchiew/docs/
            SENSE_tutorial.html
-    '''
+    """
 
     # We can only handle unwrapping one dimension:
     assert Rx == 1 or Ry == 1, 'One of Rx, Ry must be 1!'
@@ -101,7 +101,3 @@ def sense1d(im, sens, Rx=1, Ry=1, coil_axis=-1, imspace=True):
     if flip_xy:
         res = np.moveaxis(res, 1, 0)
     return np.moveaxis(res, -1, coil_axis)
-
-
-if __name__ == '__main__':
-    pass

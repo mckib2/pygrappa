@@ -1,4 +1,4 @@
-'''Python implementation of the iGRAPPA algorithm.'''
+"""Python implementation of the iGRAPPA algorithm."""
 
 import numpy as np
 from tqdm import trange
@@ -11,9 +11,9 @@ from pygrappa import mdgrappa
 
 
 def igrappa(
-        kspace, calib, kernel_size=(5, 5), k=0.3, coil_axis=-1,
-        lamda=0.01, ref=None, niter=10, silent=True, backend=mdgrappa):
-    '''Iterative GRAPPA.
+        kspace, calib, kernel_size=(5, 5), k: float=0.3, coil_axis: int=-1,
+        lamda: float=0.01, ref=None, niter: int=10, silent: bool=True, backend=mdgrappa):
+    """Iterative GRAPPA.
 
     Parameters
     ----------
@@ -68,7 +68,7 @@ def igrappa(
            Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            59.4 (2008): 903-907.
-    '''
+    """
 
     # Make sure k has a reasonable value
     assert 0 < k < 1, 'Parameter k should be in (0, 1)!'
@@ -167,5 +167,5 @@ def igrappa(
     # otherwise, just return reconstruction
     kIm = np.moveaxis(kIm, -1, coil_axis)
     if ref is not None:
-        return (kIm.astype(tipe), mse)
+        return kIm.astype(tipe), mse
     return kIm.astype(tipe)

@@ -1,4 +1,4 @@
-'''Basic hp-GRAPPA usage.'''
+"""Basic hp-GRAPPA usage."""
 
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # pylint: disable=W0611 # NOQA
@@ -7,6 +7,7 @@ from phantominator import shepp_logan
 
 from pygrappa import hpgrappa, mdgrappa
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 

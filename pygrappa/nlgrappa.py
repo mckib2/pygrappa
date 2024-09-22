@@ -1,16 +1,16 @@
-'''Python implementation of Non-Linear GRAPPA.'''
+"""Python implementation of Non-Linear GRAPPA."""
 
 from functools import partial
 
 import numpy as np
-from pygrappa import cgrappa
+from pygrappa import mdgrappa
 from pygrappa.kernels import polynomial_kernel
 
 
 def nlgrappa(
         kspace, calib, kernel_size=(5, 5), ml_kernel='polynomial',
         ml_kernel_args=None, coil_axis=-1):
-    '''NL-GRAPPA.
+    """NL-GRAPPA.
 
     Parameters
     ----------
@@ -46,7 +46,7 @@ def nlgrappa(
     .. [1] Chang, Yuchou, Dong Liang, and Leslie Ying. "Nonlinear
            GRAPPA: A kernel approach to parallel MRI reconstruction."
            Magnetic resonance in medicine 68.3 (2012): 730-740.
-    '''
+    """
 
     raise NotImplementedError("NL-GRAPPA is not currently working!")
 
@@ -80,11 +80,7 @@ def nlgrappa(
 
     # Pass onto cgrappa for the heavy lifting
     return np.moveaxis(
-        cgrappa(
+        mdgrappa(
             vkspace, vcalib, kernel_size=kernel_size, coil_axis=-1,
             nc_desired=nc, lamda=0),
         -1, coil_axis)
-
-
-if __name__ == '__main__':
-    pass

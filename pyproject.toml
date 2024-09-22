@@ -13,13 +13,7 @@ license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
-dependencies = [
-    "numpy",
-    "scipy",
-    "scikit-image",
-    "tqdm",
-]
 
 [project.optional-dependencies]
 test = ["pytest", "flake8", "phantominator"]
-examples = ["matplotlib"]
+examples = ["matplotlib", "sckikit-image", "tqdm", "phantominator"]

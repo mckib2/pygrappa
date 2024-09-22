@@ -1,10 +1,10 @@
-'''Python implementation of the GRAPPA operator formalism.'''
+"""Python implementation of the GRAPPA operator formalism."""
 
 import numpy as np
 
 
-def grappaop(calib, coil_axis=-1, lamda=0.01):
-    '''GRAPPA operator for Cartesian calibration datasets.
+def grappaop(calib, coil_axis: int=-1, lamda: int=0.01):
+    """GRAPPA operator for Cartesian calibration datasets.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def grappaop(calib, coil_axis=-1, lamda=0.01):
     .. [1] Griswold, Mark A., et al. "Parallel magnetic resonance
            imaging using the GRAPPA operator formalism." Magnetic
            resonance in medicine 54.6 (2005): 1553-1556.
-    '''
+    """
 
     # Coil axis in the back
     calib = np.moveaxis(calib, coil_axis, -1)
@@ -60,8 +60,4 @@ def grappaop(calib, coil_axis=-1, lamda=0.01):
     lamda0 = lamda*np.linalg.norm(Syh)/Syh.shape[0]
     Gy = np.linalg.solve(
         Syh @ Sy + lamda0*np.eye(Syh.shape[0]), Syh @ Ty)
-    return (Gx, Gy)
-
-
-if __name__ == '__main__':
-    pass
+    return Gx, Gy

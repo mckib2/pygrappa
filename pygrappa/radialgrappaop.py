@@ -1,14 +1,14 @@
-'''Python implementation of Radial GRAPPA operator.'''
+"""Python implementation of Radial GRAPPA operator."""
 
 import numpy as np
 from scipy.linalg import expm, logm
 
 
 def radialgrappaop(
-        kx, ky, k, nspokes=None, spoke_axis=-2, coil_axis=-1,
-        spoke_axis_coord=-1, lamda=0.01, ret_lGtheta=False,
-        traj_warn=True):
-    '''Non-Cartesian Radial GRAPPA operator.
+        kx, ky, k, nspokes: int=None, spoke_axis: int=-2, coil_axis: int=-1,
+        spoke_axis_coord: int=-1, lamda: float=0.01, ret_lGtheta: bool=False,
+        traj_warn: bool=True):
+    """Non-Cartesian Radial GRAPPA operator.
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ def radialgrappaop(
            Magnetic Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            59.4 (2008): 930-935.
-    '''
+    """
 
     # Move coils and spoke_axis to the back:
     if k.ndim == 2:
@@ -138,8 +138,4 @@ def radialgrappaop(
 
     # Take matrix exponential to get from (lGx, lGy) -> (Gx, Gy)
     # and we're done!
-    return (expm(lGx), expm(lGy))
-
-
-if __name__ == '__main__':
-    pass
+    return expm(lGx), expm(lGy)

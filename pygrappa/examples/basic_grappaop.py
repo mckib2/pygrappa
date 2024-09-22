@@ -1,4 +1,4 @@
-'''Basic usage of the GRAPPA operator.'''
+"""Basic usage of the GRAPPA operator."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +8,7 @@ try:
 except ImportError:
     from skimage.measure import compare_nrmse
 
-from pygrappa import cgrappa, grappaop
+from pygrappa import mdgrappa, grappaop
 from pygrappa.utils import gaussian_csm
 
 
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     kspace4x1[3::4, ...] = 0
 
     # Compare to regular ol' GRAPPA
-    grecon4x1 = cgrappa(kspace4x1, calib, kernel_size=(4, 5))
+    grecon4x1 = mdgrappa(kspace4x1, calib, kernel_size=(4, 5))
 
     # Get a GRAPPA operator and do the recon
     Gx, Gy = grappaop(calib)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     kspace2x2 = kspace.copy()
     kspace2x2[1::2, ...] = 0
     kspace2x2[:, 1::2, :] = 0
-    grecon2x2 = cgrappa(kspace2x2, calib, kernel_size=(4, 5))
+    grecon2x2 = mdgrappa(kspace2x2, calib, kernel_size=(4, 5))
     recon2x2 = kspace2x2.copy()
     recon2x2[1::2, ...] = recon2x2[::2, ...] @ Gx
     recon2x2[:, 1::2, :] = recon2x2[:, ::2, :] @ Gy

@@ -1,4 +1,4 @@
-'''Basic usage of Radial GRAPPA operator.'''
+"""Basic usage of Radial GRAPPA operator."""
 
 from time import time
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     plt.imshow(true - scgrog)
     plt.title('Residual')
     nrmse = compare_nrmse(true, scgrog)
-    ssim = compare_ssim(true, scgrog)
+    ssim = compare_ssim(true, scgrog, data_range=np.max(true.flatten()) - np.min(true.flatten()))
     plt.xlabel('NRMSE: %g, SSIM: %g' % (nrmse, ssim))
     # print(nrmse, ssim)
 

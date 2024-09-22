@@ -1,12 +1,12 @@
-'''Python implementation of VC-GRAPPA.'''
+"""Python implementation of VC-GRAPPA."""
 
 import numpy as np
 
-from pygrappa import cgrappa as grappa
+from pygrappa import mdgrappa as grappa
 
 
-def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
-    '''Virtual Coil GRAPPA.
+def vcgrappa(kspace, calib, *args, coil_axis: int=-1, **kwargs):
+    """Virtual Coil GRAPPA.
 
     See pygrappa.grappa() for argument list.
 
@@ -28,7 +28,7 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
            Magnetic Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            61.1 (2009): 93-102.
-    '''
+    """
 
     # Move coil axis to end
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -60,9 +60,5 @@ def vcgrappa(kspace, calib, *args, coil_axis=-1, **kwargs):
 
     # Pass through to GRAPPA
     return grappa(
-        kspace, calib, coil_axis=-1, nc_desired=2*nc,
+        kspace, calib, coil_axis=-1,
         *args, **kwargs).astype(tipe)
-
-
-if __name__ == '__main__':
-    pass

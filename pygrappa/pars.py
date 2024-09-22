@@ -1,4 +1,4 @@
-'''Python implementation of the PARS algorithm.'''
+"""Python implementation of the PARS algorithm."""
 
 from time import time
 
@@ -9,9 +9,9 @@ from tqdm import tqdm
 
 
 def pars(
-        kx, ky, k, sens, tx=None, ty=None, kernel_size=25,
-        kernel_radius=None, coil_axis=-1):
-    '''Parallel MRI with adaptive radius in k‐space.
+        kx, ky, k, sens, tx=None, ty=None, kernel_size: int=25,
+        kernel_radius: float=None, coil_axis: int=-1):
+    """Parallel MRI with adaptive radius in k‐space.
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def pars(
            radiofrequency coil encoded data." Magnetic Resonance in
            Medicine: An Official Journal of the International Society
            for Magnetic Resonance in Medicine 53.6 (2005): 1383-1392.
-    '''
+    """
 
     # Move coil axis to the back
     k = np.moveaxis(k, coil_axis, -1)
@@ -121,7 +121,3 @@ def pars(
     return np.moveaxis(np.fft.fftshift(np.fft.ifft2(
         np.fft.ifftshift(np.reshape(res, (sx, sy, nc), 'F'), axes=ax),
         axes=ax), axes=ax)[sx4:-sx4, sx4:-sx4, :], -1, coil_axis)
-
-
-if __name__ == '__main__':
-    pass

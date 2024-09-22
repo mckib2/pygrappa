@@ -1,4 +1,4 @@
-'''Python implementation of the Slice-GRAPPA algorithm.'''
+"""Python implementation of the Slice-GRAPPA algorithm."""
 
 import numpy as np
 from skimage.util import view_as_windows
@@ -6,9 +6,9 @@ from tqdm import trange
 
 
 def slicegrappa(
-        kspace, calib, kernel_size=(5, 5), prior='sim', coil_axis=-2,
-        time_axis=-1, slice_axis=-1, lamda=0.01, split=False):
-    '''(Split)-Slice-GRAPPA for SMS reconstruction.
+        kspace, calib, kernel_size=(5, 5), prior: str='sim', coil_axis: int=-2,
+        time_axis: int=-1, slice_axis: int=-1, lamda: float=0.01, split: bool=False):
+    """(Split)-Slice-GRAPPA for SMS reconstruction.
 
     Parameters
     ----------
@@ -80,7 +80,7 @@ def slicegrappa(
            reduction technique for simultaneous multislice
            acquisitions." Magnetic resonance in medicine 72.1 (2014):
            93-102.
-    '''
+    """
 
     # Make sure we know how to construct the sources:
     if prior not in ['sim', 'kspace']:
@@ -169,7 +169,3 @@ def slicegrappa(
 
     # Return results in fixed order: (nx, ny, nc, nt, cs)
     return res
-
-
-if __name__ == '__main__':
-    pass

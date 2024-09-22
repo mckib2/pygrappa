@@ -1,12 +1,12 @@
-'''Python implementation of the Segmented GRAPPA algorithm.'''
+"""Python implementation of the Segmented GRAPPA algorithm."""
 
 import numpy as np
 
-from pygrappa import cgrappa
+from pygrappa import mdgrappa
 
 
 def seggrappa(kspace, calibs, *args, **kwargs):
-    '''Segmented GRAPPA.
+    """Segmented GRAPPA.
 
     See pygrappa.grappa() for full list of arguments.
 
@@ -29,14 +29,10 @@ def seggrappa(kspace, calibs, *args, **kwargs):
            variable density sampling." Magnetic Resonance in
            Medicine: An Official Journal of the International Society
            for Magnetic Resonance in Medicine 53.1 (2005): 186-193.
-    '''
+    """
 
     # Do the reconstruction for each of the calibration regions
-    recons = [cgrappa(kspace, c, *args, **kwargs) for c in calibs]
+    recons = [mdgrappa(kspace, c, *args, **kwargs) for c in calibs]
 
     # Average all the reconstructions
     return np.mean(recons, axis=0)
-
-
-if __name__ == '__main__':
-    pass

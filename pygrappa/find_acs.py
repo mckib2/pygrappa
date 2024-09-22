@@ -1,4 +1,4 @@
-'''Automated location of a rectangular ACS.'''
+"""Automated location of a rectangular ACS."""
 
 from time import time
 import logging
@@ -6,8 +6,8 @@ import logging
 import numpy as np
 
 
-def find_acs(kspace, coil_axis=-1):
-    '''Find the largest centered hyper-rectangle possible.
+def find_acs(kspace, coil_axis: int=-1):
+    """Find the largest centered hyper-rectangle possible.
 
     Parameters
     ----------
@@ -32,7 +32,7 @@ def find_acs(kspace, coil_axis=-1):
     smaller than the entirety of the data.  It grows a hyper-
     rectangle from the center and checks to see if there are any
     new holes in the region each time it expands.
-    '''
+    """
 
     kspace = np.moveaxis(kspace, coil_axis, -1)
     mask = np.abs(kspace[..., 0]) > 0

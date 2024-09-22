@@ -1,4 +1,4 @@
-'''Show basic usage of NL-GRAPPA MATLAB port.'''
+"""Show basic usage of NL-GRAPPA MATLAB port."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +6,7 @@ from phantominator import shepp_logan
 
 from pygrappa import nlgrappa_matlab
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 

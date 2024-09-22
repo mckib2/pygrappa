@@ -1,12 +1,12 @@
-'''Coil estimation strategies.'''
+"""Coil estimation strategies."""
 
 import numpy as np
 from scipy.linalg import eigh
 from skimage.filters import threshold_li
 
 
-def walsh(imspace, mask=None, coil_axis=-1):
-    '''Stochastic matched filter coil combine.
+def walsh(imspace, mask=None, coil_axis: int=-1):
+    """Stochastic matched filter coil combine.
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def walsh(imspace, mask=None, coil_axis=-1):
            imagery." Magnetic Resonance in Medicine: An Official
            Journal of the International Society for Magnetic
            Resonance in Medicine 43.5 (2000): 682-690.
-    '''
+    """
     imspace = np.moveaxis(imspace, coil_axis, -1)
     ncoils = imspace.shape[-1]
     ns = np.prod(imspace.shape[:-1])

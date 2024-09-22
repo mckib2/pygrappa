@@ -1,4 +1,4 @@
-'''Example demonstrating how process datasets stored in memmap.'''
+"""Example demonstrating how process datasets stored in memmap."""
 
 from tempfile import NamedTemporaryFile as NTF
 
@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
 from pygrappa import grappa
+
 
 if __name__ == '__main__':
 
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         # reconstruct, write res out to a memmap with name res_file
         grappa(
             kspace, calib, kernel_size, coil_axis=-1, lamda=0.01,
-            memmap=True, memmap_filename=res_file)
+            memmap=True, memmap_filename=res_file.name)
 
         # Take a look by opening up the memmap
         res = np.memmap(

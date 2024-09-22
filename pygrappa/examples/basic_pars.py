@@ -1,4 +1,4 @@
-'''Demo of Non-Cartesian GRAPPA using PARS.'''
+"""Demo of Non-Cartesian GRAPPA using PARS."""
 
 import numpy as np
 import matplotlib.pyplot as plt

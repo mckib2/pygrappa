@@ -1,13 +1,13 @@
-'''Reference GRAPPA implementation ported to python.'''
+"""Reference GRAPPA implementation ported to python."""
 
 import numpy as np
 from tqdm import trange
 
 
 def lustig_grappa(
-        kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
-        disp=False, memmap=False, memmap_filename='out.memmap'):
-    '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
+        kspace, calib, kernel_size=(5, 5), coil_axis: int=-1, lamda: float=0.01,
+        disp: bool=False, memmap: bool=False, memmap_filename: str='out.memmap'):
+    """GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
     ----------
@@ -65,7 +65,7 @@ def lustig_grappa(
            International Society for Magnetic Resonance in Medicine
            47.6 (2002): 1202-1210.
     .. [2] https://people.eecs.berkeley.edu/~mlustig/Software.html
-    '''
+    """
 
     # Put the coil dimension at the end
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -113,7 +113,7 @@ def lustig_grappa(
 
 
 def ARC(kspace, AtA, kernel_size, c, lamda):
-    '''ARC.'''
+    """ARC."""
     sx, sy, ncoils = kspace.shape[:]
     kx, ky = kernel_size[:]
 
@@ -176,8 +176,8 @@ def ARC(kspace, AtA, kernel_size, c, lamda):
 
 
 def dat2AtA(data, kernel_size):
-    '''Computes the calibration matrix from calibration data.
-    '''
+    """Computes the calibration matrix from calibration data.
+    """
 
     tmp = im2row(data, kernel_size)
     tsx, tsy, tsz = tmp.shape[:]
@@ -186,7 +186,7 @@ def dat2AtA(data, kernel_size):
 
 
 def im2row(im, win_shape):
-    '''res = im2row(im, winSize)'''
+    """res = im2row(im, winSize)"""
     sx, sy, sz = im.shape[:]
     wx, wy = win_shape[:]
     sh = (sx-wx+1)*(sy-wy+1)
@@ -204,8 +204,8 @@ def im2row(im, win_shape):
 
 
 def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
-    '''Calibrate.
-    '''
+    """Calibrate.
+    """
 
     kx, ky = kernel_size[:]
 
@@ -240,8 +240,4 @@ def calibrate(AtA, kernel_size, ncoils, coil, lamda, sampling=None):
     kernel[idxA_flat] = rawkernel.squeeze()
     kernel = np.reshape(kernel, sampling.shape, order='F')
 
-    return (kernel, rawkernel)
-
-
-if __name__ == '__main__':
-    pass
+    return kernel, rawkernel

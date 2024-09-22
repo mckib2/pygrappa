@@ -1,4 +1,4 @@
-'''Python implementation of the PRUNO algorithm.'''
+"""Python implementation of the PRUNO algorithm."""
 
 import numpy as np
 from skimage.util import pad, view_as_windows
@@ -10,8 +10,8 @@ from scipy.signal import lfilter
 from tqdm import trange
 
 
-def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
-    '''Parallel Reconstruction Using Null Operations (PRUNO).
+def pruno(kspace, calib, kernel_size=(5, 5), coil_axis: int=-1):
+    """Parallel Reconstruction Using Null Operations (PRUNO).
 
     Parameters
     ----------
@@ -24,7 +24,7 @@ def pruno(kspace, calib, kernel_size=(5, 5), coil_axis=-1):
     .. [1] Zhang, Jian, Chunlei Liu, and Michael E. Moseley.
            "Parallel reconstruction using null operations." Magnetic
            resonance in medicine 66.5 (2011): 1241-1253.
-    '''
+    """
 
     # Coils to da back
     kspace = np.moveaxis(kspace, coil_axis, -1)

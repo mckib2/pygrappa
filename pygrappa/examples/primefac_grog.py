@@ -1,5 +1,4 @@
-'''ISMRM abstract code for prime factorization speed-up for SC-GROG.
-'''
+"""ISMRM abstract code for prime factorization speed-up for SC-GROG."""
 
 from time import time
 

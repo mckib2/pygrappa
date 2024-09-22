@@ -1,4 +1,4 @@
-'''Demonstrate the effect of Tikhonov regularization.'''
+"""Demonstrate the effect of Tikhonov regularization."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,8 +9,9 @@ except ImportError:
     from skimage.measure import compare_nrmse
 from tqdm import tqdm
 
-from pygrappa import cgrappa as grappa
+from pygrappa import mdgrappa as grappa
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 

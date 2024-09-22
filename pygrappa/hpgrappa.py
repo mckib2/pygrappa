@@ -1,4 +1,4 @@
-'''Python implementation of hp-GRAPPA.'''
+"""Python implementation of hp-GRAPPA."""
 
 import numpy as np
 
@@ -6,9 +6,9 @@ from pygrappa import mdgrappa
 
 
 def hpgrappa(
-        kspace, calib, fov, kernel_size=(5, 5), w=None, c=None,
-        ret_filter=False, coil_axis=-1, lamda=0.01, silent=True):
-    '''High-pass GRAPPA.
+        kspace, calib, fov, kernel_size=(5, 5), w: float=None, c: float=None,
+        ret_filter: bool=False, coil_axis: int=-1, lamda: float=0.01):
+    """High-pass GRAPPA.
 
     Parameters
     ----------
@@ -37,7 +37,7 @@ def hpgrappa(
            imaging." Magnetic Resonance in Medicine: An Official
            Journal of the International Society for Magnetic
            Resonance in Medicine 59.3 (2008): 642-649.
-    '''
+    """
 
     # Pass GRAPPA arguments forward
     grappa_args = {
@@ -91,12 +91,12 @@ def hpgrappa(
 
     # Return the filter if user asked for it
     if ret_filter:
-        return (res.astype(tipe), F2)
+        return res.astype(tipe), F2
     return res.astype(tipe)
 
 
-def _filter_parameters(ncoils, num_acs_lines):
-    '''Table 1: predefined filter parameters from [1]_.
+def _filter_parameters(ncoils: int, num_acs_lines: int):
+    """Table 1: predefined filter parameters from [1]_.
 
     Parameters
     ----------
@@ -110,7 +110,7 @@ def _filter_parameters(ncoils, num_acs_lines):
     -------
     (w, c) : tuple
         Filter parameters.
-    '''
+    """
 
     LESS_THAN_8 = True
     MORE_THAN_8 = False

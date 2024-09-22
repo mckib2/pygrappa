@@ -1,18 +1,18 @@
-'''Machine learning kernel functions.'''
+"""Machine learning kernel functions."""
 
 import numpy as np
 # from sklearn.preprocessing import PolynomialFeatures
 
 
-def polynomial_kernel(X, cross_term_neighbors=2):
-    '''Computes polynomial kernel.
+def polynomial_kernel(X, cross_term_neighbors: int=2):
+    """Computes polynomial kernel.
 
     Parameters
     ----------
     X : array_like of shape (sx, sy, nc)
         Features to map to high dimensional feature-space.
 
-    '''
+    """
 
     _sx, _sy, nc = X.shape[:]
 

@@ -1,4 +1,4 @@
-'''Python GRAPPA implementation.
+"""Python GRAPPA implementation.
 
 More efficient Python implementation of GRAPPA.
 
@@ -20,10 +20,10 @@ key-lookup table for kernels.  It might be nice to train multiple
 kernel geometries simultaneously if possible, or at least have an
 option to do chunks at a time.
 
-Currently each hole in kspace is being looped over when applying
+Currently, each hole in kspace is being looped over when applying
 weights for a single kernel type.  It would be nice to apply the
 weights for all corresponding holes simultaneously.
-'''
+"""
 
 from time import time
 from tempfile import NamedTemporaryFile as NTF
@@ -33,9 +33,9 @@ from skimage.util import view_as_windows
 
 
 def grappa(
-        kspace, calib, kernel_size=(5, 5), coil_axis=-1, lamda=0.01,
-        memmap=False, memmap_filename='out.memmap', silent=True):
-    '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
+        kspace, calib, kernel_size=(5, 5), coil_axis: int=-1, lamda: float=0.01,
+        memmap: bool=False, memmap_filename: str='out.memmap', silent: bool=True):
+    """GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
     ----------
@@ -80,7 +80,7 @@ def grappa(
            Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            47.6 (2002): 1202-1210.
-    '''
+    """
 
     # Remember what shape the final reconstruction should be
     fin_shape = kspace.shape[:]
@@ -255,7 +255,3 @@ def grappa(
 
         return np.moveaxis(
             (recon[:] + kspace)[kx2:-kx2, ky2:-ky2, :], -1, coil_axis)
-
-
-if __name__ == '__main__':
-    pass

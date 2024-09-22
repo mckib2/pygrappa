@@ -1,4 +1,4 @@
-'''Python implementation of through-time GRAPPA.'''
+"""Python implementation of through-time GRAPPA."""
 
 from time import time
 
@@ -8,10 +8,10 @@ from tqdm import tqdm
 
 
 def ttgrappa(
-        kx, ky, kspace, cx, cy, calib, kernel_size=25,
-        kernel_radius=None, max_kernel_size=25, coil_axis=-1,
-        time_axis=-2, lamda=0.01):
-    '''Through-time GRAPPA.
+        kx, ky, kspace, cx, cy, calib, kernel_size: int=25,
+        kernel_radius: float=None, max_kernel_size: int=25, coil_axis: int=-1,
+        time_axis: int=-2, lamda: float=0.01):
+    """Through-time GRAPPA.
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def ttgrappa(
            2D/3D non‐Cartesian sampling trajectories with rapid
            calibration." Magnetic resonance in medicine 82.3 (2019):
            1101-1112.
-    '''
+    """
 
     # Move da coils to da back and time_axis to the middle
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -165,7 +165,3 @@ def ttgrappa(
     # Fill in the known samples and return
     res[sampled, :] = kspace[sampled, :]
     return np.moveaxis(res, -1, coil_axis)
-
-
-if __name__ == '__main__':
-    pass

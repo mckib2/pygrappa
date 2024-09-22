@@ -1,4 +1,4 @@
-'''Bring functions up to the correct level.'''
+"""Bring functions up to the correct level."""
 
 # GRAPPA
 from .mdgrappa import mdgrappa  # NOQA

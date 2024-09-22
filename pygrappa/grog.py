@@ -1,4 +1,4 @@
-'''Python implmentation of the GROG algorithm.'''
+"""Python implmentation of the GROG algorithm."""
 
 from time import time
 
@@ -13,15 +13,15 @@ from pygrappa.grog_gridding import (
 
 
 def _make_key(key, precision):
-    '''Dictionary keys.'''
+    """Dictionary keys."""
     return np.around(key, decimals=int(precision))
 
 
 def grog(
-        kx, ky, k, N, M, Gx, Gy, precision=2, radius=.75, Dx=None,
-        Dy=None, coil_axis=-1, ret_image=False, ret_dicts=False,
-        use_primefac=False, remove_os=True, inverse=False):
-    '''GRAPPA operator gridding.
+        kx, ky, k, N: int, M: int, Gx, Gy, precision: int=2, radius: float=.75, Dx: dict=None,
+        Dy: dict=None, coil_axis: int=-1, ret_image: bool=False, ret_dicts: bool=False,
+        use_primefac: bool=False, remove_os: bool=True, inverse: bool=False):
+    """GRAPPA operator gridding.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ def grog(
            Magnetic Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            59.4 (2008): 930-935.
-    '''
+    """
 
     # Make sure types are consistent before calling grog funcs
     assert kx.dtype == ky.dtype, (

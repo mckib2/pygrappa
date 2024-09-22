@@ -1,4 +1,4 @@
-'''Naive implementation to make sure we know what's going on.'''
+"""Naive implementation to make sure we know what's going on."""
 
 import numpy as np
 from skimage.util import view_as_windows
@@ -10,9 +10,9 @@ from phantominator import shepp_logan
 
 
 def simple_pruno(
-        kspace, calib, kernel_size=(5, 5), coil_axis=-1,
+        kspace, calib, kernel_size=(5, 5), coil_axis: int=-1,
         sens=None, ph=None, kspace_ref=None):
-    '''PRUNO.'''
+    """PRUNO."""
 
     # Coils to da back
     kspace = np.moveaxis(kspace, coil_axis, -1)
