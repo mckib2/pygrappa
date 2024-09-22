@@ -1,4 +1,4 @@
-'''Python implementation of multidimensional GRAPPA.'''
+"""Python implementation of multidimensional GRAPPA."""
 
 from collections import defaultdict
 from time import time
@@ -15,11 +15,11 @@ def mdgrappa(
         kspace,
         calib=None,
         kernel_size=None,
-        coil_axis=-1,
-        lamda=0.01,
-        weights=None,
-        ret_weights=False):
-    '''GeneRalized Autocalibrating Partially Parallel Acquisitions.
+        coil_axis: int = -1,
+        lamda: float = 0.01,
+        weights: dict = None,
+        ret_weights: bool = False):
+    """GeneRalized Autocalibrating Partially Parallel Acquisitions.
 
     Parameters
     ----------
@@ -65,7 +65,7 @@ def mdgrappa(
            Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            47.6 (2002): 1202-1210.
-    '''
+    """
 
     # coils to the back
     kspace = np.moveaxis(kspace, coil_axis, -1)
@@ -159,12 +159,8 @@ def mdgrappa(
 
     if ret_weights:
         if weights:
-            return (recon, weights)
+            return recon, weights
         return (recon,
                 {k: Ws[ii, :np.sum(np.frombuffer(k, dtype=bool))*nc, :]
                  for ii, k in enumerate(P)})
     return recon
-
-
-if __name__ == '__main__':
-    pass

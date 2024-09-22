@@ -1,4 +1,4 @@
-'''Demonstrate how to grid non-Cartesian data.
+"""Demonstrate how to grid non-Cartesian data.
 
 Notes
 -----
@@ -22,7 +22,7 @@ References
        NFFT 3---a software library for various nonequispaced fast
        Fourier transforms." ACM Transactions on Mathematical Software
        (TOMS) 36.4 (2009): 19.
-'''
+"""
 
 from time import time
 

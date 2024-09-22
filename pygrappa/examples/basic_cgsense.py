@@ -1,4 +1,4 @@
-'''Basic usage of CG-SENSE implementation.'''
+"""Basic usage of CG-SENSE implementation."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +7,7 @@ from phantominator import shepp_logan
 
 from pygrappa import cgsense
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 

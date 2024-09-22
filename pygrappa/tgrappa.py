@@ -1,16 +1,15 @@
-'''TGRAPPA implementation.'''
+"""TGRAPPA implementation."""
 
 import numpy as np
 from tqdm import tqdm
 
-# from pygrappa import grappa
-from pygrappa import cgrappa as grappa  # need for speed!
+from pygrappa import mdgrappa as grappa
 
 
 def tgrappa(
         kspace, calib_size=(20, 20), kernel_size=(5, 5),
-        coil_axis=-2, time_axis=-1):
-    '''Temporal GRAPPA.
+        coil_axis: int = -2, time_axis: int = -1):
+    """Temporal GRAPPA.
 
     Parameters
     ----------
@@ -56,7 +55,7 @@ def tgrappa(
            Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            53.4 (2005): 981-985.
-    '''
+    """
 
     # Move coil and time axes to a place we can find them
     kspace = np.moveaxis(kspace, (coil_axis, time_axis), (-2, -1))
@@ -74,7 +73,7 @@ def tgrappa(
         raise ValueError('Full ACS region cannot be found!')
 
     # To avoid running GRAPPA more than once on one time frame,
-    # we'll keep track of which frames have been reconstruced:
+    # we'll keep track of which frames have been reconstructed:
     completed_tframes = np.zeros(st, dtype=bool)
 
     # Initialize the progress bar
@@ -148,7 +147,3 @@ def tgrappa(
 
     # Move axes back to where the user had them
     return np.moveaxis(res, (-1, -2), (time_axis, coil_axis))
-
-
-if __name__ == '__main__':
-    pass

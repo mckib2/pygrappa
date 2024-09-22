@@ -1,4 +1,4 @@
-'''Multidimensional CG-SENSE.'''
+"""Multidimensional CG-SENSE."""
 
 from time import time
 
@@ -8,6 +8,7 @@ from phantominator import shepp_logan
 
 from pygrappa import cgsense
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 

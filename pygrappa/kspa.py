@@ -1,4 +1,4 @@
-'''Python implementation of the kSPA algorithm.'''
+"""Python implementation of the kSPA algorithm."""
 
 from time import time
 
@@ -9,8 +9,8 @@ from scipy.interpolate import griddata
 
 
 def kspa(
-        kx, ky, k, sens, coil_axis=-1, sens_coil_axis=-1):
-    '''Recon for arbitrary trajectories using k‐space sparse matrices.
+        kx, ky, k, sens, coil_axis: int = -1, sens_coil_axis: int = -1):
+    """Recon for arbitrary trajectories using k‐space sparse matrices.
 
     Parameters
     ----------
@@ -29,7 +29,7 @@ def kspa(
            Magnetic Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            58.6 (2007): 1171-1181.
-    '''
+    """
 
     # Move coils to the back
     sens = np.moveaxis(sens, sens_coil_axis, -1)

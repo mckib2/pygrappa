@@ -1,10 +1,10 @@
-'''Too-good-to-be-real coil sensitivity maps.'''
+"""Too-good-to-be-real coil sensitivity maps."""
 
 import numpy as np
 
 
-def disjoint_csm(sx, sy, ncoil):
-    '''Make ncoil partitions of (sx, sy) box for coil sensitivities.
+def disjoint_csm(sx: int, sy: int, ncoil: int):
+    """Make ncoil partitions of (sx, sy) box for coil sensitivities.
 
     Parameters
     ----------
@@ -17,7 +17,7 @@ def disjoint_csm(sx, sy, ncoil):
     -------
     csm : array_like
         Simulated coil sensitivity maps.
-    '''
+    """
 
     blocks = np.ones((sx, sy))
     blocks = np.array_split(blocks, ncoil, axis=0)
@@ -28,7 +28,3 @@ def disjoint_csm(sx, sy, ncoil):
         csm[idx:idx+sh, :, ii] = blocks[ii]
         idx += sh
     return csm
-
-
-if __name__ == '__main__':
-    pass

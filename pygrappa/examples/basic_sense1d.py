@@ -1,4 +1,4 @@
-'''Show basic usage of 1D SENSE.'''
+"""Show basic usage of 1D SENSE."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +6,7 @@ from phantominator import shepp_logan
 
 from pygrappa import sense1d
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
     N, nc = 128, 8

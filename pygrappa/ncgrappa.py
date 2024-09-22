@@ -1,11 +1,11 @@
-'''Python implementation of Non-Cartesian GRAPPA.'''
+"""Python implementation of Non-Cartesian GRAPPA."""
 
 import numpy as np
 from scipy.spatial import cKDTree  # pylint: disable=E0611
 
 
-def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis=-1):
-    '''Non-Cartesian GRAPPA.
+def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis: int = -1):
+    """Non-Cartesian GRAPPA.
 
     Parameters
     ----------
@@ -34,7 +34,7 @@ def ncgrappa(kx, ky, k, cx, cy, calib, kernel_size, coil_axis=-1):
            2D/3D non‐Cartesian sampling trajectories with rapid
            calibration." Magnetic resonance in medicine 82.3 (2019):
            1101-1112.
-    '''
+    """
 
     # Assume k has coil at end unless user says it's upfront.  We
     # want to assume that coils are in the back of calib and k:

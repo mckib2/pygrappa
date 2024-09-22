@@ -4,22 +4,16 @@ build-backend = "mesonpy"
 
 [project]
 name = "pygrappa"
-version = "0.26.2"
+version = "0.26.3"
 description = "GeneRalized Autocalibrating Partially Parallel Acquisitions."
 readme = "README.rst"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["mri", "grappa", "sense"]
 license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
 ]
-dependencies = [
-    "numpy",
-    "scipy",
-    "scikit-image",
-    "tqdm",
-]
 
 [project.optional-dependencies]
 test = ["pytest", "flake8", "phantominator"]
-examples = ["matplotlib"]
+examples = ["matplotlib", "sckikit-image", "tqdm", "phantominator"]

@@ -1,10 +1,10 @@
-'''Calculate g-factor maps.'''
+"""Calculate g-factor maps."""
 
 import numpy as np
 
 
-def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
-    '''Compute g-factor map for coil sensitities and accelerations.
+def gfactor(coils, Rx: int, Ry: int, coil_axis: int = -1, tol: float = 1e-6):
+    """Compute g-factor map for coil sensitities and accelerations.
 
     Parameters
     ----------
@@ -31,7 +31,7 @@ def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
     ----------
     .. [1] https://web.stanford.edu/class/ee369c/restricted/
            Solutions/assignment_4_solns.pdf
-    '''
+    """
 
     # Coils to da back
     coils = np.moveaxis(coils, coil_axis, -1)
@@ -54,7 +54,7 @@ def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
                 ndx = int(np.mod(ii + LX*nrx, nx))
                 ndy = int(np.mod(jj + LY*nry, ny))
                 CT = coils[ndx, ndy, :]
-                if ((LX == 0) and (LY == 0)):
+                if (LX == 0) and (LY == 0):
                     s.append(CT)
                 elif sos[ndx, ndy] > tol:
                     s.append(CT)
@@ -67,8 +67,8 @@ def gfactor(coils, Rx, Ry, coil_axis=-1, tol=1e-6):
     return g
 
 
-def gfactor_single_coil_R2(coil, Rx=2, Ry=1):
-    '''Specific example of a single homogeneous coil, R=2.
+def gfactor_single_coil_R2(coil, Rx: int = 2, Ry: int = 1):
+    """Specific example of a single homogeneous coil, R=2.
 
     Parameters
     ----------
@@ -100,7 +100,7 @@ def gfactor_single_coil_R2(coil, Rx=2, Ry=1):
            Magnetic Resonance in Medicine: An Official Journal of the
            International Society for Magnetic Resonance in Medicine
            61.1 (2009): 93-102.
-    '''
+    """
 
     assert coil.ndim == 2, 'Must be single coil!'
     assert (Rx == 2 and Ry == 1) or (Rx == 1 and Ry == 2), (
@@ -113,7 +113,3 @@ def gfactor_single_coil_R2(coil, Rx=2, Ry=1):
         shifted = np.fft.fftshift(np.angle(coil), axes=1)
 
     return mask/np.sin(np.abs(np.angle(coil) - shifted))
-
-
-if __name__ == '__main__':
-    pass

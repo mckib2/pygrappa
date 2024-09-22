@@ -1,4 +1,4 @@
-'''Demonstrate usage of VC-GRAPPA.'''
+"""Demonstrate usage of VC-GRAPPA."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,6 +10,7 @@ except ImportError:
 
 from pygrappa import vcgrappa, grappa
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 

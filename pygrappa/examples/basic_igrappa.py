@@ -1,11 +1,12 @@
-'''Demonstrate usage of iGRAPPA.'''
+"""Demonstrate usage of iGRAPPA."""
 
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
-from pygrappa import igrappa, cgrappa
+from pygrappa import igrappa, mdgrappa
 from pygrappa.utils import gaussian_csm
+
 
 if __name__ == '__main__':
 
@@ -31,7 +32,7 @@ if __name__ == '__main__':
     kspace[1::2, ::2, :] = 0
 
     # Reconstruct using both GRAPPA and iGRAPPA
-    res_grappa = cgrappa(kspace, calib)
+    res_grappa = mdgrappa(kspace, calib)
     res_igrappa, mse = igrappa(kspace, calib, ref=ref)
 
     # Bring back to image space

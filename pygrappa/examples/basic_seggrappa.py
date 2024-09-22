@@ -8,7 +8,7 @@ try:
 except ImportError:
     from skimage.measure import compare_nrmse
 
-from pygrappa import cgrappa, seggrappa
+from pygrappa import mdgrappa, seggrappa
 from pygrappa.utils import gaussian_csm
 
 if __name__ == '__main__':
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     res_seg = seggrappa(kspace, [calib_lower, calib_upper])
 
     # Reconstruct using single calibration region at the center
-    res_grappa = cgrappa(kspace, calib)
+    res_grappa = mdgrappa(kspace, calib)
 
     # Into image space
     imspace_seg = np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(

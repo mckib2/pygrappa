@@ -1,15 +1,15 @@
-'''Unit tests for VC-GRAPPA.'''
+"""Unit tests for VC-GRAPPA."""
 
 import unittest
 
 from pygrappa import vcgrappa
-from .helpers import make_base_test_case_2d
+from pygrappa.tests.helpers import make_base_test_case_2d
 
 
 class TestVCGRAPPA(make_base_test_case_2d(
         vcgrappa,
         ssim_thresh=.90)):
-    # TODO: adjust/improve ssim_thesh; right now less than mdgrappa
+    # TODO: adjust/improve ssim_thresh; right now less than mdgrappa
     pass
 
 

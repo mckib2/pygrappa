@@ -1,18 +1,18 @@
-'''Simple gridding for non-Cartesian kspace.'''
+"""Simple gridding for non-Cartesian kspace."""
 
 import numpy as np
 from scipy.interpolate import griddata
 
 
 def gridder(
-        kx, ky, k, sx, sy, coil_axis=-1, ifft=True, os=2,
-        method='linear'):
-    '''Helper function to grid non-Cartesian data.
+        kx, ky, k, sx: int, sy: int, coil_axis: int = -1, ifft: bool = True, os: float = 2.0,
+        method: str = "linear"):
+    """Helper function to grid non-Cartesian data.
 
     Parameters
     ----------
     kx, ky : array_like
-        1D arrays of (kx, ky) coordinates cooresponding to
+        1D arrays of (kx, ky) coordinates corresponding to
         measurements, k.
     k : array_like
         k-space measurements corresponding to spatial frequencies
@@ -37,7 +37,7 @@ def gridder(
         If ifft=True.
     kspace : array_like, optional
         If ifft=False.
-    '''
+    """
 
     # Move coil data to the back
     k = np.moveaxis(k, coil_axis, -1)
@@ -54,7 +54,3 @@ def gridder(
             np.fft.ifftshift(np.nan_to_num(grid_kspace), axes=(0, 1)),
             axes=(0, 1)), axes=(0, 1))[padx:-padx, pady:-pady, :]
     return grid_kspace
-
-
-if __name__ == '__main__':
-    pass

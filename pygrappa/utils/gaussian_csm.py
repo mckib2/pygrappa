@@ -1,11 +1,11 @@
-'''Simple coil sensitivity maps.'''
+"""Simple coil sensitivity maps."""
 
 import numpy as np
 from scipy.stats import multivariate_normal
 
 
-def gaussian_csm(sx, sy, ncoil, sigma=1):
-    '''Make a 2D Gaussian walk in a circle for coil sensitivities.
+def gaussian_csm(sx: int, sy: int, ncoil: int, sigma: float = 1.0):
+    """Make a 2D Gaussian walk in a circle for coil sensitivities.
 
     Parameters
     ----------
@@ -13,12 +13,14 @@ def gaussian_csm(sx, sy, ncoil, sigma=1):
         Height and width of coil images.
     ncoil : int
         Number of coils to be simulated.
+    sigma : float
+        Diagonal entries in covariance matrix.
 
     Returns
     -------
     csm : array_like
         Simulated coil sensitivity maps.
-    '''
+    """
 
     X, Y = np.meshgrid(
         np.linspace(-1, 1, sy), np.linspace(-1, 1, sx))
@@ -29,7 +31,3 @@ def gaussian_csm(sx, sy, ncoil, sigma=1):
         mu = [np.cos(ii/ncoil*np.pi*2), np.sin(ii/ncoil*2*np.pi)]
         csm[..., ii] = multivariate_normal(mu, cov).pdf(pos)
     return csm + 1j*csm
-
-
-if __name__ == '__main__':
-    pass

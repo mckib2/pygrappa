@@ -1,4 +1,4 @@
-'''Basic usage of NL-GRAPPA.'''
+"""Basic usage of NL-GRAPPA."""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,11 +8,11 @@ except ImportError:
     from skimage.measure import compare_nrmse
 from phantominator import shepp_logan
 
-from pygrappa import nlgrappa, cgrappa
+from pygrappa import nlgrappa, mdgrappa
 from pygrappa.utils import gaussian_csm
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     N, nc = 256, 16
     ph = shepp_logan(N)[..., None]*gaussian_csm(N, N, nc)
 
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     kspace3x1[2::3, ...] = 0
 
     # Reconstruct using both GRAPPA and VC-GRAPPA
-    res_grappa = cgrappa(kspace3x1.copy(), calib)
+    res_grappa = mdgrappa(kspace3x1.copy(), calib)
     res_nlgrappa = nlgrappa(
         kspace3x1.copy(), calib, ml_kernel='polynomial',
         ml_kernel_args={'cross_term_neighbors': 0})

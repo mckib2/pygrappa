@@ -1,4 +1,4 @@
-'''Do Cartesian to radial gridding.'''
+"""Do Cartesian to radial gridding."""
 
 from time import time
 

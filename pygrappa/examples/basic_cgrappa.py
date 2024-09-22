@@ -1,10 +1,11 @@
-'''Basic CGRAPPA example using Shepp-Logan phantom.'''
+"""Basic CGRAPPA example using Shepp-Logan phantom."""
 
 import numpy as np
 import matplotlib.pyplot as plt
 from phantominator import shepp_logan
 
 from pygrappa import cgrappa
+
 
 if __name__ == '__main__':
 
