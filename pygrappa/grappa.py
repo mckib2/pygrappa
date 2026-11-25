@@ -221,13 +221,10 @@ def grappa(
             # pull all source patches from kspace faster than a
             # for loop...
 
-            # x, y define where top left corner is, so move to ctr,
-            # also make sure they are iterable by enforcing atleast_1d
+            # x, y define where top left corner is, so move to ctr.
             idx = np.unravel_index(
-                np.argwhere(iidx == ii), Psh[:2])
+                np.flatnonzero(iidx == ii), Psh[:2])
             x, y = idx[0]+kx2, idx[1]+ky2
-            x = np.atleast_1d(x.squeeze())
-            y = np.atleast_1d(y.squeeze())
             for xx, yy in zip(x, y):
                 # Collect sources for this hole and apply weights
                 S = kspace[xx-kx2:xx+kx2+adjx, yy-ky2:yy+ky2+adjy, :]
